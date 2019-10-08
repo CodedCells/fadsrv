@@ -1,5 +1,6 @@
 # fadsrv
 Python 3 Webserver for browsing Fur Affinity posts efficiently.
+https://www.youtube.com/watch?v=W1tM0ZRNgf4
 
 # Requirements
 Python 3
