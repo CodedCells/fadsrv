@@ -214,7 +214,7 @@ def build_entries():
     
     entries['generated'] = datetime.datetime.now()
     print('Building artist entries', entries['generated'])
-
+    
     if entries['_fadata'] != {} and entries['_kwdata'] == {}:
         print('Building KWS')
         entries['_all'] = os.listdir('i/')
@@ -239,8 +239,10 @@ def build_entries():
         
         entries['_kws'] = sorted(entries['_kws'].items(), key=operator.itemgetter(1))
         print('Finised', c-r, 'keywords')
-    
-    entries['artists'] = artistsort(os.listdir('i/'))
+
+    files = os.listdir('i/')
+    entries['artists'] = artistsort(files)
+    entries['idfn'] = {x.split('.')[0].split('_')[-1]: x for x in files}
     
     entries['featured'] = random.choice(list(entries['artists'].keys()))
     
@@ -257,6 +259,7 @@ def build_entries():
 
 
 def serve_image(handle, path):
+    if path[1] == 'i':path[2] = entries['idfn'].get(path[2].split('.')[0], path[2])
     spath = '/'.join(path[1:])
     ext = spath.split('.')[-1].lower()
     
@@ -268,10 +271,9 @@ def serve_image(handle, path):
     
     else:
         handle.send_response(404)
-        handle.send_header('Content-type', 'text/html')
+        handle.send_header('Content-type', 'image/svg+xml')
         handle.end_headers()
-        handle.wfile.write(s['utf8'])
-        handle.wfile.write(bytes(s['404'].format(handle.path), 'utf8'))
+        handle.wfile.write(entries['_parrot'])
 
 
 def serve_error(handle, title, message):
@@ -376,10 +378,11 @@ def write_imagedefs(files, handle, name=''):
     for file in files:
         ext = file.lower().split('.')[-1]
         post_html = ''
+        fnid = file.split('.')[0].split('_')[-1] + '.' + ext
         if ext in fmt['image']:
-            post_html += '<img loading="lazy" src="/i/i/{}" /><br>\n'.format(file)
+            post_html += '<img loading="lazy" src="/i/i/{}" /><br>\n'.format(fnid)
         elif ext in fmt['text']:post_html += '<p>'+read_file('i/'+file)+'</p>\n'
-        elif ext in fmt['flash']:post_html += '<embed src="/i/i/{}" /><br>\n'.format(file)
+        elif ext in fmt['flash']:post_html += '<embed src="/i/i/{}" /><br>\n'.format(fnid)
         else:
             post_html += s['uft'].format(ext, file)
             continue
@@ -597,7 +600,7 @@ def thmb_finder(artist):
     filc = len(entries['artists'][artist])
     for t in entries['artists'][artist]:
         if t.lower().split('.')[-1] in fmt['image']:
-            thmb = t
+            thmb = t.split('.')[0].split('_')[-1] + '.' + t.split('.')[-1]
             break
     
     return thmb
