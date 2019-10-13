@@ -165,6 +165,7 @@ def build_entries(docats):
                 entries['artists'][name] += entries['artists'][artist]
     
     entries['artistsort'] = sorted(entries['artists'], key=lambda k: len(entries['artists'][k]))
+    
     print('{} artists'.format(len(entries['artistsort'])))
 
 
@@ -427,13 +428,10 @@ def serve_list_shuffle_artist(handle, index_id):
     
     count = 0
     for line in range(12*(index_id-1), 12*index_id):
-        if line >= last_file or -line >= last_file:
-            break
+        if line >= last_file or -line >= last_file:break
         count += 1
         artist = artists[line]
-        if artist not in entries['artists']:
-            print('bug!', artist)
-            continue
+        if artist not in entries['artists']:continue
         
         handle.wfile.write(bytes(s['thmb'].format(artist, len(entries['artists'][artist]), thmb_finder(artist), ['', 'passed'][artist in pref['passed']], 'a'), 'utf8'))
     
@@ -447,28 +445,27 @@ def serve_list_recent(handle, index_id):
     handle.end_headers()
     
     posts = sorted(os.listdir('i/'), reverse=True)
+    artdata = entries['_fadata']['postdata']
     artists = []
     for post in posts:
-        artist = post.split('.')[1].split('_')[0]
+        artist = artdata.get(post, {'artist': '_badart'}).get('artist')
         if artist not in artists:
             artists.append(artist)
     
     last_file = len(artists)
-    last_page = math.ceil(last_file / 14)
+    last_page = math.ceil(last_file / 15)
     
     nav = build_nav(handle, 'recent', index_id, index_id > -last_page, index_id < last_page)
     handle.wfile.write(nav)
     handle.wfile.write(b'</div><div class="container">\n')
     
     count = 0
-    for line in range(60*(index_id-1), 60*index_id):
+    for line in range(15*(index_id-1), 15*index_id):
         if line >= last_file or -line >= last_file:
             break
         count += 1
         artist = artists[line]
-        if artist not in entries['artists']:
-            print('bug!', artist)
-            continue
+        if artist not in entries['artists']:continue
         
         handle.wfile.write(bytes(s['thmb'].format(artist, len(entries['artists'][artist]), thmb_finder(artist), ['', 'passed'][artist in pref['passed']], 'a'), 'utf8'))
     
@@ -498,9 +495,8 @@ def serve_list_passed(handle, index_id):
         count += 1
         artist, datestamp = artists[line]
         
-        if artist not in entries['artists']:
-            print('bug!', artist)
-            continue
+        if artist not in entries['artists']:continue
+        
         datestamp = int(str(datestamp)[:-3])# correct js being funky
         date = datetime.datetime.utcfromtimestamp(datestamp).isoformat()[:10]
         if date != prev:
@@ -582,7 +578,7 @@ def serve_list_part(handle, index_id):
     
     artistp = {}
     for artist in artistc.keys():
-        if artist not in entries['artists']:print(artist, 'error');continue
+        if artist not in entries['artists']:continue
         perc = artistc[artist] / len(entries['artists'][artist])
         if perc < 1:artistp[artist] = perc
     
@@ -597,8 +593,7 @@ def serve_list_part(handle, index_id):
     
     count = 0
     for line in range(15*(index_id-1), 15*index_id):
-        if line >= last_file or -line >= last_file:
-            break
+        if line >= last_file or -line >= last_file:break
         count += 1
         artist, perc = artists[line]
         handle.wfile.write(bytes(s['thmb'].format(artist, str(len(entries['artists'][artist]))+' - {:.02f}%'.format(perc*100), thmb_finder(artist), ['', 'passed'][artist in pref['passed']], 'a'), 'utf8'))
@@ -773,7 +768,7 @@ class fa_req_handler(BaseHTTPRequestHandler):
                 if artist.startswith(ripdata['query']):
                     filc = len(entries['artists'][artist])
                     ret[artist] = s['thmb'].format(artist, filc, thmb_finder(artist), ['', 'passed'][artist in pref['passed']], 'a')
-    
+        
         elif self.path.startswith('/_flag/'):
             flag = self.path[7:]
             for file in ripdata.keys():
@@ -788,9 +783,7 @@ class fa_req_handler(BaseHTTPRequestHandler):
             random.shuffle(artists)
             tries = 0
             while len(ret.keys()) < 3 and tries < 9999:
-                if len(artists) == 0:
-                    print('OUT OF ARTISTS')
-                    break
+                if len(artists) == 0:break
                 artist = artists.pop()
                 filc = len(entries['artists'][artist])
                 if artist not in pref['l8r'] and artist not in pref['passed'] and not artist.startswith('_'):
