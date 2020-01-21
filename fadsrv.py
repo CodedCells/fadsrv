@@ -1,61 +1,12 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
-import os, json, random, datetime, time, math, urllib, json, operator
+import os, json, random, datetime, time, math, urllib, operator
 from io import BytesIO
+
+from fad_utils import *
 
 version = '15'
 
-mobile_path = '/storage/emulated/0/download/takeout/fad/'
-is_mobile = os.path.isdir(mobile_path)
-if is_mobile:os.chdir(mobile_path)
-
-def read_file(fn, mode='r', encoding='utf-8'):
-    # read a file on a single line
-    if mode == 'rb':encoding = None# saves writing it a few times
-    with open(fn, mode, encoding=encoding) as file:
-        data = file.read()
-        file.close()
-    
-    return data
-
-
-def read_json(fn):
-    with open(fn, 'r') as file:
-        return json.load(file)
-
-
-def save_json(fn, d):
-    with open(fn, 'w') as file:
-        json.dump(d, file)
-        file.close()
-    return
-
-pref = {}
-for file in ['passed', 'seen', 'ref', 'rem', 'l8r']:
-    if os.path.isfile(file + '.json'):
-        pref[file] = read_json(file + '.json')
-    else:
-        pref[file] = {}
-
-
-def get_prop(p, i, t='"'):
-    # split string by start and stop
-    return i.split(p)[1].split(t)[0]
-
-
-def strdate(indate):
-    months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
-    ids = indate.split(' ')
-    year = int(ids[2])
-    month = months.index(ids[0].lower()) + 1
-    day = int(ids[1][:-3])
-    hour, minute = [int(x) for x in ids[3].split(':')]
-    if ids[4].lower() == 'pm':hour += 12
-    if hour >= 24:hour = 0
-    date = datetime.datetime(year, month, day, hour, minute)
-    return date
-
-
-def artistsort(postfn, docats=is_mobile):
+def artistsort(postfn, docats=False):
     # sort posts to artists
     artdata = entries['_fadata']['postdata']
     artists = {}
@@ -85,22 +36,6 @@ def artistsort(postfn, docats=is_mobile):
     return artists
 
 
-def is_safe_path(path):
-    # prevent reading files outside of root directory
-    # returns True if file is safe to serve
-    return os.path.abspath(path).startswith(os.getcwd())
-
-
-entries = {
-    '_css': read_file('style.css', mode='rb'),
-    '_parrot': read_file('parrot.svg', mode='rb'),
-    '_searchjs': read_file('search.js', mode='rb'),
-    '_markjs': read_file('mark.js', mode='rb'),
-    '_cyoajs': read_file('cyoa.js', mode='rb'),
-    '_kwdata': {}
-}
-
-
 def fadata_findnew():
     fadata = entries['_fadata']
     
@@ -110,21 +45,20 @@ def fadata_findnew():
     new = []
     for file in os.listdir('i/'):
         if file not in processed:
-            if file.count('.') >= 2:
-                new.append(file)
-            else:
-                print('bugged file', file)
+            if file.count('.') >= 2:new.append(file)
+            else:print('Broken file:', file)
     
-    print(len(new), 'new files')
-    if len(new) > 0:
+    if len(new) == 0:
+        print('No new files, skipping index routine.')
+        return 0
+    
+    else:
+        print(len(new), 'new files to index')
+        
         if 'pagefn' not in fadata:
-            print('Loading all page files')
             fadata['pagefn'] = []
-        else:
-            print('Loading new page files')
 
         dataf = {}
-        print('Loading pagefiles')
         for x in os.listdir('p/'):
             if x not in fadata['pagefn']:
                 fadata['pagefn'].append(x)
@@ -137,12 +71,12 @@ def fadata_findnew():
             postfn = '.'.join(file.split('.')[:-1]) + '_desc.html'
             postfn = dataf.get('_'.join(postfn.split('_')[1:]), None)
             if postfn == None:
-                print('Missing data for', file)
+                print(' !\tMissing data for', file)
                 continue
             
             else:
                 c += 1
-                if c % 500 == 0:print('\t', c)
+                if c % 500 == 0:print('\t', c)# Show progress every 500
                 postdf = read_file(postfn)
                 fadata['postdata'][file] = {}
                 pd = fadata['postdata'][file]
@@ -157,11 +91,12 @@ def fadata_findnew():
                     if k in keywords:keywords[k].append(file)
                     else:keywords[k] = [file]
                 
-                date = get_prop('popup_date">', postdf, t='</')# Nov 19th, 2015 02:34 AM
+                date = get_prop('popup_date">', postdf, t='</')# MMM DDth, CCYY hh:mm AM
                 try:pd['date'] = strdate(date).isoformat()
                 except Exception as e:
                     print(date)
                     input(e)
+                
                 pd['title'] = get_prop('property="og:title" content="', postdf)
                 pd['artist'] = get_prop('property="og:title" content="', postdf).split(' ')[-1].lower()
                 desc = get_prop('<td valign="top" align="left" width="70%" class="alt1" style="padding:8px">', postdf, t='</td>')
@@ -170,60 +105,34 @@ def fadata_findnew():
                 pd['description'] = [x.strip() for x in pd['description'].split('\n')]
                 pd['url'] = get_prop('"og:url" content="', postdf)
         
-        print('\t', c)
+        print('\t', c)# Final count
         
-        print('Saving')
+        print('Writing fadata.json to disk... ', end='')
         with open('fadata.json', 'w') as file:
             json.dump(fadata, file)
             file.close()
-
-
-if os.path.isfile('fadata.json'):entries['_fadata'] = read_json('fadata.json')
-else:entries['_fadata'] = {'artists': {}, 'postdata': {}, 'keywords': {}}
-if not is_mobile:fadata_findnew()
-
-prog = read_json('prog.json')
-fmt = prog['formats']
-fmt['all'] = []
-for k in fmt.keys():fmt['all'] += fmt[k]
-ctl = prog['content']
-del prog
-
-s = {
-    'thb': '<span class="thumb{3}"><a href="{1}"><img loading="lazy" src="{2}" /><br>{0}</a></span>\n',
-    'thmb': '<span class="thumb {3}"><a href="/s{4}/{0}/1"><img loading="lazy" src="/t/i/{2}" /><br>{0} - {1}</a></span>\n',
-    'thmbf': '<span class="thumb featured"><a href="/s{3}/{0}/1"><img loading="lazy" src="/t/i/{2}" /><br>{0} - {1}<br><b>Featured</b></a></span>\n',
-    'utf8': b'<meta charset="UTF-8">\n',
-    '404': 'Couldn\'t find <b>{}</b><br>\nSorry about that. :(',
-    'head': '<html>\n<head><title>{}</title>\n<link rel="stylesheet" href="/style.css">\n</head>\n<body>\n',
-    'uft': 'Unknown file type: <b>{}</b> on <i>{}</i>\n',
-    'ewc': '<div class="desc"><details><summary>Descripton (Estimated {} word count)</summary>\n{}</details>\n</div><br>\n',
-    'nb': '<a class="btn{2}" href="{1}">{0}</a>\n',
-    'oor': 'Out of Range.<br><a class="back" href="/{0}">Go to last valid page. Page {0}.</a>',
-    'wrap': '<{0} {1}>{2}</{0}>\n',
-    'parrot': b'<br>\n<!-- I\'ve been summoned, something may be wrong. -->\n<img src="/parrot.svg" alt="Got his fibre, on his way." /><br>\n',
+        print('Done!')
     
-    'markt': '<button id="{0}{1}" onclick="mark(\'{0}\', \'{1}\')" class="{3}">{2}</button>\n',
-    'all': '<h2>Sorry, but...</h2><br>\nThat\'s all I\'ve got on record. Just {} {}{}.',
-    'noby': 'Sorry, but no works by <b>{}</b> are in my database.'
-}
+    return len(new)
 
 
-def build_entries():
+def build_entries(docats):
     global entries
     
     entries['generated'] = datetime.datetime.now()
-    print('Building artist entries', entries['generated'])
+    print('Started building entries')
     
     if entries['_fadata'] != {} and entries['_kwdata'] == {}:
-        print('Building KWS')
+        print('Grouping posts by keywords ^c,c^/n')
         entries['_all'] = os.listdir('i/')
         entries['_kws'] = {}
         
         c = 0
         r = 0
         for key in list(entries['_fadata']['keywords'].keys()):
+            # had to comment this out because it takes sooooooo long
             #entries['_kwdata'][key] = [x for x in entries['_fadata']['keywords'][key] if x in entries['_all']]
+            # that's o(n) for you, need to reimplement this at some point
             entries['_kwdata'][key] = entries['_fadata']['keywords'][key]
             entries['_kws'][key] = len(entries['_kwdata'][key])
             
@@ -232,16 +141,17 @@ def build_entries():
                 del entries['_kwdata'][key]
                 r += 1
             
-            c += 1
+            else:
+                c += 1
             if c % 1000 == 0:print('\t', c)
         
-        print('\t', c, 'removed', r)
+        print('\nSifted through', c, 'important and', r, 'useless keywords')
         
         entries['_kws'] = sorted(entries['_kws'].items(), key=operator.itemgetter(1))
-        print('Finised', c-r, 'keywords')
+        print('Done with all that')
 
     files = os.listdir('i/')
-    entries['artists'] = artistsort(files)
+    entries['artists'] = artistsort(files, docats=docats)
     entries['idfn'] = {x.split('.')[0].split('_')[-1]: x for x in files}
     
     entries['featured'] = random.choice(list(entries['artists'].keys()))
@@ -255,7 +165,8 @@ def build_entries():
                 entries['artists'][name] += entries['artists'][artist]
     
     entries['artistsort'] = sorted(entries['artists'], key=lambda k: len(entries['artists'][k]))
-    print('Completed {} entries'.format(len(entries['artistsort'])))
+    
+    print('{} artists'.format(len(entries['artistsort'])))
 
 
 def serve_image(handle, path):
@@ -377,14 +288,19 @@ def write_imagedefs(files, handle, name=''):
     count = 0
     for file in files:
         ext = file.lower().split('.')[-1]
-        post_html = ''
+        cat = file_category(file)
         fnid = file.split('.')[0].split('_')[-1] + '.' + ext
-        if ext in fmt['image']:
-            post_html += '<img loading="lazy" src="/i/i/{}" /><br>\n'.format(fnid)
-        elif ext in fmt['text']:post_html += '<p>'+read_file('i/'+file)+'</p>\n'
-        elif ext in fmt['flash']:post_html += '<embed src="/i/i/{}" /><br>\n'.format(fnid)
+        if cat == 'image':
+            post_html = '<img loading="lazy" src="/i/i/{}" /><br>\n'.format(fnid)
+        
+        elif cat == 'text':
+            post_html = '<p>'+read_file('i/'+file)+'</p>\n'
+        
+        elif cat == 'flash':
+            post_html = '<embed src="/i/i/{}" /><br>\n'.format(fnid)
+        
         else:
-            post_html += s['uft'].format(ext, file)
+            post_html = s['uft'].format(ext, file)
             continue
         
         data = entries['_fadata']['postdata'].get(file, None)
@@ -443,7 +359,8 @@ def serve_list_keyword(handle, index_id):
             break
         count += 1
         kw, kc = keywords[line]
-        handle.wfile.write(bytes(s['thmb'].format(kw, kc, entries['_kwdata'][kw][0], '', 'k'), 'utf8'))
+        thmb = entries['_kwdata'][kw][0]
+        handle.wfile.write(bytes(s['thmb'].format(kw, kc, fn2id(thmb), '', 'k'), 'utf8'))
     
     if count == 0:
         handle.wfile.write(bytes('\n<br>'+s['oor'].format(last_page), 'utf8'))
@@ -511,17 +428,15 @@ def serve_list_shuffle_artist(handle, index_id):
     
     count = 0
     for line in range(12*(index_id-1), 12*index_id):
-        if line >= last_file or -line >= last_file:
-            break
+        if line >= last_file or -line >= last_file:break
         count += 1
         artist = artists[line]
-        if artist not in entries['artists']:
-            print('bug!', artist)
-            continue
+        if artist not in entries['artists']:continue
         
         handle.wfile.write(bytes(s['thmb'].format(artist, len(entries['artists'][artist]), thmb_finder(artist), ['', 'passed'][artist in pref['passed']], 'a'), 'utf8'))
     
     handle.wfile.write(b'\n</div><div class="foot">' + nav)
+
 
 def serve_list_recent(handle, index_id):
     
@@ -530,28 +445,27 @@ def serve_list_recent(handle, index_id):
     handle.end_headers()
     
     posts = sorted(os.listdir('i/'), reverse=True)
+    artdata = entries['_fadata']['postdata']
     artists = []
     for post in posts:
-        artist = post.split('.')[1].split('_')[0]
+        artist = artdata.get(post, {'artist': '_badart'}).get('artist')
         if artist not in artists:
             artists.append(artist)
     
     last_file = len(artists)
-    last_page = math.ceil(last_file / 14)
+    last_page = math.ceil(last_file / 15)
     
     nav = build_nav(handle, 'recent', index_id, index_id > -last_page, index_id < last_page)
     handle.wfile.write(nav)
     handle.wfile.write(b'</div><div class="container">\n')
     
     count = 0
-    for line in range(60*(index_id-1), 60*index_id):
+    for line in range(15*(index_id-1), 15*index_id):
         if line >= last_file or -line >= last_file:
             break
         count += 1
         artist = artists[line]
-        if artist not in entries['artists']:
-            print('bug!', artist)
-            continue
+        if artist not in entries['artists']:continue
         
         handle.wfile.write(bytes(s['thmb'].format(artist, len(entries['artists'][artist]), thmb_finder(artist), ['', 'passed'][artist in pref['passed']], 'a'), 'utf8'))
     
@@ -581,9 +495,8 @@ def serve_list_passed(handle, index_id):
         count += 1
         artist, datestamp = artists[line]
         
-        if artist not in entries['artists']:
-            print('bug!', artist)
-            continue
+        if artist not in entries['artists']:continue
+        
         datestamp = int(str(datestamp)[:-3])# correct js being funky
         date = datetime.datetime.utcfromtimestamp(datestamp).isoformat()[:10]
         if date != prev:
@@ -599,8 +512,8 @@ def thmb_finder(artist):
     thmb = 'parrot.svg'
     filc = len(entries['artists'][artist])
     for t in entries['artists'][artist]:
-        if t.lower().split('.')[-1] in fmt['image']:
-            thmb = t.split('.')[0].split('_')[-1] + '.' + t.split('.')[-1]
+        if file_category(t) == 'image':
+            thmb = fn2id(t)
             break
     
     return thmb
@@ -665,7 +578,7 @@ def serve_list_part(handle, index_id):
     
     artistp = {}
     for artist in artistc.keys():
-        if artist not in entries['artists']:print(artist, 'error');continue
+        if artist not in entries['artists']:continue
         perc = artistc[artist] / len(entries['artists'][artist])
         if perc < 1:artistp[artist] = perc
     
@@ -680,8 +593,7 @@ def serve_list_part(handle, index_id):
     
     count = 0
     for line in range(15*(index_id-1), 15*index_id):
-        if line >= last_file or -line >= last_file:
-            break
+        if line >= last_file or -line >= last_file:break
         count += 1
         artist, perc = artists[line]
         handle.wfile.write(bytes(s['thmb'].format(artist, str(len(entries['artists'][artist]))+' - {:.02f}%'.format(perc*100), thmb_finder(artist), ['', 'passed'][artist in pref['passed']], 'a'), 'utf8'))
@@ -766,16 +678,15 @@ def serve_menu(handle):
     handle.wfile.write(s['utf8'])
     handle.wfile.write(bytes(s['head'].format('Navigation'), 'utf8'))
     handle.wfile.write(b'<h2 style="font-family:Brush Script MT, Brush Script Std, cursive;">Data Management Panel</h2>\n<div class="container">\n')
-    pages = [('la', 'artist list'),
-            ('lk', 'keyword list'),
-            ('part', 'partially seen'),
-            ('search', 'artist search'),
-            ('shuffle', 'artist shuffle'),
-            ('recent', 'artist recent'),
-            ('passed', 'artist passed'),
-            ('cyoa', 'cyoa finder'),
-            ('stats', 'statistics')]
-    for path, name in pages:
+    for path, name in [('la', 'artist list'),
+                       ('lk', 'keyword list'),
+                       ('part', 'partially seen'),
+                       ('search', 'artist search'),
+                       ('shuffle', 'artist shuffle'),
+                       ('recent', 'artist recent'),
+                       ('passed', 'artist passed'),
+                       ('cyoa', 'cyoa finder'),
+                       ('stats', 'statistics')]:
         handle.wfile.write(bytes(s['thb'].format(name, path, 'parrot.svg', ''), 'utf8'))
 
 class fa_req_handler(BaseHTTPRequestHandler):
@@ -857,7 +768,7 @@ class fa_req_handler(BaseHTTPRequestHandler):
                 if artist.startswith(ripdata['query']):
                     filc = len(entries['artists'][artist])
                     ret[artist] = s['thmb'].format(artist, filc, thmb_finder(artist), ['', 'passed'][artist in pref['passed']], 'a')
-    
+        
         elif self.path.startswith('/_flag/'):
             flag = self.path[7:]
             for file in ripdata.keys():
@@ -872,9 +783,7 @@ class fa_req_handler(BaseHTTPRequestHandler):
             random.shuffle(artists)
             tries = 0
             while len(ret.keys()) < 3 and tries < 9999:
-                if len(artists) == 0:
-                    print('OUT OF ARTISTS')
-                    break
+                if len(artists) == 0:break
                 artist = artists.pop()
                 filc = len(entries['artists'][artist])
                 if artist not in pref['l8r'] and artist not in pref['passed'] and not artist.startswith('_'):
@@ -883,14 +792,62 @@ class fa_req_handler(BaseHTTPRequestHandler):
         
         elif self.path == '/rebuild':
             try:
-                build_entries()
+                build_entries(want_cats)
                 ret['status'] = 'success'
             except:
                 ret['status'] = 'error'
         
         self.wfile.write(bytes(json.dumps(ret), 'utf8'))
 
+
+s = {# strings
+    'thb': '<span class="thumb{3}"><a href="{1}"><img loading="lazy" src="{2}" /><br>{0}</a></span>\n',
+    'thmb': '<span class="thumb {3}"><a href="/s{4}/{0}/1"><img loading="lazy" src="/t/i/{2}" /><br>{0} - {1}</a></span>\n',
+    'thmbf': '<span class="thumb featured"><a href="/s{3}/{0}/1"><img loading="lazy" src="/t/i/{2}" /><br>{0} - {1}<br><b>Featured</b></a></span>\n',
+    'utf8': b'<meta charset="UTF-8">\n',
+    '404': 'Couldn\'t find <b>{}</b><br>\nSorry about that. :(',
+    'head': '<html>\n<head><title>{}</title>\n<link rel="stylesheet" href="/style.css">\n</head>\n<body>\n',
+    'uft': 'Unknown file type: <b>{}</b> on <i>{}</i>\n',
+    'ewc': '<div class="desc"><details><summary>Descripton (Estimated {} word count)</summary>\n{}</details>\n</div><br>\n',
+    'nb': '<a class="btn{2}" href="{1}">{0}</a>\n',
+    'oor': 'Out of Range.<br><a class="back" href="/{0}">Go to last valid page. Page {0}.</a>',
+    'wrap': '<{0} {1}>{2}</{0}>\n',
+    'parrot': b'<br>\n<!-- I\'ve been summoned, something may be wrong. -->\n<img src="/parrot.svg" alt="Got his fibre, on his way." /><br>\n',
+    
+    'markt': '<button id="{0}{1}" onclick="mark(\'{0}\', \'{1}\')" class="{3}">{2}</button>\n',
+    'all': '<h2>Sorry, but...</h2><br>\nThat\'s all I\'ve got on record. Just {} {}{}.',
+    'noby': 'Sorry, but no works by <b>{}</b> are in my database.'
+}
+
 if __name__ == '__main__':
-    build_entries()
+    
+    mobile_path = '/storage/emulated/0/download/takeout/fad/'
+    is_mobile = os.path.isdir(mobile_path)
+    want_cats = is_mobile
+    print(['^-.-^ docats false', '^o,o^ docats true'][want_cats])
+    if is_mobile:
+        os.chdir(mobile_path)
+        
+    entries = {
+        '_css': read_file('style.css', mode='rb'),
+        '_parrot': read_file('parrot.svg', mode='rb'),
+        '_searchjs': read_file('search.js', mode='rb'),
+        '_markjs': read_file('mark.js', mode='rb'),
+        '_cyoajs': read_file('cyoa.js', mode='rb'),
+        '_kwdata': {}
+    }
+
+    pref = {}
+    for file in ['passed', 'seen', 'ref', 'rem', 'l8r']:
+        if os.path.isfile(file + '.json'):
+            pref[file] = read_json(file + '.json')
+        else:
+            pref[file] = {}
+
+    if os.path.isfile('fadata.json'):entries['_fadata'] = read_json('fadata.json')
+    else:entries['_fadata'] = {'artists': {}, 'postdata': {}, 'keywords': {}}
+    if not is_mobile:fadata_findnew()
+    
+    build_entries(want_cats)
     httpd = HTTPServer(('127.0.0.1', 6970), fa_req_handler)
     httpd.serve_forever()

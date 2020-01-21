@@ -1,6 +1,13 @@
-# fadsrv
+# fadsrv refactor
 Python 3 Webserver for browsing Fur Affinity posts efficiently.
 https://www.youtube.com/watch?v=W1tM0ZRNgf4
+
+## Branch Goals
+* Fix code repetition
+* Make code more readable
+* Improve functionality
+* Decrease performance intensivity
+* Configurability
 
 # Requirements
 * Python 3
