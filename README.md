@@ -1,17 +1,10 @@
-# fadsrv refactor
-Python 3 Webserver for browsing Fur Affinity posts efficiently.
-https://www.youtube.com/watch?v=W1tM0ZRNgf4
-
-## Branch Goals
-* Fix code repetition
-* Make code more readable
-* Improve functionality
-* Decrease performance intensivity
-* Configurability
+refactor
+Python 3 Webserver for browsing downloaded Fur Affinity posts quickly and easily.
+[Video example](https://www.youtube.com/watch?v=W1tM0ZRNgf4)
 
 # Requirements
 * Python 3
-* Fur Affinity posts (images & html)
+* Fur Affinity posts (images & data), works with [getFA](https://github.com/CodedCells/getfa)
 
 # Setup
 1. Place all files in a folder.
@@ -36,3 +29,10 @@ https://www.youtube.com/watch?v=W1tM0ZRNgf4
 * `rem`ove - for stuff you might have missed and not want to keep.
 * `passed` - When you've looked on Fur Affinity and got everything you want.
 * `l8r` - I'll look at that artist later (aka 6134 posts is a lot to look at atm)
+
+## WIP
+* Fix code repetition
+* Make code more readable
+* Improve functionality
+* Decrease performance intensivity
+* Configurability
