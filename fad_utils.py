@@ -26,9 +26,9 @@ def save_json(fn, d):
     return
 
 
-def get_prop(p, i, t='"'):
+def get_prop(p, i, t='"', o=1):
     # split string by start and stop
-    return i.split(p)[1].split(t)[0]
+    return i.split(p)[o].split(t)[0]
 
 
 def is_safe_path(path):
@@ -42,10 +42,14 @@ def strdate(indate):
     ids = indate.split(' ')
     year = int(ids[2])
     month = months.index(ids[0].lower()) + 1
-    day = int(ids[1][:-3])
+    day = ids[1]
+    while not day.isdigit():day = day[:-1]
+    if len(day) == 0:print('DAY ERROR', ids)
+    day = int(day)
     hour, minute = [int(x) for x in ids[3].split(':')]
     if ids[4].lower() == 'pm':hour += 12
     if hour >= 24:hour = 0
+    
     date = datetime.datetime(year, month, day, hour, minute)
     return date
 
