@@ -1,0 +1,117 @@
+/*
+Convert prefs from filenames to ids
+Standardise listing and deduplicate code
+Fix -1 to be wrap around
+Fix some artists and keyword thumbs being randomised on start?
+Fix legacy performance issues
+*/
+
+body {
+	background: #303030;
+	font-family: sans-serif;
+	color: #cfcfcf;
+	text-align: center;
+	margin: 0;
+}
+
+a {
+	color: inherit!important;
+	text-decoration: none;
+}
+
+.head {
+	display: block;
+	width: 100%;
+	background: #202020;
+	padding: 10px 0;
+	box-shadow: 0 10px 16px 0 rgba(0,0,0,0.3),0 6px 20px 0 rgba(0,0,0,0.3);
+}
+
+.foot {
+	display: block;
+	width: 100%;
+	background: #202020;
+	padding: 5px 0;
+}
+
+.container.list {
+	margin: 30px auto 20px auto;
+	max-width: 800px;
+}
+
+.thumbw {
+	display: inline-block;
+	width: 250px;
+}
+
+.niceinp {
+	font-size: 150%;
+	text-align: center;
+	border: none;
+	background: #424242;
+	box-shadow: 0 10px 16px 0 rgba(0,0,0,0.3),0 6px 20px 0 rgba(0,0,0,0.3);
+	color: #cfcfcf;
+}
+
+.thumbw input {
+	width: 140px;
+}
+
+.thumb a {
+	display: inline-block;
+	vertical-align: top;
+	width: 250px;
+	height: 280px;
+	padding-bottom: 10px;
+	margin-bottom: 20px;
+	background: #424242;
+	box-shadow: 0 10px 16px 0 rgba(0,0,0,0.3),0 6px 20px 0 rgba(0,0,0,0.3);
+}
+
+.passed a {
+	background: #262626;
+}
+
+.thumb img {
+	width: initial;
+	display: inline-block;
+	max-width: 250px;
+	max-height: 250px;
+}
+
+.btn {
+	min-width: 70px;
+	display: inline-block;
+	margin: 10px;
+	padding: 20px 0;
+	margin-bottom: 15px;
+	font-size: 20pt;
+	background: #424242;
+	box-shadow: 0 10px 16px 0 rgba(0,0,0,0.3),0 6px 20px 0 rgba(0,0,0,0.3);
+}
+
+.btn.wide {
+	min-width: 240px;
+}
+
+.btn.disabled {
+	color: gray!important;
+	pointer-events: none;
+	cursor: default;
+}
+
+button {
+	border: none;
+	color: #cfcfcf;
+	background: #202020;
+	padding: 10px;
+	min-width: 60px;
+	min-height: 60px;
+	margin: 10px 20px;
+	box-shadow: 0 10px 16px 0 rgba(0,0,0,0.3),0 6px 20px 0 rgba(0,0,0,0.3);
+	font-size: 24px;
+}
+
+button.on {
+	background: #707090;
+}
