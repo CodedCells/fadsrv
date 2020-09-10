@@ -1,0 +1,11 @@
+THis code is a bit old, my current versions I use are incomplete and a bit messy.
+This is stable but lacks some Quality of Life tweaks
+Once I've got my version neat I'll upload it
+
+This project is a bit more techie, you should have a good understanding of Python 3 ideally
+just in general, but it helps if you run into any problems
+
+updating to new fadsrv should be smooth, but depending on customisations or config you may run into problems
+
+FADSRV allows the easy browsing of art from Fur Affinity, for filtering and sorting content.
+My build has sets which work similar to e621 where posts can be added and browsed easily.
