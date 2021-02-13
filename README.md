@@ -23,7 +23,7 @@ This project is a work in progress, fixing up old janky code I wrote hastily.
 * Customisable buttons, dropdowns and other ways to organise users and posts.
 * Optimised data handling, enabling fast change saving
 
-## WIP
+# WIP
 * Make set handling less hardcoded
 * Optimise use of global variables
 * Fix legacy code issues rather than working around them
