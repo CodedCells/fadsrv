@@ -12,6 +12,7 @@ This project is in active development, some parts are very janky and will need t
 1. Create a directory for the scripts to work in
 2. Run `main.py` to start the webserver
 3. Navigate to `http://127.0.0.1:6970` in your web browser
+4. Visit `http://127.0.0.1:6970/cookie_help` or open 'pages/cookie_help.html' to get your cookies set up
 
 # Features
 * Posts grouped by users, tags, folders and customisable lists
