@@ -1,0 +1,45 @@
+<!--
+FADMETA {
+"order": -1900,
+"enableMenu": true,
+"forceMenu": "pages",
+"enableHeader": true,
+"enableFooter": true,
+"enableRebuild": false,
+"enableTime": true,
+"enableStyle": true,
+"enableScript": true,
+"menuLabel": "User Stats Help",
+"menuIcon": [9, 1]
+}-->
+<link rel="stylesheet" href="../style.css">
+<script>
+function angleCut(ctx, w, h, colors) {
+	//ctx.fillStyle = colors[0];
+	//ctx.fillRect(0, 0, w, h);
+	fxScale = w / colors.length;
+	fxUpperLowerOffset = fxScale * .65;
+	for (var i = 0; i < colors.length; i++) {
+		console.log(i);
+		fxOffsetL = i * fxScale;
+		fxOffsetR = (i + 1) * fxScale;
+		
+		ctx.fillStyle = colors[i];
+		ctx.beginPath();
+		ctx.moveTo(Math.min(w, fxOffsetR + fxUpperLowerOffset), 0);
+		ctx.lineTo(w, h);
+		ctx.lineTo(Math.max(0, fxOffsetL - fxUpperLowerOffset), h);
+		if (i == 0) fxOffsetL = -w;
+		ctx.lineTo(Math.max(0, fxOffsetL + fxUpperLowerOffset), 0);
+		ctx.fill();
+	}
+}
+
+function load() {
+	icone = document.getElementById("icon");
+	icon = icone.getContext("2d");
+	angleCut(icon, icone.width, icone.height, ["red", "orange", "yellow", "green", "blue", "purple"]);
+}
+</script>
+<body onload="load()">
+<canvas id="icon" width="320" height="320" />

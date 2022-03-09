@@ -1,0 +1,57 @@
+<!--
+FADMETA {
+"order": -1900,
+"enableMenu": true,
+"forceMenu": "pages",
+"enableHeader": true,
+"enableFooter": true,
+"enableRebuild": false,
+"enableTime": true,
+"enableStyle": true,
+"enableScript": true,
+"menuLabel": "User Stats Help",
+"menuIcon": [9, 1]
+}-->
+<link rel="stylesheet" href="../res/style.css">
+<div class="head">
+<h2>User Stats Help</h2>
+</div>
+<div class="container list"</div>
+
+<div class="talking">
+<h2>What is user_stats.py?</h2>
+<p>User Stats is an automated tool that'll collect useful information about users for FADSRV.</p>
+</div>
+
+<div class="talking">
+<h2>Setting up</h2>
+Requirements
+<ul>
+<li>Python 3.x</li>
+<li><a href="https://docs.python-requests.org/en/master/user/install/#install">Requests module</a></li>
+<li>Cookies configuration (see <a href="/help_cookies">Cookies Help</a>)</li>
+</ul>
+
+<br>
+<h3>Configure</h3>
+<p>Use the same settings as post_grab.py since i'm lazy.</p>
+</div>
+
+<div class="talking">
+<h2>Usage</h2>
+<p>Make sure FADSRV is running as this program asks it for a list of users.</p>
+<p>Run the program, terminate if you want when it sleeps.</p>
+<br>
+<h3>Program Loop Logic</h3>
+<p>The program runs in three sequential modes</p>
+<br>
+<h3>New Users</h3>
+<p>Collects stats for users it hasn't seen before, considered a priority.</p>
+<h3>Update Users</h3>
+<p>Users whose information was collected long ago may be worthwhile updating, starting with the oldest.</p>
+<p>Can break out of this loop by holding Ctrl+C, will also stop if Fur Affinity is busy.</p>
+<h3>Manual Entry</h3>
+<p>Lets the user enter an account name, or just press enter to quit.</p>
+</div>
+
+</div>

@@ -1,0 +1,57 @@
+<!--
+FADMETA {
+"order": -1900,
+"enableMenu": true,
+"forceMenu": "pages",
+"enableHeader": true,
+"enableFooter": true,
+"enableRebuild": false,
+"enableTime": true,
+"enableStyle": true,
+"enableScript": true,
+"menuLabel": "Grab Post Help",
+"menuIcon": [1, 3]
+}-->
+<link rel="stylesheet" href="../res/style.css">
+<div class="head">
+<h2>Grab Post Help</h2>
+</div>
+<div class="container list"</div>
+
+<div class="talking">
+<h2>What is grab_post.py?</h2>
+<p>Grab Post is an automated tool that'll grab the favourites of the user specified in the config.</p>
+<p>Designed to be used on your own favourites, but could be set to target someone else's if it's shown.</p>
+</div>
+
+<div class="talking">
+<h2>Setting up</h2>
+Requirements
+<ul>
+<li>Python 3.x</li>
+<li><a href="https://docs.python-requests.org/en/master/user/install/#install">Requests module</a></li>
+<li>Cookies configuration (see <a href="/help_cookies">Cookies Help</a>)</li>
+</ul>
+
+<p>Try and run <code>grap_post.py</code>.</p>
+<br>
+<h3>Configure</h3>
+<p>After running the program at least once, <code>data/post_grab_cfg.json</code> will  be created.<p>
+<p>Edit the file and set the username to the target account.</p>
+<p>Additionally if you are running FADSRV on another port, change the port number.</p>
+<br>
+<p>Default settings will work with the stock FADSRV configuration.</p>
+</div>
+
+<div class="talking">
+<h2>Usage</h2>
+<p>The program should run to completion just by opening, downloading all the posts in the user's favourites.</p>
+<br>
+<h3>Program Loop Logic</h3>
+<p>The program will continue to visit the next page until either there are no more pages <i>or</i> it doesn't see any new posts.</p>
+<p>This may cause issues if terminated during an initial run.</p>
+<p>The program runs at a reduced speed and is intended to run in the background once you've done favouriting, this is to reduce stress on Fur Affinity's servers.</p>
+<p>The program downloads the page and then the media for each post, working it's way from newest to oldest.</p>
+</div>
+
+</div>

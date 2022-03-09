@@ -1,0 +1,19 @@
+main.py	
+	Python 3 Webserver Browser
+
+Cookies are pretty much required for any scraping
+An informative guide about this can be found:
+in pages/help_cookies.html
+
+or when running the server:
+http://127.0.0.1:6970/help_cookies
+
+logging_grab_post.py
+	Run to download posts and data
+
+logging_user_stats_new.py
+	Run to gather stats of users you faved posts from
+
+logging_user_stats_update.py
+	Run to update stats of users you faved posts from
+	Updates every 10-40 days depening on post dates

@@ -1,32 +1,27 @@
-Python 3 tool set and web server for downloading and browsing Fur Affinity posts in customisable lists, quickly and easily.
+Python 3 Web Server and Toolset for gathering and browsing content from Fur Affinity posts in customisable lists, quickly and easily.
+
+This project is in active development, some parts are very janky and will need to be fixed.
 
 [Outdated Video example](https://www.youtube.com/watch?v=W1tM0ZRNgf4)
 
-This project is a work in progress, fixing up old janky code I wrote hastily.
-
 # Requirements
 * Python 3
-* Fur Affinity posts (images & data), works with [getFA](https://github.com/CodedCells/getfa)
-* Some knowledge of Python 3
+* Some knowledge of Python 3 (bugs may occur)
 
 # Setup
 1. Create a directory for the scripts to work in
-2. Either configure getFA or add files: images in `i/` and pages in `p/`
-3. (optional) Create `data/` to keep server data organised
-4. Run `main.py` and let it build metadata
-5. Navigate to `127.0.0.1:6970` in your web browser
+2. Run `main.py` to start the webserver
+3. Navigate to `http://127.0.0.1:6970` in your web browser
 
 # Features
-* Posts grouped by users, keywords, folders and customisable lists
+* Posts grouped by users, tags, folders and customisable lists
 * User, keyword and folder search
-* Customisable lists, for users and posts
-* Customisable buttons, dropdowns and other ways to organise users and posts.
-* Optimised data handling, enabling fast change saving
+* Customisable lists, for everything (users, posts, folders, your own lists!)
+* Customisable buttons, dropdowns, collections and other ways to organise your hoard.
+* Optimised data handling, appending to files.
 
 # WIP
-* Make set handling less hardcoded
 * Optimise use of global variables
-* Fix legacy code issues rather than working around them
 * Make code more readable
 * Improve functionality
-* Configurability
+* Interface for Menu/Mark editing

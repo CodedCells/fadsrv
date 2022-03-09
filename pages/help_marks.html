@@ -1,0 +1,101 @@
+<!--
+FADMETA {
+"order": -5000,
+"enableMenu": true,
+"forceMenu": "pages",
+"enableHeader": true,
+"enableFooter": true,
+"enableRebuild": false,
+"enableTime": true,
+"enableStyle": true,
+"enableScript": true,
+"menuLabel": "Mark Help",
+"menuIcon": [0, 4]
+}-->
+<link rel="stylesheet" href="../res/style.css">
+<div class="head">
+<h2>Mark Help</h2>
+</div>
+<div class="container list"</div>
+
+<div class="talking">
+<h2>What are marks?</h2>
+<p>Marks are a way of categorising and organising posts.</p>
+<p>Akin to favouriting a post on Fur Affinity, but with so many more options.</p>
+<br>
+<p>Generally represented as buttons or icons, they can be used for almost anything.</p>
+</div>
+
+<div class="talking">
+<h2>Types</h2>
+<p>Marks have a type property, indicating how they can be used.</p>
+<br>
+<h2>Multi-Button (<code>"type": "multibutt"</code>)</h2>
+<p>Creates one or more buttons that can be picked between and toggled.</p>
+
+<h2>Dropdown List (<code>"type": "list"</code>)</h2>
+<p>Creates a dropdown list of predefined values.</p>
+
+<h2>Collection (<code>"type": "collection"</code>)</h2>
+<p>Creates a button which opens a menu of user-created collections.</p>
+
+<h2>Int (<code>"type": "int"</code>) unused</h2>
+<p>Creates a numerical input, untested outside of direct use.</p>
+
+<h2>Others</h2>
+<p>These are the only ones implemented in the base code.</p>
+<p>I'd like to add user-customisable functionality to this, but it works for all my use cases right now.</p>
+</div>
+
+<div class="talking">
+<h2>Properties</h2>
+<p>Other properties can be specified for marks, as to how they will behave.
+<h2>For (<code>"for": "kind"</code>)</h2>
+<p>Semi-required property, defaults to <code>posts</code>.</p>
+<p>Default values include:
+<ul style="font-family: fixed-width">
+<li>posts</li>
+<li>posts_unav</li>
+<li>users</li>
+<li>postmarks</li>
+<li>tags</li>
+<li>folders</li>
+<li>sets</li>
+</ul>
+<p>Any additional marks may also be used, e.g. <code>sets</code>.</p>
+
+<h2>Icon (<code>"icon": [x, y]</code>)</h2>
+<p>Optional, defaults to the name of the value or mark, may also default to [9, 9] in some cases.</p>
+<p>Refers to a position on <a href="../icons.svg">this iconsheet</a>, starting at [0, 0] at the top left.</p>
+<p><code>x</code> refers to the horizontal position, increasing going towards the right.</p>
+<p><code>y</code> refers to the vertical position, increasing going towards the bottom.</p>
+
+<h2>Values (<code>"values": ["thing1", "thing2"]</code>)</h2>
+<p>Values are used in multi-button and dropdown list mark files.</p>
+<p>A list of values, where the user can pick between them or to unset it.</p>
+
+<h2>Value Icon (<code>"valueicon": [[4,3], [3,3]]</code>)</h2>
+<p>Value Icons are used aside values, providing a unique icon for each value.</p>
+
+<h2>Exclude Marked (<code>"excludeMarked": false</code>)</h2>
+<p>Defaults <code>true</code>, meaning it'll hide content marked by it</p>
+<p>Whether to exclude posts marked by this when docats is true.</p>
+
+<h2>Order (<code>"order": 10</code>)</h2>
+<p>Display order when placed aside other marks.</p>
+
+<h2>Disabled (<code>"disabled": true</code>)</h2>
+<p>Displays button, but makes the button unclickable.</p>
+
+<h2>Hidden (<code>"hidden": true</code>)</h2>
+<p>Do not display at all.</p>
+
+<h2>Do Read Count (<code>"doReadCount": true</code>)</h2>
+<p>Used for collections only, when enabled displays if all posts have been marked as read.</p>
+
+<h2>List (<code>"list": true</code>)</h2>
+<p>USed to tell the system this file is just a list of things separated by lines.</p>
+<p>Cannoot be modified at runtime, please set disabled or hidden.</p>
+</div>
+
+</div>

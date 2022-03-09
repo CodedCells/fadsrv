@@ -1,0 +1,78 @@
+<!--
+FADMETA {
+"order": -2000,
+"enableMenu": true,
+"forceMenu": "pages",
+"enableHeader": true,
+"enableFooter": true,
+"enableRebuild": false,
+"enableTime": true,
+"enableStyle": true,
+"enableScript": true,
+"menuLabel": "Cookie Help",
+"menuIcon": [1, 2]
+}-->
+<link rel="stylesheet" href="../res/style.css">
+<div class="head">
+<h2>Cookie Help</h2>
+</div>
+<div class="container list"</div>
+
+<div class="talking">
+<h2>Why use cookies?</h2>
+<p>Cookies are required to perform some automated tasks involving your account on Fur Affinity.</p>
+
+<h3>grab_post</h3>
+<p>Fur Affinity prevents any Mature or Adult rated posts from being displayed, unless you are logged in and have them enabled under your account settings.</p>
+<p>If you have your favourites private, the program can only access them with your session cookies.</p>
+
+<h3>user_stats</h3>
+<p>As above, information based on last post date is affected if posts are hidden</p>
+</div>
+
+<div class="talking">
+<h2>Warning</h2>
+<p>Do not share your cookies, as they can be used to access your account.</p>
+<p>If you suspect someone else may have your cookies, IMMEDIATELY:</p>
+<ol>
+<li>Go to <a href="https://www.furaffinity.net/controls/sessions/logins/">Fur Affinity's Active Sessions Page</a>
+<li>Hit all the log out buttons</li>
+</ol>
+<p>You should have to log back in, and you'll need to get your new cookies.</p>
+
+</div>
+
+<div class="talking">
+<h2>Setting up secret.json</h2>
+<p>If there isn't a file at <code>data/secret.json</code>, create an empty text file with that name.</p>
+<p>Example structure, where the values would be replaced:</p>
+<pre>
+{
+	"a": "your_a_cookie",<!-- no u -->
+	"b": "your_b_cookie"
+}
+</pre>
+
+<h3>Get your cookies</h3>
+<h4>Chrome</h4>
+<ol>
+<li>Open Developer tools (F12)</li>
+<li>Go to the Application tab</li>
+<li>Sidebar: under Storage &gt; Cookies &gt; https://www.furaffinity.net</li>
+<li>Copy and Paste the A and B cookies into <code>secret.json</code></li>
+<li>Save the file</li>
+</ol>
+<img src="pageimg/chrome_cookie.png" width="100%">
+
+<h4>Firefox</h4>
+<ol>
+<li>Open Web Developer Tools (F12)</li>
+<li>Go to the Storage tab</li>
+<li>Sidebar: under Cookies &gt; https://www.furaffinity.net</li>
+<li>Copy and Paste the A and B cookies into <code>secret.json</code></li>
+<li>Save the file</li>
+</ol>
+<img src="pageimg/firefox_cookie.png" width="100%">
+
+</div>
+</div>
