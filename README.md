@@ -7,6 +7,8 @@ This project is in active development, some parts are very janky and will need t
 # Requirements
 * Python 3
 * Some knowledge of Python 3 (bugs may occur)
+* Requests module (for fetching data)
+* PIL module (for fetching data and optional compression)
 
 # Setup
 1. Create a directory for the scripts to work in
