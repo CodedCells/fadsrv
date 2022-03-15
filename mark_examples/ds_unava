@@ -1,0 +1,8 @@
+# unav
+//	for	"posts_unav"
+//	icon	[6,0]
+//	type	"multibutt"
+//	values	["maybe", "no", "removed", "add"]
+//	valueicon	[[3,4], [4,2], [1,5], [4,1]]
+//	excludeMarked	false
+//	order	0

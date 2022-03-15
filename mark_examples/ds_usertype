@@ -1,0 +1,7 @@
+# utype
+//	icon	[6,1]
+//	type	"list"
+//	values	["artist", "buyer", "writer", "brand", "icon", "other"]
+//	valueicon	[[8,2], [9,3], [9,2]]
+//	for	"users"
+//	order	50

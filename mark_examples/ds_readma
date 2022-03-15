@@ -1,0 +1,7 @@
+# readma
+//	icon	[3,3]
+//	type	"list"
+//	values	["no-text", "unread", "read", "setur"]
+//	valueicon	[[5,3], [4,3], [3,3], [8,0]]
+//	for	"posts"
+//	order	40

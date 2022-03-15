@@ -1,0 +1,6 @@
+# foltype
+//	icon	[9,9]
+//	type	"list"
+//	values	["series", "topic", "character", "classify"]
+//	for	"folders"
+//	order	10
