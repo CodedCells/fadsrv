@@ -4,7 +4,7 @@ implementation of cfg, ent won't modify in functions
 
 from onefad_web import *
 
-ent['version'] = 5
+ent['version'] = 6
 
 
 def register_page(k, kind):
@@ -127,12 +127,36 @@ class builtin_logs(builtin_base):
         htmlout += '<script>\nvar logOutput = '
         self.write(handle, htmlout)
         
-        htmlout = json.dumps(readfile(fn).split('\n'))
+        lines = readfile(fn).split('\n')
+        trunc = lines[-1000:] # probably too many anyways
+        
+        self.write(handle, json.dumps(trunc) + ';\n')
+        htmlout = f'var lines = {len(lines)};\n'
+        htmlout += 'drawLogInit()</script>\n</div>'
+        
         self.write(handle, htmlout)
         
-        self.write(handle, ';\ndrawLogInit()</script>\n</div>')
-        
         return True
+    
+    @staticmethod
+    def ago(s):
+        if s < 61:
+            return f' {s} second{plu(s)} ago'
+        
+        elif s < 3601:
+            return f' {s/60:0.0f} minute{plu(s)} ago'
+        
+        elif s < 86401:
+            return f' {s/3600:.01f} hour{plu(s)} ago'
+        
+        else:
+            return f' {s/86400:.01f} day{plu(s)} ago'
+    
+    def loglink(self, prog, m, t, d):
+        name = '.'.join(t.split('.')[:-1])
+        name += self.ago(int(m))
+            
+        return f'<p><a href="/logs/{prog}/{t}">{name}</a></p>\n'
     
     def tasklist(self, prog, showold):
         now = datetime.now()
@@ -147,12 +171,12 @@ class builtin_logs(builtin_base):
                 old.append((m, t, d))
                 continue
             
-            htmlout += f'<p><a href="/logs/{prog}/{t}">Modfied {int(m)} seconds ago</a></p>\n'
+            htmlout += self.loglink(prog, m, t, d)
         
         if old and showold:
             htmlout += '<h4>old</h4\n>'
             for m, t, d in old:
-                htmlout += f'<p><a class="oldtasklink" href="/logs/{prog}/{t}">Modfied {int(m)} seconds ago</a></p>\n'
+                htmlout += self.loglink(prog, m, t, d)
         
         return htmlout
     
