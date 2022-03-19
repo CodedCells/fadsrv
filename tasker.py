@@ -25,7 +25,7 @@ class builtin_logs(builtin_base):
     def get_prog_title(prog):# task id -> script id -> title
         return ent['tasks'].get(
             ent['taskidfn'].get(prog, prog), {}
-            ).get('title', 'logs/' + prog)
+            ).get('title', 'log/' + prog)
     
     def taskpage(self, handle, path):
         prog = path[1]
@@ -42,8 +42,9 @@ class builtin_logs(builtin_base):
         title = self.get_prog_title(prog)
         
         htmlout = '<script src="/logger.js"></script>\n<div class="pageinner">'
-        htmlout += f'<div class="head"><h2 class="pagetitle"><span id="progName">{title}</span></h2></div>\n'
+        htmlout += f'<div class="head"><h2 class="pagetitle"><span>{title}</span></h2></div>\n'
         htmlout += '<div class="container list">\n'
+        htmlout += f'<p style="display:none" id="progName">{prog}</p>'
         diff = (datetime.now() - data['dmod']).total_seconds()
         htmlout += f'<p id="fileinfo"><span id="taskName">{task}</span> - Modified {int(diff)} seconds ago'
         if data.get('old'):
@@ -400,7 +401,7 @@ class post_logupdate(post_base):
     
     def __init__(self, title='', link='/_logupdate', icon=ii(99), pages=False):
         super().__init__(title, link, icon, pages)
-        
+    
     def post_logic(self, handle, pargs, data):
         ret = {'lines': []}
         has = data.get('has', 0)
@@ -409,7 +410,7 @@ class post_logupdate(post_base):
         if not isinstance(has, int):
             return {'lines': [], 'old': True, 'status': 'wtf has'}
         
-        if not isinstance(has, int):
+        if not isinstance(mod, int):
             return {'lines': [], 'old': True, 'status': 'wtf mod'}
         
         if not ('prog' in data and 'task' in data):
@@ -428,7 +429,7 @@ class post_logupdate(post_base):
             ret['old'] = False
             with open(taskd['path'] + task) as fh:
                 for n, line in enumerate(fh.readlines()):
-                    if n >= has:
+                    if n+1 >= has:
                         ret['lines'].append(line)
         
         return ret
@@ -531,7 +532,7 @@ class fa_req_handler(BaseHTTPRequestHandler):
 
 if __name__ == '__main__':
     code_path = os.path.dirname(__file__)
-    init_logger('tasker', disp=':' in code_path)
+    init_logger('tasker', disp=':' in code_path, level=logging.INFO)
     
     os.chdir(code_path)
     

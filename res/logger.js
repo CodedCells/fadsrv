@@ -29,7 +29,6 @@ function updateListener() {
 	if (data.lines.length > 0) {
 		gotNewLast = true;
 		for (var l = 0; l < data.lines.length; l++) {
-			lines += 1;
 			logOutput.push(data.lines[l]);
 			drawLogLine(data.lines[l]);
 		}
@@ -43,6 +42,8 @@ function updateLog() {
 		console.log("Old, no refresh");
 		return;
 	}
+	
+	lines = logOutput.length;
 	
 	meta = {
 		"prog": document.getElementById("progName").innerHTML,
