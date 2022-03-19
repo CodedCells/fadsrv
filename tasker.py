@@ -1,11 +1,6 @@
-'''
-implementation of cfg, ent won't modify in functions
-'''
-
 from onefad_web import *
 
-ent['version'] = 6
-
+ent['version'] = 7
 
 def register_page(k, kind):
     global ent
@@ -21,87 +16,16 @@ def register_page(k, kind):
             logging.error(f"class {k}", exc_info=True)
 
 
-class builtin_run(builtin_base):
-    
-    def __init__(self, title='Run', link='/run', icon=ii(11), pages=False):
-        super().__init__(title, link, icon, pages)
-    
-    def taskpage(self, handle, path):
-        check_running_tasks()
-        if path[1] not in ent['tasks']:
-            self.write(f'<p>Could not find task script: {path[1]}</p>\n</div>')
-            return
-        
-        prog = path[1]
-        data = ent['tasks'][prog]
-        taskid = data.get('id', prog)
-        print(prog, taskid)
-        
-        recent_runs = {t: d
-                       for t, d in ent['task_logs'].get(taskid, {}).items()
-                       if not d['old']}
-        
-        if (data.get('preventMultiple') and
-            len(recent_runs) and
-            path[-1] != 'y'):
-            htmlout = '<p>This task is running or has ran recently:</p>\n'
-
-            now = datetime.now()
-            sort = sorted([
-                ((now - d['dmod']).total_seconds(), d, t)
-                for t, d in recent_runs.items()])
-            
-            for m, t, d in sort:
-                htmlout += f'<br><a href="/logs/{taskid}/{t}">Modfied {int(m)} seconds ago</a><br>\n'
-            
-            htmlout += '<br><br><p>Still want to continue?</p>\n'
-            htmlout += f'<a href="/run/{taskid}/y">Yes (may result in problems)</a>\n'
-            htmlout += '</div>'
-            self.write(handle, htmlout)
-            return
-        
-        logging.debug(f'Attempting to run {prog}')
-        try:
-            os.system(f'sudo bash {cfg["task_dir"]}{prog}')
-        except Exception as e:
-            logging.error(f"Failed to run", exc_info=True)
-        
-        htmlout = f'<script>function taskRedir() {{window.location.href="/logs/{taskid}";;}}\n'
-        htmlout += 'var x=setTimeout(taskRedir, 2500);</script>\n'
-        htmlout += '<p>Attemping to take you to the task list for this program.</p>\n'
-        self.write(handle, htmlout)
-    
-    def page(self, handle, path):
-        
-        htmlout = f'<div class="head"><h2 class="pagetitle">Run Task</h2></div>\n'
-        htmlout += '<div class="container list">\n'
-        self.write(handle, htmlout)
-        
-        if not path[1].isdigit():
-            self.taskpage(handle, path)
-            return
-        
-        htmlout = ''
-        for fn, d in ent['tasks'].items():
-            icon = d.get('icon', 99)
-            if isinstance(icon, int):
-                icon = ii(icon)
-            
-            #htmlout += f'<p><a href="/run/{fn}">{d.get("title", fn)}</p><br>\n'
-            htmlout += strings['menubtn-narrow-icons-flat'].format(
-                href=f'/run/{fn}',
-                alt=fn, x=icon[0]*-100, y=icon[1]*-100,
-                label=d.get("title", fn)
-                )
-        
-        htmlout += '</div>'
-        self.write(handle, htmlout)
-
-
 class builtin_logs(builtin_base):
     
     def __init__(self, title='Logs', link='/logs', icon=ii(22), pages=False):
         super().__init__(title, link, icon, pages)
+    
+    @staticmethod
+    def get_prog_title(prog):# task id -> script id -> title
+        return ent['tasks'].get(
+            ent['taskidfn'].get(prog, prog), {}
+            ).get('title', 'logs/' + prog)
     
     def taskpage(self, handle, path):
         prog = path[1]
@@ -115,8 +39,10 @@ class builtin_logs(builtin_base):
         data = ent['task_logs'][prog][task]
         fn = data['path'] + task
         
-        htmlout = '<script src="/logger.js"></script>\n'
-        htmlout += f'<div class="head"><h2 class="pagetitle"><span id="progName">{prog}</span></h2></div>\n'
+        title = self.get_prog_title(prog)
+        
+        htmlout = '<script src="/logger.js"></script>\n<div class="pageinner">'
+        htmlout += f'<div class="head"><h2 class="pagetitle"><span id="progName">{title}</span></h2></div>\n'
         htmlout += '<div class="container list">\n'
         diff = (datetime.now() - data['dmod']).total_seconds()
         htmlout += f'<p id="fileinfo"><span id="taskName">{task}</span> - Modified {int(diff)} seconds ago'
@@ -141,20 +67,20 @@ class builtin_logs(builtin_base):
     @staticmethod
     def ago(s):
         if s < 61:
-            return f' {s} second{plu(s)} ago'
+            return f'{s} second{plu(s)} ago'
         
         elif s < 3601:
-            return f' {s/60:0.0f} minute{plu(s)} ago'
+            return f'{s/60:0.0f} minute{plu(s)} ago'
         
         elif s < 86401:
-            return f' {s/3600:.01f} hour{plu(s)} ago'
+            return f'{s/3600:.01f} hour{plu(s)} ago'
         
         else:
-            return f' {s/86400:.01f} day{plu(s)} ago'
+            return f'{s/86400:.01f} day{plu(s)} ago'
     
     def loglink(self, prog, m, t, d):
         name = '.'.join(t.split('.')[:-1])
-        name += self.ago(int(m))
+        name += f'<br><i>Last modified {self.ago(int(m))}</i>'
             
         return f'<p><a href="/logs/{prog}/{t}">{name}</a></p>\n'
     
@@ -173,18 +99,27 @@ class builtin_logs(builtin_base):
             
             htmlout += self.loglink(prog, m, t, d)
         
-        if old and showold:
-            htmlout += '<h4>old</h4\n>'
-            for m, t, d in old:
-                htmlout += self.loglink(prog, m, t, d)
+        if not (showold and old):
+            return htmlout
+        
+        htmlout += '<h4>Old Logs:</h4\n>'
+        for m, t, d in old:
+            htmlout += self.loglink(prog, m, t, d)
         
         return htmlout
     
     def progpage(self, handle, path):
         prog = path[1]
-        htmlout = f'<div class="head"><h2 class="pagetitle"><span id="progName">{prog}</span></h2></div>\n'
+        title = self.get_prog_title(prog)
+        htmlout = '<div class="pageinner"><div class="head">'
+        htmlout += f'<h2 class="pagetitle"><span id="progName">{title}</span></h2></div>\n'
         htmlout += '<div class="container list">\n'
-        htmlout += self.tasklist(prog, True)
+        tl = self.tasklist(prog, True)
+        if tl.startswith('<h4>Old'):
+            htmlout += '<p>No recently updated logs.</p>\n'
+        
+        htmlout += tl
+        
         self.write(handle, htmlout)
     
     def page(self, handle, path):
@@ -198,16 +133,102 @@ class builtin_logs(builtin_base):
             self.progpage(handle, path)
             return
         
-        htmlout = '<div class="head"><h2 class="pagetitle">Task Logs</h2></div>\n'
+        htmlout = '<div class="pageinner"><div class="head"><h2 class="pagetitle">Task Logs</h2></div>\n'
         htmlout += '<div class="container list">\n'
         self.write(handle, htmlout)
         
-        htmlout = ''
+        htmlout = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;">'
         now = datetime.now()
         for prog in ent['task_logs']:
-            htmlout += f'<h2><a href="/logs/{prog}">{prog}</a> ({len(ent["task_logs"][prog]):,})</h2>\n'
-            htmlout += self.tasklist(prog, False)
+            title = self.get_prog_title(prog)
+            htmlout += '<div>'
+            htmlout += f'<h2>{title}</h2>\n'
+            logc = len(ent["task_logs"][prog])
+            htmlout += f'{logc:,} log{plu(logc)} on disk,\n'
+            htmlout += f'<a href="/logs/{prog}">View All</a><br>\n'
+            tl = self.tasklist(prog, False)
+            if not tl:tl = '<p>No recently updated logs.</p>\n'
+            htmlout += tl
+            htmlout += '</div>'
         
+        htmlout += '</div></div></div>'
+        self.write(handle, htmlout)
+
+
+class builtin_run(builtin_logs):
+    
+    def __init__(self, title='Run', link='/run', icon=ii(11), pages=False):
+        super().__init__(title, link, icon, pages)
+    
+    def taskpage(self, handle, path):
+        check_running_tasks()
+        if path[1] not in ent['tasks']:
+            self.write(handle, f'<p>Could not find task script: {path[1]}</p>\n</div>')
+            return
+        
+        prog = path[1]
+        data = ent['tasks'][prog]
+        taskid = data.get('id', prog)
+        print(prog, taskid)
+
+        running = self.tasklist(taskid, False)
+        if (data.get('preventMultiple') and
+            running and
+            path[-1] != 'y'):
+            htmlout = '<p>This task is running or has ran recently:</p>\n'
+            htmlout += running
+            
+            htmlout += '<br>\n<h3>Do you want to continue?</h3>\n'
+            htmlout += f'<a href="/run/{prog}/y">Yes (may result in problems)</a>\n'
+            htmlout += '</div></div>'
+            self.write(handle, htmlout)
+            return
+        
+        logging.debug(f'Attempting to run {prog}')
+        try:
+            os.system(f'sudo bash {cfg["task_dir"]}{prog}')
+        except Exception as e:
+            logging.error(f"Failed to run", exc_info=True)
+        
+        htmlout = f'<script>function taskRedir() {{window.location.href="/logs/{taskid}";;}}\n'
+        htmlout += 'var x=setTimeout(taskRedir, 2500);</script>\n'
+        htmlout += '<p>Attemping to take you to the task list for this program.</p>\n'
+        self.write(handle, htmlout)
+    
+    def taskicon(self, fn):
+        d = ent['tasks'][fn]
+        icon = d.get('icon', 99)
+        if isinstance(icon, int):
+            icon = ii(icon)
+        
+        return strings['menubtn-narrow-icons-flat'].format(
+            href=f'/run/{fn}',
+            alt=fn, x=icon[0]*-100, y=icon[1]*-100,
+            label=d.get("title", fn)
+            )
+    
+    def page(self, handle, path):
+        htmlout = '<div class="pageinner"><div class="head">'
+        htmlout += f'<h2 class="pagetitle">Run Task</h2></div>\n'
+        htmlout += '<div class="container list">\n'
+        self.write(handle, htmlout)
+        
+        if not path[1].isdigit():
+            self.taskpage(handle, path)
+            return
+        
+        htmlout = ''
+        for group, order in ent['group_order']:
+            gtasks = ent['taskgroups'][group]
+            if not gtasks:continue
+            if not group.startswith('_'):
+                if htmlout:htmlout += '<hr>\n'
+                htmlout += f'<h2>{group}</h2>\n'
+            
+            for task in gtasks:
+                htmlout += self.taskicon(task)
+        
+        htmlout += '</div></div>'
         self.write(handle, htmlout)
 
 
@@ -263,18 +284,47 @@ def config_save():
 
 
 def find_avialble_tasks():
+    tGO = 'group_order'
+    tTG = 'taskgroups'
+    tUG = '_ungrouped'
+    
     ent['tasks'] = {}
+    ent['taskidfn'] = {}
+    ent[tTG] = {tUG: []}
+    taskg = ent[tTG]
+    ent[tGO] = {tUG: 6979}
+    
     for fn in os.listdir(cfg['task_dir']):
         if not fn.endswith('.sh'):continue
         data = {'filename': fn}
+        
         for line in readfile(cfg['task_dir'] + fn).split('\n'):
-            if not line.startswith('#'):break
+            if not line.startswith('#'):break# no data
+            
             line = line.split('\t')
             if len(line) != 3:continue
             data[line[1]] = json.loads(line[2])
         
-        ent['tasks'][fn] = data
-        print(data)
+        ent['tasks'][fn] = data# store data
+        ent['taskidfn'][data.get('id', fn)] = fn
+        logging.debug(data)
+        
+        # menu ordering
+        group = data.get('group', tUG)
+        order = data.get('order', 0)
+        if group not in taskg:
+            taskg[group] = []
+            ent[tGO][group] = 0
+        
+        taskg[group].append((order, fn))
+        
+        if tGO in data and data[tGO] < ent[tGO][group]:
+            ent[tGO][group] = data[tGO]
+    
+    for g, i in ent[tTG].items():# sort each group
+        ent[tTG][g] = [y for x, y in sorted(i)]
+    
+    ent[tGO] = sorted(ent[tGO].items(), key=itemgetter(1))
 
 
 def check_task(prog, task):
