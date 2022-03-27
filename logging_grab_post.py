@@ -1,5 +1,4 @@
 import requests
-import shutil
 
 from onefad import *
 
@@ -493,7 +492,8 @@ def configgy():
             'FADSRV': {'port': 6970, 'post': 'findnew'}
             },
         'speed': 1.5,
-        "squash_server": ""
+        "squash_server": "",
+        "squash_tell": ""
         })
     
     pp = cfg['apd_dir']
@@ -580,17 +580,13 @@ def what_to_copy():
         if copy_skip(file, rext) != None:
             continue
         
-        if doPostSplit:
-            postfn = 'im/{:02}/'.format(int(postid[-2:]))
-    
-        else:
-            postfn = 'i/'
+        postfn = data_path(postid, 'post_store', main_post, fmt='')
         
         if prepsys(postfn, file):
             c += 1
         
         if c % 100 == 0:
-            print('\t', c)
+            logging.info(c)
             if c % 500 == 0:
                 time.sleep(2)
     
@@ -598,28 +594,31 @@ def what_to_copy():
 
 
 def tell_unpack():
-     x = requests.post('http://192.168.0.68:6770/rebuild')
-     print('status: {}'.format(x.status_code))
+     x = requests.post(cfg['squash_tell'])
+     logging.info(f'status: {x.status_code}')
 
 
 def squash_more():
-    print('poking server...')
+    if not cfg['squash_tell']:
+        logging.info("No squash server set")
+        return
+    
+    logging.info('Poking server...')
     tell_unpack()
     
-    global files, com, rem, doPostSplit
+    global files, com, rem
     
-    doPostSplit = os.path.isdir('im/')
+    mode = cfg['post_store'][main_post].get('mode', None)
     
-    if doPostSplit:
+    if mode == 'split':
         files = []
         for i in range(100):
-            i = '{:02d}/'.format(i)
-            files += os.listdir('im/' + i)
+            files += os.listdir(f'{main_post}/{i:02d}/')
     
-    else:
-        files = os.listdir('i/')
+    elif mode == 'single' or mode == None:
+        files = os.listdir(main_post)
     
-    print('{:,} files'.format(len(files)))
+    logging.info('{:,} files'.format(len(files)))
     com = set(os.listdir('ncomp'))
     print('{:,} compressed'.format(len(com)))
     rem = set(apc_read(cfg["squash_server"] + 'filelist').keys())
@@ -645,11 +644,12 @@ if __name__ == '__main__':
     configgy()
     logging.info(f"squash parth is {cfg['squash_server']}")
     from onefad_squash import *
+    
     main()
     
     logging.info('Done!')
     
     poke_servers()
     
-    if cfg["squash_server"]:
+    if cfg['squash_server']:
         squash_more()
