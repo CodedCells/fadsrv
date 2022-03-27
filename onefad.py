@@ -1,4 +1,5 @@
 import os
+import shutil
 import logging
 import threading
 import json
@@ -25,7 +26,7 @@ def filename_date(d):
 
 
 def init_logger(prog,
-                level=logging.INFO,
+                level=logging.DEBUG,
                 disp=False):
     # configure logging
     # make it easier for other programs to find it
