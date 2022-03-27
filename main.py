@@ -3,7 +3,7 @@
 
 from onefad_functions import *
 
-ent['version'] = '31#2022-03-09'
+ent['version'] = '31#2022-03-27'
 
 class builtin_base(builtin_base):
     
@@ -133,7 +133,7 @@ def apd_findnew():
             if os.path.isfile(dst):
                 os.remove(dst)
             
-            os.rename(f'put/{fn}', dst)
+            shutil.move(f'put/{fn}', dst)
             fi = fn.split('_')[0]
             
             if fi in apdfa:
@@ -392,6 +392,8 @@ def apd_findnew():
         
         logging.info('Done writing and apply changes')
     
+    logging.info('Building new desc links')
+    
     descpost = set(xlink['descpost'])
     descuser = set(xlink['descuser'])
     
@@ -437,6 +439,7 @@ def apd_findnew():
         logging.info('Writing descpost')
         apc_write(dd + 'apx_descpost',
                   ch_descpost, xlink['descpost'], 1, volsize=None)
+        
         for post in ch_descpost:
             xlink['descpost'][post] = ch_descpost[post]
     
@@ -444,8 +447,11 @@ def apd_findnew():
         logging.info('Writing descuser')
         apc_write(dd + 'apx_descuser',
                   ch_descuser, xlink['descuser'], 1, volsize=None)
+        
         for post in ch_descuser:
             xlink['descuser'][post] = ch_descuser[post]
+    
+    logging.info('Completed new desc links')
     
     return made_changes
 
@@ -2022,6 +2028,13 @@ class eyde_filter(eyde_base):
         
         elif v == 'marked':
             self.filter_items_by(ent['_marked'], True)
+
+        elif v == 'descpost':
+            items = set()
+            for i in self.items:
+                items.update(set(xlink['descpost'].get(i, [])))
+            
+            self.items = items
         
         else:
             pass#print(k, v)
@@ -2035,7 +2048,7 @@ class eyde_filter(eyde_base):
 
         h += '<div class="filterTab">\n'
         a = [''.join(x) for x in p_arg]
-        for k in ['Reversed', 'Unmarked', 'Marked', 'Unavailable']:
+        for k in ['Reversed', 'Unmarked', 'Marked', 'Unavailable', 'Descpost']:
             h += self.filter_widget('checkbox', k, ['', k], [], '@'+k.lower() in a)
         
         h += '</div>\n<div class="filterTab">\n'
@@ -2098,7 +2111,8 @@ class eyde_filter(eyde_base):
                 '@unavailable',
                 '@unmarked',
                 '@marked',
-                '@reversed']:
+                '@reversed',
+                '@descpost']:
                 m, b = p_arg, False
             
             elif p == '@nosort' or p.startswith('sort:'):
@@ -2125,10 +2139,12 @@ class eyde_filter(eyde_base):
         unav_skip = False
         #print(p_arg)
         if not l_or + l_and:# no positives
-            if ('@', 'unavailable') in p_arg:
+            if (('@', 'unavailable') in p_arg and
+                not ('@', 'descpost') in p_arg):
                 self.items = xlink['descpostback']
                 self.filter_items_by(ent['_posts'], False)
                 unav_skip = True
+                
             else:
                 self.items = set(apdfa)
         
@@ -2141,8 +2157,8 @@ class eyde_filter(eyde_base):
                 s = self.filter_param_get(k, v)
                 self.items.update(s)
         
-        if not unav_skip and ('@', 'unavailable') in p_arg:
-            self.filter_items_by(ent['_posts'], False)
+        for k, v in p_arg:# process args
+            self.filter_arg_do(k, v)
         
         for k, v in p_not:# do not include
             s = self.filter_param_get(k, v)
@@ -2152,11 +2168,11 @@ class eyde_filter(eyde_base):
             s = self.filter_param_get(k, v)
             self.filter_items_by(s, True)
         
+        if not unav_skip and ('@', 'unavailable') in p_arg:
+            self.filter_items_by(ent['_posts'], False)
+        
         if not has_sort:# default sort
             self.filter_arg_do('sort', 'id')
-        
-        for k, v in p_arg:# process args
-            self.filter_arg_do(k, v)
         
         if self.f_sortflip:# do a flip
             self.items = self.items[::-1]
