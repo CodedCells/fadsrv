@@ -3704,7 +3704,7 @@ class builtin_statsess(builtin_base):
             'quart': 'Quarterly',
             'year': 'Yearly'
             }
-    
+    @staticmethod
     def fromiso(d):
         try:
             return datetime.strptime(d, '%Y-%m-%dT%H:%M:%S.%f')
@@ -3725,7 +3725,7 @@ class builtin_statsess(builtin_base):
             return f'{d[:4]} q{math.ceil(m/3)}'
         
         elif mode == 'week':
-            d = fromiso(d).isocalendar()
+            d = self.fromiso(d).isocalendar()
             return f'{d[0]} w{d[1]}'
         
     def path_pick(self, path, options, default):
