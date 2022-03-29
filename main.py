@@ -1866,7 +1866,6 @@ class eyde_filter(eyde_base):
 
     def __init__(self, items=[], marktype='filters', domodes=True):
         super().__init__(items, marktype, domodes)
-        self.modes['sus'] = 'Sus mode'
         
         self.icon = ii(55)
         self.f_sort = 'id'
@@ -1875,10 +1874,10 @@ class eyde_filter(eyde_base):
         'filedate': [post_sort_prop_none, 'filedate', '0'],
         'uploader': [post_sort_prop, 'uploader', '.badart'],
         'title':    [post_sort_prop, 'title', '_'],
-        'wc':       [post_sort_prop, 'descwc', 0],
+        'descwc':   [post_sort_prop, 'descwc', 0],
         'bytes':    [post_sort_prop, 'srcbytes', 0],
-        'faves':    [post_sort_prop, 'faves', 0],
-        'views':    [post_sort_prop, 'views', 0],
+        #'faves':    [post_sort_prop, 'faves', 0],
+        #'views':    [post_sort_prop, 'views', 0],
         'linked':   [post_sort_linked, 'descpostback'],
         'linking':  [post_sort_linked, 'descpost']
         }
