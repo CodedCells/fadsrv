@@ -2415,7 +2415,7 @@ class mort_base(builtin_base):
         self.page_options = [
             ['reversed'],
             ['cull', 'nocull'],
-            ['count', 'ustats']
+            ['count', 'unmarked', 'ustats']
             ]
     
     def page(self, handle, path, text='', head=True):
@@ -2588,6 +2588,10 @@ class mort_base(builtin_base):
         
         elif 'count' in pf:
             items = self.item_sorter(self.datas, items, mincount)
+        
+        elif 'unmarked' in pf:# only for users
+            um = {i: v[0] for i, v in users_marked.items()}
+            items = self.item_sorter(um, items, mincount)
         
         elif 'ustats' in pf:
             items = self.item_sorter(ent['ustats'], items, mincount)
