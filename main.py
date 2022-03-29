@@ -3,7 +3,7 @@
 
 from onefad_functions import *
 
-ent['version'] = '31#2022-03-27'
+ent['version'] = '31#2022-03-29'
 
 class builtin_base(builtin_base):
     
@@ -662,7 +662,7 @@ def build_entries(reload=0):
     if reload > 0:
         
         if reload > 1:
-            load_apd(reload > 2 or not ent['loaded_apx'])
+            load_apd()
         
         if reload > 2 and not cfg.get('skip_bigdata'):
             ent['force_datasort'] = True
@@ -4780,19 +4780,23 @@ def load_apx(fn):
         del data['//']
     
     xlink[apdfile] = data
-    back = {}
-    if prop.get('linkback', True):
-        exists = set()
-
-        for k, v in data.items():
-            for i in v:
-                if i in exists:
-                    back[i].append(k)
-                else:
-                    back[i] = [k]
-                    exists.add(i)
     
-        xlink[apdfile + 'back'] = back
+    if not prop.get('linkback', True):
+        return# skip doing reverse linking
+    
+    back = {}
+    exists = set()
+    
+    for k, v in data.items():
+        for i in v:
+            if i in exists:
+                back[i].append(k)
+            
+            else:
+                back[i] = [k]
+                exists.add(i)
+    
+    xlink[apdfile + 'back'] = back
 
 
 def load_bigapd():
@@ -4804,7 +4808,7 @@ def load_bigapd():
     apdfafol = apc_read(dd + 'apdfafol', do_time=True, encoding='iso-8859-1')
 
 
-def load_apd(do_apx):
+def load_apd():
     global ent, apdmm, apdm, dpref, dprefm, xlink, wp, wpm
     
     logging.info('Loading apd files')
@@ -4893,9 +4897,6 @@ def load_apd(do_apx):
     
     for apdfile in wpfile:
         load_wp(apdfile)
-    
-    if not do_apx:
-        return
     
     logging.info('Loading apx')
     xlink = {}
