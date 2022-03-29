@@ -2435,6 +2435,19 @@ class mort_base(builtin_base):
             self.items = None
             self.datas = {}
     
+    @staticmethod
+    def item_sorter_ez(i, d):
+        if type(d) != int:d = len(d)# int int make int
+        return [d] + list(i)
+    
+    def item_sorter(self, data, items, mincount):
+        so = sorted(self.item_sorter_ez(i, data.get(i[0], 0))
+                    for i in items)
+        
+        return [tuple(x[1:])
+                for x in so
+                if x[0] >= mincount]
+    
     def build_page(self, handle, pargs, head=True, text=''):
         index_id = 1
         pf = []
@@ -2574,12 +2587,10 @@ class mort_base(builtin_base):
         if not items:pass
         
         elif 'count' in pf:
-            items = sorted([[len(self.datas.get(i[0],[]))] + list(i) for i in items])
-            items = [tuple(x[1:]) for x in items if x[0] >= mincount]
+            items = self.item_sorter(self.datas, items, mincount)
         
         elif 'ustats' in pf:
-            items = sorted([[ent['ustats'].get(i[0], -1)] + list(i) for i in items])
-            items = [tuple(x[1:]) for x in items if x[0] >= mincount]
+            items = self.item_sorter(ent['ustats'], items, mincount)
         
         else:
             # arbitray data yay
