@@ -813,6 +813,8 @@ div.menu-button-wide {
 
 #logOutput code {
 	display: block;
+	line-height: 120%;
+}
 }
 
 code.logDEBUG {
