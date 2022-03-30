@@ -826,3 +826,14 @@ code.logWARNING {
 code.logERROR {
 	color: #f88;
 }
+
+.taskloglist {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-evenly;
+}
+
+.tasklogbox {
+	min-width: 250px;
+	flex-grow: 1;
+}

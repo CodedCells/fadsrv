@@ -22,10 +22,10 @@ class builtin_logs(builtin_base):
         super().__init__(title, link, icon, pages)
     
     @staticmethod
-    def get_prog_title(prog):# task id -> script id -> title
+    def get_prog_data(prog):# task id -> script id -> title
         return ent['tasks'].get(
             ent['taskidfn'].get(prog, prog), {}
-            ).get('title', 'log/' + prog)
+            )
     
     def taskpage(self, handle, path):
         prog = path[1]
@@ -39,14 +39,15 @@ class builtin_logs(builtin_base):
         data = ent['task_logs'][prog][task]
         fn = data['path'] + task
         
-        title = self.get_prog_title(prog)
+        cdata = self.get_prog_data(prog)
+        title = cdata.get('title', 'log/' + prog)
         
         htmlout = '<script src="/logger.js"></script>\n<div class="pageinner">'
         htmlout += f'<div class="head"><h2 class="pagetitle"><span>{title}</span></h2></div>\n'
         htmlout += '<div class="container list">\n'
         htmlout += f'<p style="display:none" id="progName">{prog}</p>'
         diff = (datetime.now() - data['dmod']).total_seconds()
-        htmlout += f'<p id="fileinfo"><span id="taskName">{task}</span> - Modified {int(diff)} seconds ago'
+        htmlout += f'<p id="fileinfo"><span id="taskName">{task}</span> - Modified {self.ago(int(diff))}'
         if data.get('old'):
             htmlout += ' - <span id="isOld">Old</span>'
         
@@ -55,11 +56,15 @@ class builtin_logs(builtin_base):
         self.write(handle, htmlout)
         
         lines = readfile(fn).split('\n')
-        trunc = lines[-1000:] # probably too many anyways
+        trunc = lines[-500:] # probably too many anyways
         
         self.write(handle, json.dumps(trunc) + ';\n')
         htmlout = f'var lines = {len(lines)};\n'
-        htmlout += 'drawLogInit()</script>\n</div>'
+        htmlout += 'drawLogInit()</script>\n'
+        if len(lines) > 500:
+            htmlout += f'Trimmed to 500 lines, full log {len(lines)} lines long.'
+        
+        htmlout += '</div>'
         
         self.write(handle, htmlout)
         
@@ -111,7 +116,7 @@ class builtin_logs(builtin_base):
     
     def progpage(self, handle, path):
         prog = path[1]
-        title = self.get_prog_title(prog)
+        title = self.get_prog_data(prog).get('title', 'log/' + prog)
         htmlout = '<div class="pageinner"><div class="head">'
         htmlout += f'<h2 class="pagetitle"><span id="progName">{title}</span></h2></div>\n'
         htmlout += '<div class="container list">\n'
@@ -138,11 +143,11 @@ class builtin_logs(builtin_base):
         htmlout += '<div class="container list">\n'
         self.write(handle, htmlout)
         
-        htmlout = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;">'
+        htmlout = '<div class="taskloglist">'
         now = datetime.now()
         for prog in ent['task_logs']:
-            title = self.get_prog_title(prog)
-            htmlout += '<div>'
+            title = self.get_prog_data(prog).get('title', 'log/' + prog)
+            htmlout += '<div class="tasklogbox">'
             htmlout += f'<h2>{title}</h2>\n'
             logc = len(ent["task_logs"][prog])
             htmlout += f'{logc:,} log{plu(logc)} on disk,\n'
@@ -162,12 +167,12 @@ class builtin_run(builtin_logs):
         super().__init__(title, link, icon, pages)
     
     def taskpage(self, handle, path):
-        check_running_tasks()
         if path[1] not in ent['tasks']:
             self.write(handle, f'<p>Could not find task script: {path[1]}</p>\n</div>')
-            return
         
         prog = path[1]
+        check_running_task_dir(prog)
+        
         data = ent['tasks'][prog]
         taskid = data.get('id', prog)
         print(prog, taskid)
@@ -296,7 +301,7 @@ def find_avialble_tasks():
     ent[tGO] = {tUG: 6979}
     
     for fn in os.listdir(cfg['task_dir']):
-        if not fn.endswith('.sh'):continue
+        if not fn.endswith('.sh') and not fn.endswith('.cfg'):continue
         data = {'filename': fn}
         
         for line in readfile(cfg['task_dir'] + fn).split('\n'):
@@ -343,12 +348,17 @@ def check_task(prog, task):
         data['old'] = (datetime.now() - d).total_seconds() > 300
 
 
+def check_running_task_dir(prog):
+    tasks = ent['task_logs'].get(prog, {})
+    
+    for n, d in enumerate(sorted(tasks.items(), reverse=True)):
+        if not d[1]['old'] or n == 0:
+            check_task(prog, d[0])
+    
 def check_running_tasks():
     
-    for prog, tasks in ent['task_logs'].items():
-        [check_task(prog, d[0])
-         for n, d in enumerate(sorted(tasks.items(), reverse=True))
-         if not d[1]['old'] or n == 0]
+    for prog in ent['task_logs']:
+        check_running_task_dir(prog)
 
 
 def find_runningg_tasks():
