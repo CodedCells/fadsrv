@@ -28,9 +28,10 @@ function updateListener() {
 	
 	if (data.lines.length > 0) {
 		gotNewLast = true;
+		prev = "";
 		for (var l = 0; l < data.lines.length; l++) {
 			logOutput.push(data.lines[l]);
-			drawLogLine(data.lines[l]);
+			prev = drawLogLine(data.lines[l], prev);
 		}
 	} else {
 		gotNewLast = false;
@@ -61,24 +62,35 @@ function updateLog() {
 	var x = setTimeout(updateLog, Math.min(10000, wait));
 }
 
-function drawLogLine(line) {
+function logDateParse(d) {
+	return Date.parse(d.replace(",", "."));
+}
+
+function drawLogLine(line, prev) {
 	lo = document.getElementById("logOutput");
 	if (line.length < 1) return
 	
 	if (isNaN(line.charAt(0))) {// not a date probably
 		row = lo.childNodes[lo.childElementCount - 1];
 		row.innerHTML += '\n' + line;
-		return;
+		return row.innerHTML.split("\t")[0];
 	}
+	
+	gap = "";
+	dline = line.split("\t")[0];
+	if (logDateParse(prev) + 1000 < logDateParse(dline))
+		gap = " gap";
 	
 	level = line.split("\t")[1];
 	line = line.replace("\\t", "\t");
-	lo.innerHTML += '<code class="log' + level + '">' + line + '</code';
+	lo.innerHTML += '<code class="log' + level + gap + '">' + line + '</code';
+	return dline;
 }
 
 function drawLogInitReady() {
+	prev = "";
 	for (var l = 0; l < logOutput.length; l++) {
-		drawLogLine(logOutput[l]);
+		prev = drawLogLine(logOutput[l], prev);
 	}
 }
 

@@ -815,6 +815,9 @@ div.menu-button-wide {
 	display: block;
 	line-height: 120%;
 }
+
+#logOutput code.gap {
+	margin-top: 6pt;
 }
 
 code.logDEBUG {
