@@ -25,13 +25,14 @@ function updateListener() {
 		document.getElementById("fileinfo").innerHTML += ' - <span id="isOld">Old</span>';
 	
 	mod = data.mod;
+	lines = data.lines;
 	
-	if (data.lines.length > 0) {
+	if (data.output.length > 0) {
 		gotNewLast = true;
-		prev = "";
-		for (var l = 0; l < data.lines.length; l++) {
-			logOutput.push(data.lines[l]);
-			prev = drawLogLine(data.lines[l], prev);
+		prev = "2000-01-01";// the past, hacky
+		for (var l = 0; l < data.output.length; l++) {
+			logOutput.push(data.output[l]);
+			prev = drawLogLine(data.output[l], prev);
 		}
 	} else {
 		gotNewLast = false;
@@ -44,13 +45,12 @@ function updateLog() {
 		return;
 	}
 	
-	lines = logOutput.length;
-	
 	meta = {
 		"prog": document.getElementById("progName").innerHTML,
 		"task": document.getElementById("taskName").innerHTML,
 		"mod": 0,
-		"has": lines
+		"has": lines,
+		"level": level
 	}
 	console.log(meta);
 	send_xhr("/logupdate", JSON.stringify(meta), updateListener)
@@ -81,9 +81,9 @@ function drawLogLine(line, prev) {
 	if (logDateParse(prev) + 1000 < logDateParse(dline))
 		gap = " gap";
 	
-	level = line.split("\t")[1];
+	linel = line.split("\t")[1];
 	line = line.replace("\\t", "\t");
-	lo.innerHTML += '<code class="log' + level + gap + '">' + line + '</code';
+	lo.innerHTML += '<code class="log' + linel + gap + '">' + line + '</code';
 	return dline;
 }
 

@@ -16,16 +16,70 @@ def register_page(k, kind):
             logging.error(f"class {k}", exc_info=True)
 
 
+class log_filter(object):
+    
+    def __init__(self, level=None):
+        self.levels = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CIRITCAL']
+        self.level = 0
+        self.set_level(level)
+    
+    def set_level_digit(self, level):
+        if 0 <= level < len(self.levels):
+            self.level = level
+    
+    def set_level(self, level):
+        if (isinstance(level, int) or
+            (isinstance(level, str) and level.isdigit())):
+            self.set_level_digit(int(level))
+        
+        elif isinstance(level, str):
+            level = level.upper()
+            if level not in self.levels:
+                for l in self.levels:
+                    if l.startswith(level):
+                        level = l
+                        break# fuzzy matched
+                
+                else:
+                    return# fuzzy failed
+            
+            self.level = self.levels.index(level)
+        
+        # don't update if invalid
+    
+    def filter_line(self, line):
+        for l in self.levels[:self.level]:
+            if f'\t{l}\t' in line:
+                return False
+        
+        return True
+    
+    def filter_all(self, lines):
+        if self.level == 0:return lines# no work needed
+        
+        trunc = []
+        add = True
+        for line in lines:
+            if len(line) > 0 and line[0].isdigit():
+                # only modify if line starts with date
+                add = self.filter_line(line)
+            
+            if add:
+                trunc.append(line)
+        
+        return trunc
+
+
+def get_prog_data(prog):# task id -> script id -> title
+    return ent['tasks'].get(
+        ent['taskidfn'].get(prog, prog), {}
+        )
+
+
 class builtin_logs(builtin_base):
     
     def __init__(self, title='Logs', link='/logs', icon=ii(22), pages=False):
         super().__init__(title, link, icon, pages)
-    
-    @staticmethod
-    def get_prog_data(prog):# task id -> script id -> title
-        return ent['tasks'].get(
-            ent['taskidfn'].get(prog, prog), {}
-            )
     
     def taskpage(self, handle, path):
         prog = path[1]
@@ -39,7 +93,7 @@ class builtin_logs(builtin_base):
         data = ent['task_logs'][prog][task]
         fn = data['path'] + task
         
-        cdata = self.get_prog_data(prog)
+        cdata = get_prog_data(prog)
         title = cdata.get('title', 'log/' + prog)
         
         htmlout = '<script src="/logger.js"></script>\n<div class="pageinner">'
@@ -52,15 +106,24 @@ class builtin_logs(builtin_base):
             htmlout += ' - <span id="isOld">Old</span>'
         
         htmlout += '</p>\n<div id="logOutput"></div>\n'
-        htmlout += '<script>\nvar logOutput = '
         self.write(handle, htmlout)
         
         lines = readfile(fn).split('\n')
-        trunc = lines[-500:] # probably too many anyways
+        logf = log_filter(cdata.get('level'))
         
-        self.write(handle, json.dumps(trunc) + ';\n')
-        htmlout = f'var lines = {len(lines)};\n'
-        htmlout += 'drawLogInit()</script>\n'
+        if len(path) >= 4:
+            logf.set_level(path[3])
+        
+        trunc = logf.filter_all(lines)
+        trunc = trunc[-500:] # probably too many anyways
+        
+        htmlout = '<script>\n'
+        htmlout += f'var lines = {len(lines)};\n'
+        htmlout += f'var level = {logf.level};\n'
+        htmlout += 'var logOutput = '
+        self.write(handle, htmlout + json.dumps(trunc) + ';\n')
+        
+        htmlout = 'drawLogInit()</script>\n'
         if len(lines) > 500:
             htmlout += f'Trimmed to 500 lines, full log {len(lines)} lines long.'
         
@@ -116,7 +179,7 @@ class builtin_logs(builtin_base):
     
     def progpage(self, handle, path):
         prog = path[1]
-        title = self.get_prog_data(prog).get('title', 'log/' + prog)
+        title = get_prog_data(prog).get('title', 'log/' + prog)
         htmlout = '<div class="pageinner"><div class="head">'
         htmlout += f'<h2 class="pagetitle"><span id="progName">{title}</span></h2></div>\n'
         htmlout += '<div class="container list">\n'
@@ -131,7 +194,7 @@ class builtin_logs(builtin_base):
     def page(self, handle, path):
         check_running_tasks()
         find_runningg_tasks()
-        if path[-1].endswith('.txt') and len(path) == 3:
+        if len(path) >= 3 and path[2].endswith('.txt'):
             if self.taskpage(handle, path):
                 return
         
@@ -146,7 +209,7 @@ class builtin_logs(builtin_base):
         htmlout = '<div class="taskloglist">'
         now = datetime.now()
         for prog in ent['task_logs']:
-            title = self.get_prog_data(prog).get('title', 'log/' + prog)
+            title = get_prog_data(prog).get('title', 'log/' + prog)
             htmlout += '<div class="tasklogbox">'
             htmlout += f'<h2>{title}</h2>\n'
             logc = len(ent["task_logs"][prog])
@@ -175,7 +238,7 @@ class builtin_run(builtin_logs):
         
         data = ent['tasks'][prog]
         taskid = data.get('id', prog)
-        print(prog, taskid)
+        #print(prog, taskid)
 
         running = self.tasklist(taskid, False)
         if (data.get('preventMultiple') and
@@ -192,7 +255,7 @@ class builtin_run(builtin_logs):
         
         logging.debug(f'Attempting to run {prog}')
         try:
-            os.system(f'sudo bash {cfg["task_dir"]}{prog}')
+            pass#os.system(f'sudo bash {cfg["task_dir"]}{prog}')
         except Exception as e:
             logging.error(f"Failed to run", exc_info=True)
         
@@ -413,34 +476,42 @@ class post_logupdate(post_base):
         super().__init__(title, link, icon, pages)
     
     def post_logic(self, handle, pargs, data):
-        ret = {'lines': []}
+        ret = {'output': []}
         has = data.get('has', 0)
         mod = data.get('mod', 0)
         
         if not isinstance(has, int):
-            return {'lines': [], 'old': True, 'status': 'wtf has'}
+            return {'output': [], 'old': True, 'status': 'wtf has'}
         
         if not isinstance(mod, int):
-            return {'lines': [], 'old': True, 'status': 'wtf mod'}
+            return {'output': [], 'old': True, 'status': 'wtf mod'}
         
         if not ('prog' in data and 'task' in data):
-            return {'lines': [], 'old': True, 'status': 'missing fields'}
+            return {'output': [], 'old': True, 'status': 'missing fields'}
         
         prog, task = data['prog'], data['task']
+        cdata = get_prog_data(prog)
+        logf = log_filter(cdata.get('level'))
+        
+        if 'level' in data:
+            logf.set_level(data['level'])
+        
         if prog not in ent['task_logs'] or task not in ent['task_logs'][prog]:
-            return {'lines': [], 'old': True, 'status': 'not found'}
+            return {'output': [], 'old': True, 'status': 'not found'}
         
         check_task(prog, task)
         taskd = ent['task_logs'][prog][task]
         ret['old'] = taskd.get('old', False)
         ret['mod'] = taskd['mod']
+        ret['lines'] = has
         
         if taskd['mod'] != mod:
+            if has > 1:has -= 1
             ret['old'] = False
-            with open(taskd['path'] + task) as fh:
-                for n, line in enumerate(fh.readlines()):
-                    if n+1 >= has:
-                        ret['lines'].append(line)
+            lines = readfile(taskd['path'] + task).split('\n')
+            ret['lines'] = len(lines)
+            
+            ret['output'] = logf.filter_all(lines[has:])
         
         return ret
 
@@ -625,8 +696,11 @@ if __name__ == '__main__':
         fn = '_' + fn
         ent[fn] = b''
         if os.path.isfile(dfn):
+            #print(dfn)
             ent[fn] = readfile(dfn, mode='rb', encoding=None)
-
+    
+    del fn# I should tidy up global spaces
+    
     big_action_list_time(reload=3)
     
     httpd = ThreadedHTTPServer(
