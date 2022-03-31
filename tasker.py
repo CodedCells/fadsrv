@@ -255,7 +255,7 @@ class builtin_run(builtin_logs):
         
         logging.debug(f'Attempting to run {prog}')
         try:
-            pass#os.system(f'sudo bash {cfg["task_dir"]}{prog}')
+            os.system(f'sudo bash {cfg["task_dir"]}{prog}')
         except Exception as e:
             logging.error(f"Failed to run", exc_info=True)
         
