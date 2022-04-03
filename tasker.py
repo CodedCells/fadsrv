@@ -207,7 +207,6 @@ class builtin_logs(builtin_base):
         self.write(handle, htmlout)
         
         htmlout = '<div class="taskloglist">'
-        now = datetime.now()
         for prog in ent['task_logs']:
             title = get_prog_data(prog).get('title', 'log/' + prog)
             htmlout += '<div class="tasklogbox">'
@@ -215,8 +214,11 @@ class builtin_logs(builtin_base):
             logc = len(ent["task_logs"][prog])
             htmlout += f'{logc:,} log{plu(logc)} on disk,\n'
             htmlout += f'<a href="/logs/{prog}">View All</a><br>\n'
+            
             tl = self.tasklist(prog, False)
-            if not tl:tl = '<p>No recently updated logs.</p>\n'
+            if not tl:
+                tl = '<p>No recently updated logs.</p>\n'
+            
             htmlout += tl
             htmlout += '</div>'
         
@@ -239,11 +241,10 @@ class builtin_run(builtin_logs):
         data = ent['tasks'][prog]
         taskid = data.get('id', prog)
         #print(prog, taskid)
-
+        
         running = self.tasklist(taskid, False)
         if (data.get('preventMultiple') and
-            running and
-            path[-1] != 'y'):
+            running and path[-1] != 'y'):
             htmlout = '<p>This task is running or has ran recently:</p>\n'
             htmlout += running
             
@@ -256,6 +257,7 @@ class builtin_run(builtin_logs):
         logging.debug(f'Attempting to run {prog}')
         try:
             os.system(f'sudo bash {cfg["task_dir"]}{prog}')
+        
         except Exception as e:
             logging.error(f"Failed to run", exc_info=True)
         
