@@ -282,14 +282,16 @@ class builtin_run(builtin_logs):
         htmlout += '<div class="container list">\n'
         self.write(handle, htmlout)
         
-        if not path[1].isdigit():
+        if path[1] != 'all' and not path[1].isdigit():
             self.taskpage(handle, path)
             return
         
         htmlout = ''
         for group, order in ent['group_order']:
             gtasks = ent['taskgroups'][group]
-            if not gtasks:continue
+            if (not gtasks or group.startswith('#')) and 'all' not in path:
+                continue# removed or hidden
+            
             if not group.startswith('_'):
                 if htmlout:htmlout += '<hr>\n'
                 htmlout += f'<h2>{group}</h2>\n'
