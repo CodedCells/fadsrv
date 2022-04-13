@@ -66,11 +66,15 @@ function logDateParse(d) {
 	return Date.parse(d.replace(",", "."));
 }
 
+function notDate(v) {
+	return (v == " " || isNaN(v))
+}
+
 function drawLogLine(line, prev) {
 	lo = document.getElementById("logOutput");
 	if (line.length < 1) return
 	
-	if (isNaN(line.charAt(0))) {// not a date probably
+	if (notDate(line.charAt(0))) {// not a date probably
 		row = lo.childNodes[lo.childElementCount - 1];
 		row.innerHTML += '\n' + line;
 		return row.innerHTML.split("\t")[0];
