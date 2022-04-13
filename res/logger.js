@@ -83,7 +83,7 @@ function drawLogLine(line, prev) {
 	
 	linel = line.split("\t")[1];
 	line = line.replace("\\t", "\t");
-	lo.innerHTML += '<code class="log' + linel + gap + '">' + line + '</code';
+	lo.innerHTML += '<code class="log' + linel + gap + '">' + line + '</code>';
 	return dline;
 }
 
