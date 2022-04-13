@@ -812,6 +812,7 @@ div.menu-button-wide {
 }
 
 #logOutput code {
+	white-space: pre;
 	display: block;
 	line-height: 120%;
 }
