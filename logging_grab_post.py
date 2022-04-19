@@ -344,8 +344,12 @@ def has_data(post):
                 return 'already'
             
             else:
-                logging.info(f'COPYDATA {post}')
                 src  = data_path(post, 'data_store', k, fmt='{}_desc.html')
+                if not os.path.isfile(src):
+                    logging.warning(f'{post} was not in store {k}')
+                    continue
+                
+                logging.info(f'COPYDATA {post} (from {k})')
                 dst = data_path(post, 'data_store', main_data, fmt='{}_desc.html')
                 shutil.copyfile(src, dst)
                 return 'added'
@@ -360,7 +364,7 @@ def has_data(post):
                 return 'added_unlist'
             
             else:
-                logging,info(f'COPYDATA {post}')
+                logging,info(f'COPYDATA {post} (from {k})')
                 dst = data_path(post, 'data_store', main_data, fmt='{}_desc.html')
                 shutil.copyfile(src, dst)
                 return 'added'
@@ -376,8 +380,12 @@ def has_post(post, ext):
                 return 'already'
             
             else:
-                logging.info(f'COPYIMG {post}')
                 src  = data_path(post, 'post_store', k, fmt=ext)
+                if not os.path.isfile(src):
+                    logging.warning(f'{post} was not in store {k}')
+                    continue
+                
+                logging.info(f'COPYIMG {post} (from {k})')
                 dst = data_path(post, 'post_store', main_post, fmt=ext)
                 shutil.copyfile(src, dst)
                 return 'added'
@@ -392,7 +400,7 @@ def has_post(post, ext):
                 return 'added_unlist'
             
             else:
-                logging.info(f'COPYIMG {post}')
+                logging.info(f'COPYIMG {post} (from {k})')
                 dst = data_path(post, 'post_store', main_post, fmt=ext)
                 shutil.copyfile(src, dst)
                 return 'added'
