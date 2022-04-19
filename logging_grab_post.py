@@ -6,7 +6,7 @@ def sget(url, d=0):
     #logging.debug(f'Retrieving {url}')
     sg = session.get(url)
     if sg.status_code == 502:
-        logginginfo(f'Server gave 502, waiting ({url})')
+        logging.info(f'Server gave 502, waiting ({url})')
         time.sleep(10)
         return sget(url, d=d+1)
     
