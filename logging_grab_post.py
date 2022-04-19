@@ -645,7 +645,10 @@ if __name__ == '__main__':
     logging.info(f"squash parth is {cfg['squash_server']}")
     from onefad_squash import *
     
-    main()
+    try:
+        main()
+    except Exception as e:
+        logging.error("Exception occurred", exc_info=True)
     
     logging.info('Done!')
     
