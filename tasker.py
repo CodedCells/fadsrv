@@ -1,4 +1,5 @@
 from onefad_web import *
+from uuid import uuid4
 
 ent['version'] = 7
 
@@ -71,6 +72,7 @@ class log_filter(object):
 
 
 def get_prog_data(prog):# task id -> script id -> title
+    #if '/' in prog:prog = prog.split('/')[-2]
     return ent['tasks'].get(
         ent['taskidfn'].get(prog, prog), {}
         )
@@ -82,24 +84,26 @@ class builtin_logs(builtin_base):
         super().__init__(title, link, icon, pages)
     
     def taskpage(self, handle, path):
-        prog = path[1]
-        if prog not in ent['task_logs']:
+        pid = path[1]
+        prog = ent['log_by_id'][pid]
+        if pid not in ent['task_logs']:
             return False
         
         task = path[2][:-3].upper() + 'txt'
-        if task not in ent['task_logs'][prog]:
+        if task not in ent['task_logs'][pid]:
             return False
         
-        data = ent['task_logs'][prog][task]
-        fn = data['path'] + task
+        data = ent['task_logs'][pid][task]
         
         cdata = get_prog_data(prog)
-        title = cdata.get('title', 'log/' + prog)
+        ldata = ent['log_data'][prog]
+        fn = ldata['path'] + task
+        title = ldata.get('name', ldata['prog'])
         
         htmlout = '<script src="/logger.js"></script>\n<div class="pageinner">'
         htmlout += f'<div class="head"><h2 class="pagetitle"><span>{title}</span></h2></div>\n'
         htmlout += '<div class="container list">\n'
-        htmlout += f'<p style="display:none" id="progName">{prog}</p>'
+        htmlout += f'<p style="display:none" id="progName">{pid}</p>'
         diff = (datetime.now() - data['dmod']).total_seconds()
         htmlout += f'<p id="fileinfo"><span id="taskName">{task}</span> - Modified {self.ago(int(diff))}'
         if data.get('old'):
@@ -115,7 +119,9 @@ class builtin_logs(builtin_base):
             logf.set_level(path[3])
         
         trunc = logf.filter_all(lines)
-        trunc = trunc[-500:] # probably too many anyways
+        actual = len(trunc)
+        dl = cfg['display_lines']
+        trunc = trunc[-dl:] # probably too many anyways
         
         htmlout = '<script>\n'
         htmlout += f'var lines = {len(lines)};\n'
@@ -124,8 +130,8 @@ class builtin_logs(builtin_base):
         self.write(handle, htmlout + json.dumps(trunc) + ';\n')
         
         htmlout = 'drawLogInit()</script>\n'
-        if len(lines) > 500:
-            htmlout += f'Trimmed to 500 lines, full log {len(lines)} lines long.'
+        if actual >= dl:
+            htmlout += f'Trimmed to {dl} lines, full log {actual} lines long.'
         
         htmlout += '</div>'
         
@@ -144,21 +150,24 @@ class builtin_logs(builtin_base):
         elif s < 86401:
             return f'{s/3600:.01f} hour{plu(s)} ago'
         
-        else:
+        elif s < 31536001:
             return f'{s/86400:.01f} day{plu(s)} ago'
+        
+        else:
+            return 'a long time ago'
     
-    def loglink(self, prog, m, t, d):
+    def loglink(self, pid, m, t, d):
         name = '.'.join(t.split('.')[:-1])
         name += f'<br><i>Last modified {self.ago(int(m))}</i>'
             
-        return f'<p><a href="/logs/{prog}/{t}">{name}</a></p>\n'
+        return f'<p><a href="/logs/{pid}/{t}">{name}</a></p>\n'
     
-    def tasklist(self, prog, showold):
+    def tasklist(self, pid, showold):
         now = datetime.now()
         htmlout = ''
         sort = sorted([
             ((now - d['dmod']).total_seconds(), t, d)
-            for t, d in ent['task_logs'][prog].items()])
+            for t, d in ent['task_logs'][pid].items()])
         
         old = []
         for m, t, d in sort:
@@ -166,39 +175,61 @@ class builtin_logs(builtin_base):
                 old.append((m, t, d))
                 continue
             
-            htmlout += self.loglink(prog, m, t, d)
+            htmlout += self.loglink(pid, m, t, d)
         
         if not (showold and old):
             return htmlout
         
         htmlout += '<h4>Old Logs:</h4\n>'
         for m, t, d in old:
-            htmlout += self.loglink(prog, m, t, d)
+            htmlout += self.loglink(pid, m, t, d)
         
         return htmlout
     
     def progpage(self, handle, path):
-        prog = path[1]
-        title = get_prog_data(prog).get('title', 'log/' + prog)
+        pid = path[1]
+        prog = ent['log_by_id'][pid]
+        ldata = ent['log_data'][prog]
+        title = ldata.get('name', ldata['prog'])
         htmlout = '<div class="pageinner"><div class="head">'
         htmlout += f'<h2 class="pagetitle"><span id="progName">{title}</span></h2></div>\n'
         htmlout += '<div class="container list">\n'
-        tl = self.tasklist(prog, True)
+        tl = self.tasklist(pid, True)
         if tl.startswith('<h4>Old'):
             htmlout += '<p>No recently updated logs.</p>\n'
         
         htmlout += tl
         
         self.write(handle, htmlout)
+
+    def loglistlink(self, pid):
+        prog = ent['log_by_id'][pid]
+        ldata = ent['log_data'][prog]
+        title = ldata.get('name', ldata['prog'])
+        htmlout = '<div class="tasklogbox">'
+        htmlout += f'<h2>{title}</h2>\n'
+        logc = len(ent["task_logs"][pid])
+        htmlout += f'{logc:,} log{plu(logc)} on disk,\n'
+        htmlout += f'<a href="/logs/{ldata["id"]}">View All</a><br>\n'
+        
+        tl = self.tasklist(pid, False)
+        if not tl:
+            tl = '<p>No recently updated logs.</p>\n'
+        
+        htmlout += tl
+        htmlout += '</div>'
+        return htmlout
     
     def page(self, handle, path):
-        check_running_tasks()
-        find_runningg_tasks()
+        
         if len(path) >= 3 and path[2].endswith('.txt'):
             if self.taskpage(handle, path):
                 return
         
-        elif path[-1] in ent['task_logs']:
+        check_running_tasks()
+        find_runningg_tasks()
+        
+        if path[-1] in ent['log_by_id']:
             self.progpage(handle, path)
             return
         
@@ -206,23 +237,24 @@ class builtin_logs(builtin_base):
         htmlout += '<div class="container list">\n'
         self.write(handle, htmlout)
         
-        htmlout = '<div class="taskloglist">'
-        for prog in ent['task_logs']:
-            title = get_prog_data(prog).get('title', 'log/' + prog)
-            htmlout += '<div class="tasklogbox">'
-            htmlout += f'<h2>{title}</h2>\n'
-            logc = len(ent["task_logs"][prog])
-            htmlout += f'{logc:,} log{plu(logc)} on disk,\n'
-            htmlout += f'<a href="/logs/{prog}">View All</a><br>\n'
+        c = 0
+        for group, order in ent['log_group_order']:
+            htmlout = '<div class="taskloglist">'
             
-            tl = self.tasklist(prog, False)
-            if not tl:
-                tl = '<p>No recently updated logs.</p>\n'
+            gtasks = ent['log_group'][group]
+            if c and gtasks:
+                self.write(handle, '<hr>\n')
             
-            htmlout += tl
-            htmlout += '</div>'
+            if not group.startswith('_'):
+                self.write(handle, f'<h2>{group}</h2>\n')
+            
+            for task in gtasks:
+                htmlout += self.loglistlink(task)
+            
+            self.write(handle, htmlout+'</div>')
+            c += 1
         
-        htmlout += '</div></div></div>'
+        htmlout = '</div></div></div>'
         self.write(handle, htmlout)
 
 
@@ -254,9 +286,10 @@ class builtin_run(builtin_logs):
             self.write(handle, htmlout)
             return
         
-        logging.debug(f'Attempting to run {prog}')
+        logging.info(f'Attempting to run {prog}')
         try:
-            os.system(f'sudo bash {cfg["task_dir"]}{prog}')
+            if cfg.get('actually_run', True):
+                os.system(f'sudo bash {cfg["task_dir"]}{prog}')
         
         except Exception as e:
             logging.error(f"Failed to run", exc_info=True)
@@ -289,8 +322,8 @@ class builtin_run(builtin_logs):
             return
         
         htmlout = ''
-        for group, order in ent['group_order']:
-            gtasks = ent['taskgroups'][group]
+        for group, order in ent['task_group_order']:
+            gtasks = ent['task_group'][group]
             if (not gtasks or group.startswith('#')) and 'all' not in path:
                 continue# removed or hidden
             
@@ -356,16 +389,47 @@ def config_save():
         ignore_keys=['remort_buttons', 'page_buttons'])
 
 
-def find_avialble_tasks():
-    tGO = 'group_order'
-    tTG = 'taskgroups'
-    tUG = '_ungrouped'
+def group_flush(kind):
+    for k in ['_group', '_group_order']:
+        if kind + k in ent:
+            del ent[kind + k]
+
+
+def group_manage(kind, thing, data):
+    groupd = kind + '_group'
+    if groupd not in ent:
+        ent[groupd] = {'_ungrouped': []}
+        ent[groupd + '_order'] = {'_ungrouped': 6979}
     
+    groupd, groupo = ent[groupd], ent[groupd + '_order']
+    
+    group = data.get('group', data.get('log_dir', '_ungrouped'))
+    order = data.get('order', 0)
+    if group not in groupd:
+        groupd[group] = []
+        groupo[group] = 0
+    
+    groupd[group].append((order, thing))
+    
+    order = data.get('group_order')
+    if isinstance(order, int) and order < groupo[group]:
+        groupo[group] = order
+
+
+def group_sort(kind):
+    kind += '_group'
+    
+    for g, i in ent[kind].items():# sort each group
+        ent[kind][g] = [y for x, y in sorted(i)]
+    
+    kind += '_order'
+    ent[kind] = sorted(ent[kind].items(), key=itemgetter(1))
+
+
+def find_avialble_tasks():
     ent['tasks'] = {}
     ent['taskidfn'] = {}
-    ent[tTG] = {tUG: []}
-    taskg = ent[tTG]
-    ent[tGO] = {tUG: 6979}
+    group_flush('task')
     
     for fn in os.listdir(cfg['task_dir']):
         if not fn.endswith('.sh') and not fn.endswith('.cfg'):continue
@@ -382,30 +446,19 @@ def find_avialble_tasks():
         ent['taskidfn'][data.get('id', fn)] = fn
         logging.debug(data)
         
-        # menu ordering
-        group = data.get('group', tUG)
-        order = data.get('order', 0)
-        if group not in taskg:
-            taskg[group] = []
-            ent[tGO][group] = 0
-        
-        taskg[group].append((order, fn))
-        
-        if tGO in data and data[tGO] < ent[tGO][group]:
-            ent[tGO][group] = data[tGO]
+        group_manage('task', fn, data)
     
-    for g, i in ent[tTG].items():# sort each group
-        ent[tTG][g] = [y for x, y in sorted(i)]
-    
-    ent[tGO] = sorted(ent[tGO].items(), key=itemgetter(1))
+    group_sort('task')
 
 
-def check_task(prog, task):
+def check_task(pid, task):
     global ent
-    logging.debug(f'Cehcking {prog} {task}')
+    logging.debug(f'Cehcking {pid} {task}')
     
-    data = ent['task_logs'][prog][task]
-    fn = data['path'] + task
+    data = ent['task_logs'][pid][task]
+    prog = ent['log_by_id'][pid]
+    info = ent['log_data'][prog]
+    fn = info['path'] + task
     if os.path.isfile(fn):
         mtime = os.path.getmtime(fn)
         data['mod'] = mtime
@@ -413,14 +466,16 @@ def check_task(prog, task):
         data['dmod'] = d
         
         data['old'] = (datetime.now() - d).total_seconds() > 300
+    
+    return data
 
 
-def check_running_task_dir(prog):
-    tasks = ent['task_logs'].get(prog, {})
+def check_running_task_dir(pid):
+    tasks = ent['task_logs'].get(pid, {})
     
     for n, d in enumerate(sorted(tasks.items(), reverse=True)):
         if not d[1]['old'] or n == 0:
-            check_task(prog, d[0])
+            check_task(pid, d[0])
     
 def check_running_tasks():
     
@@ -428,35 +483,85 @@ def check_running_tasks():
         check_running_task_dir(prog)
 
 
+def log_info(progd, make=True):
+    infod = progd + 'info.json'
+    data = {}
+    exists = os.path.isfile(infod)
+    if exists:
+        data = read_json(infod)
+    
+    if 'id' not in data:
+        data['id'] = str(uuid4())
+        exists = False
+    
+    ent['log_by_id'][data['id']] = progd
+    
+    if make and not exists:
+        save_json(infod, data)
+    
+    return data
+
+
 def find_runningg_tasks():
     global ent
-    now = datetime.now()
+    if ent.get('fru_running'):
+        return
+    
+    ent['fru_running'] = True
+    now = datetime.fromisoformat('2000-01-01')
+    
+    group_flush('log')
     
     for logd in cfg['log_dirs']:
+        if not logd.endswith('/'):
+            logd += '/'
+        
+        if not os.path.isdir(logd):
+            continue
+        
         for prog in os.listdir(logd):
             progd = logd + prog + '/'
             if not os.path.isdir(progd):
                 continue# not program
             
-            if prog not in ent['task_logs']:
-                ent['task_logs'][prog] = {}
+            progi = progd
+            data = {
+                'path': progd,
+                'log_dir': logd,
+                'prog': prog
+                }
             
-            for task in os.listdir(progd):
+            data = {**log_info(progd), **data}
+            pid = data['id']
+            
+            ent['log_data'][progd] = data
+            group_manage('log', pid, data)
+            
+            if pid not in ent['task_logs']:
+                ent['task_logs'][pid] = {}
+            
+            for c, task in enumerate(sorted(os.listdir(progd), reverse=True)):
                 if not (task[0].isdigit() and task.endswith('.txt')):
+                    
                     continue# not task log
                 
-                if task not in ent['task_logs'][prog]:
-                    ent['task_logs'][prog][task] = {
-                        'path': progd,
+                if task not in ent['task_logs'][pid]:
+                    old = c > 20
+                    ent['task_logs'][pid][task] = {
                         'mod': 0,
-                        'old': False
+                        'dmod': now,
+                        'old': old
                         }
-                
-                    check_task(prog, task)
+                    
+                    if not old:
+                        check_task(pid, task)
+    
+    group_sort('log')
+    ent['fru_running'] = False
 
 
 def big_action_list_time(reload=0):
-    logging.debug('Performing all actions')
+    logging.info('Performing all actions')
     start = time.perf_counter()
     ent['built_at'] = datetime.now()
     
@@ -471,7 +576,7 @@ def big_action_list_time(reload=0):
     check_running_tasks()
     find_runningg_tasks()
     
-    logging.debug(f'Done in {time.perf_counter() - start}')
+    logging.info(f'Done in {time.perf_counter() - start}')
 
 
 class post_logupdate(post_base):
@@ -493,18 +598,19 @@ class post_logupdate(post_base):
         if not ('prog' in data and 'task' in data):
             return {'output': [], 'old': True, 'status': 'missing fields'}
         
-        prog, task = data['prog'], data['task']
+        pid, task = data['prog'], data['task']
+        prog = ent['log_by_id'].get(pid)
         cdata = get_prog_data(prog)
         logf = log_filter(cdata.get('level'))
         
         if 'level' in data:
             logf.set_level(data['level'])
         
-        if prog not in ent['task_logs'] or task not in ent['task_logs'][prog]:
+        if pid not in ent['task_logs'] or task not in ent['task_logs'][pid]:
             return {'output': [], 'old': True, 'status': 'not found'}
         
-        check_task(prog, task)
-        taskd = ent['task_logs'][prog][task]
+        taskd = check_task(pid, task)
+        ldata = ent['log_data'][prog]
         ret['old'] = taskd.get('old', False)
         ret['mod'] = taskd['mod']
         ret['lines'] = has
@@ -512,7 +618,7 @@ class post_logupdate(post_base):
         if taskd['mod'] != mod:
             if has > 1:has -= 1
             ret['old'] = False
-            lines = readfile(taskd['path'] + task).split('\n')
+            lines = readfile(ldata['path'] + task).split('\n')
             ret['lines'] = len(lines)
             
             ret['output'] = logf.filter_all(lines[has:])
@@ -632,6 +738,7 @@ if __name__ == '__main__':
         'res_dir': 'res/',# prepend resource files
         'task_dir': 'tasks/',
         'log_dirs': ['log/'],
+        'display_lines': 500,
         
         'homepage_menu': 'menu',
         'dropdown_menu': 'menu',
@@ -686,7 +793,9 @@ if __name__ == '__main__':
         
         'building_entries': False,
         'tasks': {},
+        'log_data': {},
         'task_logs': {},
+        'log_by_id': {},
         
         'reentry_buttons': [
             (' rebuild', 'rebuild', 'Rebuild')
