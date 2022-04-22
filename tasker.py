@@ -71,13 +71,6 @@ class log_filter(object):
         return trunc
 
 
-def get_prog_data(prog):# task id -> script id -> title
-    #if '/' in prog:prog = prog.split('/')[-2]
-    return ent['tasks'].get(
-        ent['taskidfn'].get(prog, prog), {}
-        )
-
-
 class builtin_logs(builtin_base):
     
     def __init__(self, title='Logs', link='/logs', icon=ii(22), pages=False):
@@ -95,7 +88,6 @@ class builtin_logs(builtin_base):
         
         data = ent['task_logs'][pid][task]
         
-        cdata = get_prog_data(prog)
         ldata = ent['log_data'][prog]
         fn = ldata['path'] + task
         title = ldata.get('name', ldata['prog'])
@@ -113,7 +105,7 @@ class builtin_logs(builtin_base):
         self.write(handle, htmlout)
         
         lines = readfile(fn).split('\n')
-        logf = log_filter(cdata.get('level'))
+        logf = log_filter(ldata.get('level'))
         
         if len(path) >= 4:
             logf.set_level(path[3])
@@ -428,7 +420,6 @@ def group_sort(kind):
 
 def find_avialble_tasks():
     ent['tasks'] = {}
-    ent['taskidfn'] = {}
     group_flush('task')
     
     for fn in os.listdir(cfg['task_dir']):
@@ -443,7 +434,6 @@ def find_avialble_tasks():
             data[line[1]] = json.loads(line[2])
         
         ent['tasks'][fn] = data# store data
-        ent['taskidfn'][data.get('id', fn)] = fn
         logging.debug(data)
         
         group_manage('task', fn, data)
@@ -600,8 +590,8 @@ class post_logupdate(post_base):
         
         pid, task = data['prog'], data['task']
         prog = ent['log_by_id'].get(pid)
-        cdata = get_prog_data(prog)
-        logf = log_filter(cdata.get('level'))
+        ldata = ent['log_data'][prog]
+        logf = log_filter(ldata.get('level'))
         
         if 'level' in data:
             logf.set_level(data['level'])
@@ -610,7 +600,6 @@ class post_logupdate(post_base):
             return {'output': [], 'old': True, 'status': 'not found'}
         
         taskd = check_task(pid, task)
-        ldata = ent['log_data'][prog]
         ret['old'] = taskd.get('old', False)
         ret['mod'] = taskd['mod']
         ret['lines'] = has

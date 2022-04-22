@@ -1,0 +1,172 @@
+/* base */
+
+body {
+    font-family: sans-serif;
+	text-align: center;
+	margin: 0;
+	min-height: 100vh;
+	width: 100%;
+}
+
+.pageinner {
+	min-width: 100%;
+	min-height: 100vh;
+}
+
+.head, .foot {
+	display: block;
+	min-height: 76px;
+	width: 100%;
+}
+
+.foot {
+	padding-bottom: 5px;
+}
+
+.head h2 {
+	padding-top: 25px;
+}
+.head h2.btn {
+	padding-top: 10px;
+}
+
+/* common elements */
+
+.btn {
+	display: inline-block;
+	padding: 10px 20px;
+	font-size: 20pt;
+	
+	cursor: pointer;
+}
+
+.btn.rebuild, .btn.shuffle {
+	min-width: 200px;
+}
+
+.btn.wide {
+	min-width: 300px;
+}
+
+.btn.abox {
+	padding: 6px;
+	margin: 10px;
+	margin-bottom: 15px;
+}
+
+.mbutton {
+	min-width: 30px;
+	min-height: 40px;
+	
+	position: relative;
+	z-index: 5;
+	display: inline-block;
+	border: none;
+	padding: 10px;
+	margin: 0 2px 15px 2px;
+	font-size: 24px;
+	vertical-align: top;
+	cursor: pointer;
+}
+
+.disabled {
+	pointer-events: none;
+	cursor: default;
+}
+
+/* Pop-down menu layout */
+
+.popdown::-webkit-scrollbar {
+	display: none;
+}
+
+.popdown {
+	position: fixed;
+	top: -200vh;
+	left: 0;
+	
+	width: 100vw;
+	max-height: 100vh;
+	overflow-y: scroll;
+	scrollbar-width: none;
+	
+	z-index: 9999;
+	transition: top 1.2s;
+}
+
+.popdown.down {
+	top: 0vh;
+	transition: top 0.6s;
+}
+
+.popdown .head {
+	min-height: initial;
+	width: 100%;
+	padding-top: 10px;
+}
+
+.popdown .pagetitle, .popdown .container {
+	padding: 0;
+	margin: 0 auto 20px auto;
+}
+
+.pageopt .mbutton {
+	left: 60px;
+}
+
+.pdbox button {
+	width: 56px;
+	height: 60px;
+	
+	position: absolute;
+	top: 0;
+	left: 0;
+	z-index: 10000;
+}
+
+.pdbox button.down {
+	position: fixed;
+}
+
+/* Loading Circle */
+
+.lds-ring {
+	display: inline-block;
+	position: relative;
+	width: 24px;
+	height: 24px;
+}
+
+.lds-ring div {
+	box-sizing: border-box;
+	display: block;
+	position: absolute;
+	width: 24px;
+	height: 24px;
+	margin: 2px;
+	border: 3px solid #cfcfcf;
+	border-radius: 50%;
+	animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+	border-color: #cfcfcf transparent transparent transparent;
+}
+
+.lds-ring.hide {
+	visibility: hidden;
+}
+
+.lds-ring div:nth-child(1) {
+	animation-delay: -0.45s;
+}
+
+.lds-ring div:nth-child(2) {
+	animation-delay: -0.3s;
+}
+
+.lds-ring div:nth-child(3) {
+	animation-delay: -0.15s;
+}
+
+@keyframes lds-ring {
+	0% {transform: rotate(0deg);}
+	100% {transform: rotate(360deg);}
+}
