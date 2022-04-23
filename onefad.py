@@ -298,6 +298,29 @@ def plu(v, e='s'):# pluralise
     return [e, ''][v == 1]
 
 
+def read_filesafe(fn, mode='r', encoding='utf8', important=True):
+    try:
+        data = read_file(fn, mode=mode, encoding=encoding)
+    
+    except FileNotFoundError:
+        if important:
+            logging.error('FileNotFound!\t', fn)
+        
+        data = ''
+    
+    return data
+
+def read_file(fn, mode='r', encoding='utf8'):
+    # read a file on a single line
+    if mode == 'rb':
+        encoding = None# saves writing it a few times
+    
+    with open(fn, mode, encoding=encoding) as file:
+        data = file.read()
+        file.close()
+    
+    return data
+
 def read_json(fn):
     with open(fn, 'r') as file:
         return json.load(file)
