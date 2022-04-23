@@ -468,6 +468,14 @@ def user_friendly_dict_saver(fn, data, ignore_keys=[]):
         fh.close()
 
 
+def fa_datebox(line):
+    if 'ago"' in line:# date visible
+        return get_prop('popup_date">', line, t='</')
+    
+    # date not visible
+    return get_prop('title="', line, t='"')
+
+
 def strdate(indate):# only used when parsing fa pages
     months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
     ids = indate.split(' ')

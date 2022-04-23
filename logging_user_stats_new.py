@@ -190,7 +190,7 @@ def userinfostate(user, force=True):
         
         if upbox in p:
             last_id = int(get_prop('View Gallery', p, t='/"><').split('/')[-1])
-            last_date = get_prop(upbox, p, '<').split('"')[-1][1:].strip()
+            last_date = fa_datebox(get_prop(upbox, p, t='</strong>'))
             last_date = strdate(last_date)
         
         p, a = cache(

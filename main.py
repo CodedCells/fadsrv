@@ -277,16 +277,16 @@ def apd_findnew():
             pd['tags'] = [x.split('"')[0].lower()
                               for x in ks.split('@keywords ')[1:]]
         
-        if 'date' in add:
-            if 'popup_date">' in data:
-                # MMM DDth, CCYY hh:mm AM
-                date = get_prop('popup_date">', data, t='</')
-                pd['date'] = strdate(date).timestamp()
-            
-            else:
-                logging.warning(f'Date container not found for {postid}')
-                made_changes -= 1
-                continue
+        datesplit = '<span class="hideonmobile">posted'
+        if 'date' in add and datesplit in data:
+            date = fa_datebox(get_prop(datesplit, data, t='</strong>'))
+            # MMM DDth, CCYY hh:mm AM
+            pd['date'] = strdate(date).timestamp()
+        
+        else:
+            logging.warning(f'Date container not found for {postid}')
+            made_changes -= 1
+            continue
         
         if 'folders' in add:
             pd['folders'] = []
