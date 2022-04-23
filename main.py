@@ -1675,8 +1675,9 @@ class eyde_user(eyde_base):
                 if k in udat:
                     h += f'{v}: {udat[k]}<br>\n'
         
-        if user in dpref.get('passed', {}):
-            passdate = dpref['passed'][user]
+        passed = dpref.get('passed', {})
+        if user in passed:
+            passdate = passed['user']
             h += f'Passed: {trim_date(passdate)}<br>\n'
         
         for w, d in wpm.items():
@@ -1978,8 +1979,8 @@ class eyde_filter(eyde_base):
         return set(self.filter_param_user_data(k, v).get(v, []))
     
     def filter_param_dpref(self, k, v):
-        v = self.dprefs[v]
-        return set(dpref[v])
+        v = self.dprefs.get(v, '')
+        return set(dpref.get(v, []))
     
     def filter_param_colname(self, k, v):
         return find_collection(k, v)
@@ -2479,7 +2480,7 @@ class mort_base(builtin_base):
                     
                     done.append(v)
                     
-                    mset = set(dpref[v])
+                    mset = set(dpref.get(v, {}))
                     items = [i for i in items if (i[0] in mset) == mm]
             
             elif mt == 'collection':
@@ -3136,7 +3137,7 @@ class mort_unavcheck(mort_base):
     def get_items(self):
         self.sys_has = set([x for x in apdfa])
         self.unav_marked = set([x
-            for x, y in apdm['unava'].items()
+            for x, y in apdm.get('unava', {}).items()
             if y[0] != 'n/a'])
 
         out = {}
@@ -3232,8 +3233,9 @@ class mort_review(mort_base):
     def gimme_idc(self):
         if self.items is None:
             self.items = {}
-            for user in dpref.get('passed', {}):
-                pd = jsdate(dpref['passed'][user])
+            passed = dpref.get('passed', {})
+            for user, date in passed.items():
+                pd = jsdate(date)
                 up = datetime.fromisoformat(ent['artup'].get(user, '2000-01-01'))
                 if up > pd:
                     self.items[user] = (up-pd).days
@@ -3252,8 +3254,9 @@ class mort_addedreview(mort_base):
     def gimme_idc(self):
         if self.items is None:
             self.items = {}
-            for user in dpref.get('passed', {}):
-                pd = jsdate(dpref['passed'][user])
+            passed = dpref.get('passed', {})
+            for user, date in passed.items():
+                pd = jsdate(date)
                 up = users_mod.get(user)
                 if up is None:continue
                 up = datetime.fromtimestamp(up)
@@ -3523,9 +3526,12 @@ class builtin_stats(builtin_base):
                 imgsp += len(users.get(k, []))
         
         tot = len(apdm['marka'])
-        
-        doc += f'\nAll: Known: {l8r:,}, Faved: {imgs:,}, thats\'s {imgs/max(l8r, 1):.02%}\n<br><br>'
-        doc += f'\nPassed: Known: {l8rp:,}, Faved: {imgsp:,}, thats\'s {imgsp/max(l8rp, 1):.02%}\n<br><br>'
+
+        perc = imgs/max(l8r, 1)
+        doc += f'\nAll: Known: {l8r:,}, Faved: {imgs:,}, thats\'s {min(perc, 1):.02%}\n<br><br>'
+        if l8rp:
+            perc = imgsp / max(l8rp, 1)
+            doc += f'\nPassed: Known: {l8rp:,}, Faved: {imgsp:,}, thats\'s {min(perc, 1):.02%}\n<br><br>'
         
         doc += f'\nTotal: {imgs:,}, Marked: {tot:,}, that\'s {tot/max(imgs,1):.02%}\n'
         
@@ -4184,7 +4190,7 @@ class mort_postmarks(builtin_menu):
                     if v not in eles:
                         label = v
                         if dpref.get(v, []):
-                            label += f'<br>({len(dpref[v]):,})'
+                            label += f'<br>({len(dpref.get(v, {})):,})'
                         
                         icon = d.get('icon', ii(45))
                         if len(d.get('valueicon', [])) > n:
@@ -4528,6 +4534,9 @@ class post_data(post_base):
         if not cfg['allow_data']:# disallow
             return {'error': 'data access is disabled'}
         
+        if pargs[-1] == '':
+            pargs = pargs[:-1]
+        
         if len(pargs) == 1:# 2 short 4 me
             return {'error': 'no request specified'}
         
@@ -4536,7 +4545,7 @@ class post_data(post_base):
         
         if pargs[1] in globals():
             dat = globals()[pargs[1]]
-            if len(pargs) < 3 and isinstance(dat, dict):
+            if len(pargs) > 2 and isinstance(dat, dict):
                 
                 if pargs[2] in dat:
                     return dat[pargs[2]]
