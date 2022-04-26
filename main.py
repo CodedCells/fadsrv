@@ -4745,9 +4745,22 @@ def load_user_json(fn, base, enforce_types=True):
     
     return out
 
+
+def get_cfg_resources(k):
+    v = cfg.get(k)
+    print(k, v)
+    if type(v) == str:
+    
+    if type(v) == list:
+        return v
+    
+    return None
+
+
 def load_user_config():
-    load_global('cfg', 'fadoptions.json')
-    load_global('menus', 'fadmenus.json')
+    global ent
+    load_global('cfg', ent['config_file'])
+    load_global('menus', ent['menu_file'])
     ent['profiles'] = load_global('profiles', 'fadprofiles.json')
     
     if 'remort' not in menus['pages']:
@@ -4765,6 +4778,13 @@ def load_user_config():
             'buttons': 'page_buttons',
             "icon": [8, 4]
             }
+    
+    for k in ['resources', 'style_doc', 'script_doc']:
+        v = get_cfg_resources(k)
+        if v == None:continue# No files
+        for i in v:
+            if i not in ent['resources']:
+                ent['resources'].append(i)
     
     st = safe_readfile(cfg['apd_dir'] + 'strings.txt')
     if not st:return# empty
@@ -5288,13 +5308,6 @@ if __name__ == '__main__':
             except Exception as e:
                 if 'required positional argument' not in str(e):
                     logging.error(f"class {k}", exc_info=True)
-    
-    for fn in ent['resources']:
-        dfn = cfg['res_dir'] + fn
-        fn = '_' + fn
-        ent[fn] = b''
-        if os.path.isfile(dfn):
-            ent[fn] = readfile(dfn, mode='rb', encoding=None)
     
     fadcfg = {}
     if os.path.isfile('fadcfg.json'):
