@@ -4928,12 +4928,12 @@ def load_apd():
         
         else:
             for k, v in list(data.items()):
-                if len(v) > 1:
+                if not v or list(v) == ['None']:
+                    del data[k]
+                
+                elif len(v) > 1:
                     if v[0] != 'n/a':
                         data[k] = v
-                
-                elif list(v) == ['None']:
-                    del data[k]
             
             apdm[apdfile] = data
     
