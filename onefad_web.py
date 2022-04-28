@@ -22,18 +22,23 @@ load_global('strings',{# todo migrate more from code and clean up
 
 
 def serve_resource(handle, resource):
+    global ent
     handle.send_response(200)
     handle.send_header('Content-type', ext_content(resource))
     
     fn = cfg['res_dir'] + resource
-    if cfg['developer'] and os.path.isfile(fn):
-        ent[f'_{resource}'] = readfile(fn, mode='rb')
+    rf = f'_{resource}'
+    
+    should_load = cfg['developer'] or f'_{resource}' not in ent
+    if should_load and os.path.isfile(fn):
+        logging.debug(f'loading resource {resource} from {fn}')
+        ent[rf] = readfile(fn, mode='rb')
     
     else:
         handle.send_header('Cache-Control', 'max-age=3600, must-revalidate')
     
     handle.end_headers()
-    handle.wfile.write(ent[f'_{resource}'])
+    handle.wfile.write(ent.get(rf, b''))
 
 
 def template_nav(title, index, last, enc=True):
