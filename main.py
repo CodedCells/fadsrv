@@ -4784,8 +4784,8 @@ def load_user_config():
         v = get_cfg_resources(k)
         if v == None:continue# No files
         for i in v:
-            if i not in ent['resources']:
-                ent['resources'].append(i)
+            if i.lower() not in ent['resources']:
+                ent['resources'].append(i.lower())
     
     st = safe_readfile(cfg['apd_dir'] + 'strings.txt')
     if not st:return# empty
