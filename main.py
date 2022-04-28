@@ -4748,8 +4748,9 @@ def load_user_json(fn, base, enforce_types=True):
 
 def get_cfg_resources(k):
     v = cfg.get(k)
-    print(k, v)
+    
     if type(v) == str:
+        return [v]
     
     if type(v) == list:
         return v
