@@ -181,6 +181,8 @@ def apd_findnew():
         if not postid in descset:add.append('desc')
         
         if not add:continue
+        if file == 'apdlist':continue
+        
         logging.info(f'Adding data for {file}, adding {json.dumps(add)}')
         c += 1
         if not c % 200:
@@ -208,13 +210,21 @@ def apd_findnew():
                     continue
         
         datafn = data_path(postid, s='_desc.html') + '_desc.html'
-        #print(add)
+        
+        if not os.path.isfile(datafn):
+            logging.warning(f'Missing data {datafn}')
         
         try:
             data = readfile(datafn)
+        
         except UnicodeDecodeError:# prevent strange files messing up
             logging.warning(f'Unicode error when opening {datafn}')
             data = str(readfile(datafn, mode='rb', encoding=None))
+        
+        except FileNotFoundError:
+            logging.warning(f'Missing data {datafn}')
+            made_changes -= 1
+            continue
         
         if 'rating' in add:
             if 'name="twitter:data2" content="' in data:
