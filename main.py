@@ -356,10 +356,11 @@ def apd_findnew():
         
         desc = '"https://www.furaffinity.net/gallery/'.join(
             desc.split('"/user/'))
+        
         desc = '\n'.join([x.strip() for x in desc.split('\\n')])
         desc = '\n'.join([x.strip() for x in desc.split('\n')])
         pd['desclen'] = len(desc)
-        pd['descwc'] = len(desc.split(' '))
+        pd['descwc'] = len(re.findall(r'\w+', desc))
         
         url = get_prop('"og:url" content="', data)
         urlid = url.split('/')[-2]
@@ -1244,7 +1245,7 @@ class eyde_base(builtin_base):
             
             if desc_word_count > cfg['collapse_desclength']:
                 desc = f'''<details>
-<summary>Description (Estimated {desc_word_count} word count)</summary>
+<summary>Description ({desc_word_count:,} words)</summary>
 {desc}</details>\n<br>'''
             
             ret += f'<div class="desc">{desc}</div>\n'
@@ -2735,6 +2736,8 @@ class mort_userlink(mort_base):
     
     def __init__(self, marktype='users', title='User Link', link='/user/{}/1', icon=ii(25)):
         super().__init__(marktype, title, link, icon)
+        self.path_parts = 3
+        self.hide_empty = False
     
     def gimme(self, pargs):
         self.datas = users
@@ -2751,6 +2754,7 @@ class mort_userlink(mort_base):
             items.update(set(xlink['descuser'].get(p, [])))
         
         self.items = list(items)
+        self.headtext[0] = mark_for('users', user, wrap=True) + '<br>'
 
 
 class mort_users(mort_base):
