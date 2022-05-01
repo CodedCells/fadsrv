@@ -512,7 +512,7 @@ class builtin_menu(builtin_base):
                 continue
             
             i = {'href': d.get('href', ''),
-                 'label': d.get('label', 'Error'),
+                 'label': d.get('label'),
                  'alt': d.get('alt', ''),
                  'x': 1, 'y': 5}
             
@@ -533,6 +533,9 @@ class builtin_menu(builtin_base):
             
             elif part and part[0] in ent['builtin']:
                 icon = ent['builtin'][part[0]].get_icon(part)
+                if not i['label']:
+                    i['label'] = ent['builtin'][part[0]].title
+                
                 if type(icon) == list and len(icon) == 2:
                     i['x'], i['y'] = icon
                 else:
@@ -540,6 +543,7 @@ class builtin_menu(builtin_base):
             
             i['x'] *= -100
             i['y'] *= -100
+            if not i['label']:label = 'Error'
             
             htmlout += btn.format(**i)
         
