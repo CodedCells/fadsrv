@@ -176,7 +176,7 @@ def apd_findnew():
         pd = {**apdfa.get(postid, {})}
         
         add = [x for x in fields
-               if not x in pd
+               if x not in pd
                or (x in ['title', 'uploader'] and not pd[x].strip())]
         if not postid in descset:add.append('desc')
         
