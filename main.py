@@ -211,9 +211,6 @@ def apd_findnew():
         
         datafn = data_path(postid, s='_desc.html') + '_desc.html'
         
-        if not os.path.isfile(datafn):
-            logging.warning(f'Missing data {datafn}')
-        
         try:
             data = readfile(datafn)
         
@@ -255,6 +252,12 @@ def apd_findnew():
                 
                 pd['resolution'] = [int(rat[0]), int(rat[1])]
             
+            elif '<b>Resolution:</b> ' in data:
+                rat = get_prop('<b>Resolution:</b> ', data,
+                               t='<br>').split('x')
+                
+                pd['resolution'] = [int(rat[0]), int(rat[1])]
+            
             else:
                 logging.warning(f'Size container not found for {postid}')
                 pd['resolution'] = None
@@ -287,16 +290,23 @@ def apd_findnew():
             pd['tags'] = [x.split('"')[0].lower()
                               for x in ks.split('@keywords ')[1:]]
         
-        datesplit = '<span class="hideonmobile">posted'
-        if 'date' in add and datesplit in data:
-            date = fa_datebox(get_prop(datesplit, data, t='</strong>'))
-            # MMM DDth, CCYY hh:mm AM
-            pd['date'] = strdate(date).timestamp()
-        
-        else:
-            logging.warning(f'Date container not found for {postid}')
-            made_changes -= 1
-            continue
+        if 'date' in add:
+            datesplit = '<span class="hideonmobile">posted'
+            oldatesplit = '<b>Posted:</b> <span'
+            if datesplit in data:
+                date = fa_datebox(get_prop(datesplit, data, t='</strong>'))
+                # MMM DDth, CCYY hh:mm AM
+                pd['date'] = strdate(date).timestamp()
+            
+            elif oldatesplit in data:
+                date = fa_datebox(get_prop(oldatesplit, data, t='</span>'))
+                # MMM DDth, CCYY hh:mm AM
+                pd['date'] = strdate(date).timestamp()
+            
+            else:
+                logging.warning(f'Date container not found for {postid}')
+                made_changes -= 1
+                continue
         
         if 'folders' in add:
             pd['folders'] = []
@@ -325,14 +335,28 @@ def apd_findnew():
                             }
             
         if 'title' in add:
-            if '<div class="submission-title">' not in data:
+            titlec = [
+                '<div class="submission-title">',
+                '"classic-submission-title information">',
+                '<table cellpadding="0" cellspacing="0" border="0" width="100%">'
+                ]
+            if titlec[0] in data:
+                title = get_prop(titlec[0],
+                                 data, t='</p>').split('<p>')[1]
+            
+            elif titlec[1] in data:# pretty old
+                title = get_prop(titlec[1],
+                                 data, t='</h2>').split('<h2>')[1]
+            
+            elif titlec[2] in data:# old as balls
+                title = get_prop(titlec[2],
+                                 data, t='</th>').split('class="cat">')[1]
+            
+            else:
                 logging.warning(f'Title container not found for {postid}')
                 continue
             
-            title = html.unescape(get_prop(
-                '<div class="submission-title">', data, t='</p>')).split('<p>')[1]
-            
-            title = title.strip()
+            title = html.unescape(title).strip()
             if not title:
                 title = 'Untitled'
             
