@@ -551,7 +551,8 @@ class builtin_menu(builtin_base):
     
     def page(self, handle, path):
         minfo = menus['pages'].get(self.which, {})
-        eles = menus[minfo.get('buttons', f'{self.which}_buttons')]
+        butts = minfo.get('buttons', f'{self.which}_buttons')
+        eles = menus.get(butts, {})
         
         self.build_menu(handle, self.which, minfo, eles)
 
