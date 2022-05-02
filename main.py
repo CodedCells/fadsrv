@@ -1166,10 +1166,9 @@ class eyde_base(builtin_base):
         else:
             list_mode, wr = self.modes_default, ''
         
-        q = lister_get(self.marktype, self.title)
-        nav = q[0]
-        nav += template_nav(self.title, index_id, last_page)
-        nav += q[1]
+        nav = template_nav(self.title, index_id, last_page, enc=False)
+        if cfg['lister_buttons']:
+            nav = nav.join(lister_get(self.marktype, self.title))
         
         h += '<div class="head">\n' + str(nav, cfg['encoding_serve']) + '</div>\n<div class="container">\n'
         
@@ -2633,8 +2632,10 @@ class mort_base(builtin_base):
         last_page, sa, ea = page_count(count, index_id, pc=cfg['list_count'])
         if index_id < 1:
             index_id += last_page
-        
+
         nav = template_nav(self.title, index_id, last_page, enc=False)
+        if cfg['lister_buttons']:
+            nav = nav.join(lister_get(self.marktype, self.title))
         
         h = ''
         h += f'''<!--\nclass: {type(self).__name__}
@@ -5168,6 +5169,7 @@ if __name__ == '__main__':
         'allow_pages': True,# enable custom pages
         'purge': True,# purge old data from mort and eyde to free up ram
         'sec_offset': 0,
+        'lister_buttons': True,
         
         'apd_dir': 'data/',# prepend data files
         'mark_dir': 'data_mark/',
