@@ -1884,7 +1884,7 @@ class eyde_filter(eyde_base):
         'id':       [post_sort_id, '', ''],
         'filedate': [post_sort_prop_none, 'filedate', '0'],
         'uploader': [post_sort_prop, 'uploader', '.badart'],
-        'title':    [post_sort_prop, 'title', '_'],
+        'title':    [post_sort_prop, 'title', '00000'],
         'descwc':   [post_sort_prop, 'descwc', 0],
         'bytes':    [post_sort_prop, 'srcbytes', 0],
         #'faves':    [post_sort_prop, 'faves', 0],
