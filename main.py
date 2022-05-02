@@ -757,26 +757,23 @@ def lister_get(kind, thing):
     q = lister_items(kind)
     hd = lister_linker(kind)
     
-    bprev, bnext = b'', b''
+    bprev, bnext = '', ''
     
     icon = si.get('icon', '?')
+    ogm = icon
     if type(icon) == list:
         ogm = 'iconsheet' + markicon(*icon, m=-24)
         ogm = f'<i class="teenyicon {ogm}"></i>'
-    else:
-        ogm = icon
     
     if thing in q:
         qpos = q.index(thing)
-        bprev = bytes(strings['nb'].format(
-            '&lt; ' + ogm, hd.format(q[qpos-1]), ''),
-                      cfg['encoding_serve'])
+        bprev = strings['nb'].format(
+            '&lt; ' + ogm, hd.format(q[qpos-1]), '')
         
-        bnext = bytes(strings['nb'].format(
-            ogm + ' &gt;', hd.format(q[(qpos+1)%len(q)]), ''),
-                      cfg['encoding_serve'])
+        bnext = strings['nb'].format(
+            ogm + ' &gt;', hd.format(q[(qpos+1)%len(q)]), '')
     
-    return (bprev, bnext)
+    return bprev, bnext
 
 
 def page_count(flen, index_id, pc=''):
@@ -1158,11 +1155,12 @@ class eyde_base(builtin_base):
         if index_id == last_page and sa < si:
             h += f"<br>\nThat's all I've got on record. {si:,} file{plu(si)}."
         
+        h += f'\n</div><div class="foot">{nav}\n<br>'
         try:
             handle.wfile.write(bytes(h, cfg['encoding_serve']))
-            handle.wfile.write(b'\n</div><div class="foot">' + nav + b'\n<br>')
         
         except UnicodeEncodeError as e:
+            logging.error(f">Encountered a UnicodeDecodeError {handle.path}", exc_info=True)
             handle.wfile.write(bytes(f'<p>Encountered a UnicodeDecodeError: {e}</p>\n', 'utf-8'))
             handle.wfile.write(bytes(h, 'utf-8'))
         
@@ -1194,7 +1192,7 @@ class eyde_base(builtin_base):
         if cfg['lister_buttons']:
             nav = nav.join(lister_get(self.marktype, self.title))
         
-        h += '<div class="head">\n' + str(nav, cfg['encoding_serve']) + '</div>\n<div class="container">\n'
+        h += '<div class="head">\n' + nav + '</div>\n<div class="container">\n'
         
         h += wr + '<br><br>\n'
         h += self.headtext[0]
