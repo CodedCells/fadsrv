@@ -176,7 +176,7 @@ class builtin_pages(builtin_base):
     
     def __init__(self, title, icon, data, link='', pages=False):
         super().__init__(title, link, icon, pages)
-        self.pagetype = 'builtin_pages'
+        self.pagetype = 'pages'
         self.pagehtml = data
     
     def serve(self, handle, path):

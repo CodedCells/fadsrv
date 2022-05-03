@@ -575,8 +575,10 @@ def fpref_make():
     fpref = {}
     
     for name, page in ent['builtin'].items():
-        if page.pagetype == 'remort' or page.pagetype == 'remort_marksub':
-            fpref[name] = {'icon': page.icon, 'for': page.marktype}
+        if not page.pagetype.startswith('remort'):continue
+        if not (hasattr(page, 'marktype') and page.marktype):continue
+        
+        fpref[name] = {'icon': page.icon, 'for': page.marktype}
 
 
 def register_dynamic():
@@ -630,7 +632,10 @@ def register_dynamic():
     rbcat = {
         'builtin': [],
         'builtin menu': [],
-        'Remort': []
+        'remort': [],
+        'remort mark': [],
+        'eyde': [],
+        'remort postmark': []
         }
     
     for m, v in ent['builtin'].items():
@@ -640,39 +645,38 @@ def register_dynamic():
             v.purge(1)
         
         icn = {'label': m, 'href': m, 'label2': ''}
+        sorter = '_' + m
+        c = pagetype.replace('_', ' ')
         if pagetype.startswith('remort'):
-            icn['label2'] = v.marktype
-            c = 'Remort'
+            if hasattr(v, 'marktype'):
+                icn['label2'] = v.marktype
         
-        elif pagetype == 'eyde':
-            icn['label2'] = 'mark page'
-            c = 'Eyde'
+        elif pagetype == 'pages':
+            icn['label'] = v.title
         
         elif pagetype.startswith('builtin'):
-            c = 'builtin'
-            icn['label2'] = 'builtin'
-            if '_' in pagetype:
-                icn['label2'] = pagetype.split('_')[-1]
-            
             if v.pages:
-                icn['label2'] += ' pages'
+                icn['label2'] = ' pages'
+            
             else:
                 icn['href'] = '/'+icn['href']
         
-        if c and '_' in pagetype:
-            c += ' ' + pagetype.split('_')[-1]
+        if icn['label'] == icn['label2']:
+            del icn['label2']
         
-        if icn['label2'] != '':
+        elif icn['label2'] != '':
             icn['label'] = f"<b>{icn['label']}</b><br><i>{icn['label2']}</i>"
+            sorter = icn['label2'] + m
             del icn['label2']
         
         if c not in rbcat:
             rbcat[c] = []
         
-        rbcat[c].append((m, icn))
+        rbcat[c].append((sorter, icn))
     
     for c, d in rbcat.items():
-        menus['remort_buttons'].append({'type': 'section', 'label': c})
+        if not d:continue
+        menus['remort_buttons'].append({'type': 'section', 'label': c.title()})
         menus['remort_buttons'] += [icn for m, icn in sorted(d)]
 
 
@@ -2928,7 +2932,7 @@ class mort_collection(mort_base, get_icon_collection):
         icon = apdmm[colname].get('icon', None)
         super().__init__(marktype, title, link, icon)
         self.hide_empty = False
-        self.pagetype = 'remort_marksub'
+        self.pagetype = 'remort_mark_item'
         self.path_parts = 3
     
     def gimme(self, pargs):
@@ -3117,7 +3121,7 @@ class mort_postamark(mort_amark):
         self.iteminf[1] = ['int', '<br>{:,} ' + val]
         self.marktype = 'users'
         self.link = f'/filter/@{val} user:{{}}/1'
-        self.pagetype = 'remort_marksub'
+        self.pagetype = 'remort_postmark'
     
     def get_items(self):
         userc = {}
@@ -4125,6 +4129,7 @@ class builtin_quest(builtin_base):
 
     def __init__(self, title='Quest', link='/quest/1', icon=ii(21), pages=True):
         super().__init__(title, link, icon, pages)
+        self.pagetype = 'remort'
     
     def stat_block(self, stat_marka):
         score = 0
@@ -4205,13 +4210,15 @@ class builtin_menu_mark(builtin_menu):
         self.build_menu(handle, self.which, minfo, eles)
 
 
-class mort_postmarks(builtin_menu):
+class mort_postmarks(mort_base, builtin_menu):
 
     def __init__(self, marktype='postmarks', title='Post Marks', link='/postmark/{}/1', icon=ii(0)):
         which = 'dummy'
         super().__init__(which, '/'+which, icon, False, which)
         self.title = title
         self.link = link
+        self.pagetype = 'remort'
+        self.marktype = marktype
     
     def page(self, handle, path):
         minfo = {
