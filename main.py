@@ -1320,7 +1320,7 @@ class eyde_base(builtin_base):
         ret = strings['eyde_post_title'].format(
             post, title)
         
-        if data.get('origin', 'alt'):
+        if data.get('origin') == 'alt':
             ret = f'<span class="altsrv">{ret}'
         
         ret = f'<div id="{post}@post">\n' + ret
@@ -1388,12 +1388,11 @@ class eyde_base(builtin_base):
             self.f_items,
             all_here=True)
         
-        if data.get('got', True) and not cfg['all_marks_visible']:
-            ret += '\n<br>\n' + mark_for('posts', post)
+        ret += '\n<br>\n'
+        if cfg['all_marks_visible'] or not data.get('got'):
+            ret += mark_for('posts_unav', post)
         
-        else:
-            ret += '\n<br>\n' + mark_for('posts_unav', post)
-            ret += mark_for('posts', post)
+        ret += mark_for('posts', post)
         
         if self.name.startswith('user:@') and 'uploader' in data:
             ret += mark_for('users', data['uploader'], wrap=True) + '<br>'
@@ -1420,19 +1419,24 @@ class eyde_base(builtin_base):
     def build_item_thumb(self, post, data):
         
         title = data.get('title', f'Unavailable: {post}')
+
+        cla = ''
+        if data.get('origin') == 'alt':
+            cla = ' altsrv'
         
-        ret = f'<span class="tbox"><span class="thumb">\n<div class="thumba" id="{post}@post">'
+        ret = f'<span class="tbox"><span class="thumb{cla}">\n<div class="thumba" id="{post}@post">'
         ret += f'<a class="title" href="/view/{post}/1">{title}</a>\n<a href="https://www.furaffinity.net/view/{post}/">view fa</a><br>\n'
         
         ret += self.get_file_link(post, data)
         
         ret += '</div></span>\n'
         
-        if data.get('got', True) and not cfg['all_marks_visible']:
-            ret += '\n<br>\n' + mark_for('posts', post, size=40)
+        domark = 'posts'
+        if (data.get('origin') == 'alt' or
+            not data.get('got') or cfg['all_marks_visible']):
+            domark = 'posts_unav'
         
-        else:
-            ret += '\n' + mark_for('posts_unav', post, size=40)
+        ret += '\n<br>\n' + mark_for(domark, post, size=40)
         
         ret += '</span></span>\n'
         
@@ -1473,9 +1477,12 @@ class eyde_base(builtin_base):
         return out
 
     def build_item_fa(self, post, data):
+        cla = data.get('rating', 'error').lower()
+        if data.get('origin') == 'alt':
+            cla += ' altsrv'
         
-        ret = '<figure id="sid-{0}" class="r-{1} t-image">\n<a class="t-inner" href="/view/{0}/">'.format(
-            post, data.get('rating', 'error').lower())
+        ret = f'''<figure id="sid-{post}" class="r-{cla} t-image">
+<a class="t-inner" href="/view/{post}/">'''
 
         ret += overicon('posts', post, con=None)
         
