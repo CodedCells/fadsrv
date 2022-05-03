@@ -50,7 +50,8 @@ def loadpages():
                 }
             butt.append((p, dat))
             
-            ent['builtin'][fn.lower()] = builtin_pages(dat['label'], dat['icon'], data)
+            ent['builtin'][fn.lower()] = builtin_pages(
+                dat['label'], dat['icon'], data)
     
     back = []
     menu = cfg['homepage_menu']
