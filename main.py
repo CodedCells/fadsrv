@@ -4389,10 +4389,7 @@ def serve_image(handle, path):
         serve_image(handle, path.replace('.' + ext, '.jpg'))
     
     else:
-        handle.send_response(404)
-        handle.send_header('Content-type', 'image/svg+xml')
-        handle.end_headers()
-        handle.wfile.write(ent['_parrot.svg'])
+        serve_resource(handle, 'parrot.svg', code=404)
 
 
 class builtin_textattach(builtin_base):
