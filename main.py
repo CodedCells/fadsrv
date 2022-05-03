@@ -2,14 +2,65 @@
 # pep8 non-compliant :(
 
 from onefad_functions import *
+import requests
 
-ent['version'] = '31#2022-03-29'
+ent['version'] = '31#2022-05-03'
 
 class builtin_base(builtin_base):
     
     def bookmark_hook(self, handle):
         path = handle.path.replace('@', '%64')
         self.write(handle, mark_for('url', path))
+
+
+def get_post_alt(path, rd):
+    global altfa
+    
+    req = requests.post(path, json=rd)
+    req = req.json()
+    
+    if not req or 'error' in req:
+        return {}
+    
+    for post, data in req.items():
+        altfa[post] = data
+    
+    apc_write(cfg['apd_dir'] + 'altfa', req, {}, 1)
+    return req
+
+
+def get_post(post):
+    data = apdfa.get(post)
+    if data:return data
+    data = altfa.get(post)
+    if data:
+        data['origin'] = 'alt'
+        return data
+    
+    return {'got': False}
+
+
+def get_posts(posts):
+    local = {}
+    find = []
+    for post in posts:
+        data = get_post(post)
+        if data.get('got', True):
+            local[post] = data
+            
+            if data.get('filedate'):
+                continue
+        
+        find.append(post)
+    
+    for srv, tag in cfg['altdatsrv']:
+        if not find:break
+        remote = get_post_alt(srv, {tag: find})
+        for post, data in remote.items():
+            find.remove(post)
+            local[post] = data
+    
+    return local
 
 
 def markedposts():
@@ -681,7 +732,7 @@ def register_dynamic():
 
 
 def build_entries(reload=0):
-    global ent
+    global ent, altfa
     if isinstance(reload, str):
         if reload.isdigit():reload = int(reload)
         else:reload = 0
@@ -703,10 +754,12 @@ def build_entries(reload=0):
         if reload > 1:
             load_apd()
         
-        if reload > 2 and not cfg.get('skip_bigdata'):
-            ent['force_datasort'] = True
-            load_bigapd()
-            ent['added_content'] = apd_findnew()
+        if reload > 2:
+            altfa = apc_read(cfg['apd_dir'] + 'altfa')
+            if not cfg.get('skip_bigdata'):
+                ent['force_datasort'] = True
+                load_bigapd()
+                ent['added_content'] = apd_findnew()
         
         load_text_attach()
         fpref_make()
@@ -1229,9 +1282,11 @@ class eyde_base(builtin_base):
     def build_page_full(self, sa, ea):
         out = ''
         
-        for item in self.f_items[sa:ea]:
-            data = apdfa.get(item, {'got': False})
-            out += self.build_item_full(item, data)
+        items = self.f_items[sa:ea]
+        local = get_posts(items)
+        
+        for item in items:
+            out += self.build_item_full(item, local.get(item, {'got': False}))
         
         return out
     
@@ -1262,9 +1317,13 @@ class eyde_base(builtin_base):
     def build_item_full(self, post, data):
         title = data.get('title', f'Unavailable: {post}')
         
-        ret = f'<div id="{post}@post">\n'
-        ret += strings['eyde_post_title'].format(
+        ret = strings['eyde_post_title'].format(
             post, title)
+        
+        if data.get('origin', 'alt'):
+            ret = f'<span class="altsrv">{ret}'
+        
+        ret = f'<div id="{post}@post">\n' + ret
         
         ret += self.get_file_link(post, data)
         
@@ -1274,8 +1333,8 @@ class eyde_base(builtin_base):
             ret += strings['eyde_link_ta'].format(
                 ta.get('words'), ta.get('filename'))
         
-        if data.get('got', True):
-            desc = apdfadesc.get(post, '')
+        desc = apdfadesc.get(post, None)
+        if desc != None:
             desc_word_count = data.get('descwc', -1)
             
             if desc_word_count > cfg['collapse_desclength']:
@@ -1284,7 +1343,8 @@ class eyde_base(builtin_base):
 {desc}</details>\n<br>'''
             
             ret += f'<div class="desc">{desc}</div>\n'
-            
+        
+        if data.get('got', True):
             ret += post_things(
                 '<br>Tags:', data.get('tags', ''), 'tags')
             
@@ -1345,24 +1405,17 @@ class eyde_base(builtin_base):
     def build_page_thumb(self, sa, ea):
         out = ''
         
-        for item in self.f_items[sa:ea]:
-            data = apdfa.get(item, {
-                'got': False,
-                'ext': 'png',
-                'title': f'Unavailable: {item}',
-                'uploader': '.badart'
-                })
+        items = self.f_items[sa:ea]
+        local = get_posts(items)
+        
+        for item in items:
+            data = apdfa.get(item, local.get(item, {'got': False}))
             out += self.build_item_thumb(item, data)
         
         return out
     
     def ez_build_item(self, item):
-        return self.build_item_thumb(item, apdfa.get(item, {
-                'got': False,
-                'ext': 'png',
-                'title': f'Unavailable: {item}',
-                'uploader': '.badart'
-                }))
+        return self.build_item_thumb(item, get_post(item))
     
     def build_item_thumb(self, post, data):
         
@@ -1410,13 +1463,11 @@ class eyde_base(builtin_base):
         
         out += '\n</select>\n</div><br>\n'
         
-        for item in self.f_items[sa:ea]:
-            data = apdfa.get(item, {
-                'got': False,
-                'ext': 'png',
-                'title': f'Unavailable: {item}',
-                'uploader': '.badart'
-                })
+        items = self.f_items[sa:ea]
+        local = get_posts(items)
+        
+        for item in items:
+            data = local.get(item, {'got': False})
             out += self.build_item_fa(item, data)
         
         return out
@@ -1573,45 +1624,30 @@ class eyde_dataurl(eyde_base):
         super().__init__(items, marktype, domodes)
         self.markid = 'VIEWERROR'
     
-    def build_page_full(self, sa, ea):
-        out = ''
-        
-        for item in self.items[sa:ea]:
-            data = self.datas.get(item, {'got': False})
-            out += self.build_item_full(item, data)
-        
-        return out
-    
     def gimme(self, pargs):
-
-        parse = ' '.join(pargs[1:-1])
-        self.items = []
-        self.datas = {}
+        parse = pargs[1:-1]
+        if not parse:return
+        parse = parse[0]
         
-        if '.{"' in parse and parse.endswith('}'):
-            current_id = None
-            for i in parse.split('.{"'):
-                #print(i)
-                if i.isdigit():
-                    if current_id != None and current_id not in self.items:
-                        self.items.append(current_id)
-                    
-                    current_id = i
-                
-                else:
-                    self.items.append(current_id)
-                    data = {}
-                    for k, v in json.loads('{"' + i).items():
-                        if k == 'uploader':
-                            k = 'uploader'
-                        elif k == 'tags':
-                            k = 'tags'
-                        elif k == 'folders':
-                            v = [x['url'].split(' ')[6] for x in v]
-                        
-                        data[k] = v
-                    
-                    self.datas[current_id] = data
+        self.items = []
+        data = {}
+        
+        data = json.loads(parse)
+        
+        new = {}
+        for i, d in data.items():
+            if apdfa.get(i):continue# has
+            
+            if altfa.get(i, {}).get('filedate'):
+                continue# don't overwrute actual data
+            
+            new[i] = d
+            altfa[i] = d
+        
+        if new:
+            apc_write(cfg['apd_dir'] + 'altfa', new, {}, 1)
+        
+        self.items = list(data)
         
         si = len(self.items)
         self.title = f'Data URL ({si:,} items)'
@@ -1729,7 +1765,7 @@ class eyde_user(eyde_base):
 
 
 class eyde_postmark(eyde_base):
-
+    # todo what is this, unused
     def __init__(self, items=[], marktype='postmarks', domodes=True):
         super().__init__(items, marktype, domodes)
         self.headtext = ['', '', '']
@@ -4587,6 +4623,26 @@ class post_data(post_base):
         if pargs[1] == 'posts':
             return list(apdfa)
         
+        if pargs[1] == 'postdata':
+            datsrc = apdfa
+            print(data)
+            if pargs[-1].isdigit():
+                return datsrc.get(pargs[-1], {'error': 'data not foud'})
+            
+            elif 'posts' not in data:
+                if ' ' not in pargs[-1]:
+                    return {'error': 'data list error'}
+                
+                data['posts'] = pargs[-1].split(' ')
+            print(data)
+            ret = {}
+            for i in data['posts']:
+                data = datsrc.get(i)
+                if data:
+                    ret[i] = data
+            
+            return ret
+        
         if pargs[1] in globals():
             dat = globals()[pargs[1]]
             if len(pargs) > 2 and isinstance(dat, dict):
@@ -5223,6 +5279,8 @@ if __name__ == '__main__':
         
         'altsrv': [
             ['https://www.furaffinity.net/user/{}/', 'FA Userpage']
+            ],
+        'altdatsrv': [
             ]
         })
     
@@ -5375,6 +5433,7 @@ if __name__ == '__main__':
     apdfa = {}
     apdfadesc = {}
     apdfafol = {}
+    altfa = {}
     build_entries(reload=3)
     
     httpd = ThreadedHTTPServer(
