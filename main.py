@@ -4747,6 +4747,14 @@ class fa_req_handler(BaseHTTPRequestHandler):
             self.end_headers()
             return
         
+        elif path_split[0] == 'stop':
+            b.do_head = True
+            b.do_foot = True
+            b.title = f'Server terminated'
+            b.error(self, b.title, 'Goodbye')
+            stop()
+            return
+        
         if path_split[-1].isdigit():
             path_split[-1] = int(path_split[-1])
         
@@ -5140,6 +5148,12 @@ def init_apd():
         "excludeMarked": False,
         'order': 90
     }})
+
+
+def stop():
+    logging.info('Stopping server')
+    time.sleep(2)
+    httpd.shutdown()
 
 
 if __name__ == '__main__':
