@@ -638,9 +638,6 @@ class post_base(builtin_base):
         self.post_head(handle)
         ret = self.post_logic(handle, pargs, data)
         handle.wfile.write(bytes(json.dumps(ret), 'utf-8'))
-    
-    def purge(self, strength):
-        pass
 
 
 def save_config():

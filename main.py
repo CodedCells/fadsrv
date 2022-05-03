@@ -636,7 +636,7 @@ def register_dynamic():
     for m, v in ent['builtin'].items():
         c = ''
         pagetype = v.pagetype
-        if not pagetype.startswith('builtin') and cfg['purge']:
+        if cfg['purge'] and hasattr(v, 'purge'):
             v.purge(1)
         
         icn = {'label': m, 'href': m, 'label2': ''}
