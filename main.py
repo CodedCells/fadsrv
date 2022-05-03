@@ -1394,7 +1394,7 @@ class eyde_base(builtin_base):
             all_here=True)
         
         ret += '\n<br>\n'
-        if cfg['all_marks_visible'] or not data.get('got'):
+        if cfg['all_marks_visible'] or not data.get('got', True):
             ret += mark_for('posts_unav', post)
         
         ret += mark_for('posts', post)
@@ -1438,7 +1438,7 @@ class eyde_base(builtin_base):
         
         domark = 'posts'
         if (data.get('origin') == 'alt' or
-            not data.get('got') or cfg['all_marks_visible']):
+            not data.get('got', True) or cfg['all_marks_visible']):
             domark = 'posts_unav'
         
         ret += '\n<br>\n' + mark_for(domark, post, size=40)
@@ -1489,6 +1489,9 @@ class eyde_base(builtin_base):
         ret = f'''<figure id="sid-{post}" class="r-{cla} t-image">
 <a class="t-inner" href="/view/{post}/">'''
 
+        if cfg['all_marks_visible'] or not data.get('got', True):
+            ret += overicon('posts_unav', post, con=None)
+        
         ret += overicon('posts', post, con=None)
         
         ret += self.get_file_link(post, data)
