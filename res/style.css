@@ -27,6 +27,10 @@ a.btn, .mbutton {
 	min-width: 300px;
 }
 
+.altsrv {
+	color: cyan;
+}
+
 .pagetitle {
 	display: inline-block;
 	padding: 10px 20px;
@@ -266,6 +270,10 @@ a {
 	vertical-align: text-top!important;
 }
 
+.postflex-wide .tags {
+	text-align: initial;
+}
+
 .tags a {
 	display: inline-block;
 	background: #424242;
@@ -481,7 +489,7 @@ a > i.teenyicon {
 #btnbox {
 	margin: 0 auto;
 	max-width: 500px;
-	text-align: left;
+	text-align: initial;
 }
 
 label {
@@ -500,7 +508,7 @@ label input, label .mbutton, label select {
 }
 
 .setting div:first-child {
-	text-align: left;
+	text-align: initial;
 }
 
 .setting div .niceinp{
@@ -607,6 +615,7 @@ div.menu-button-wide {
 	font-size: 10px;
 	text-decoration: none;
 	font-weight: 700;
+	min-width: 50px;
 }
 
 .t-image img {
@@ -619,6 +628,17 @@ div.menu-button-wide {
 	min-width: 100px;
 	min-height: 250px;
 	max-height: 250px;
+}
+
+.postflex-quad.r-adult {
+	color: red;
+}
+
+.postflex-quad.r-mature {
+	color: #7fffd4
+}
+
+.postflex-quad.r-general {
 }
 
 .r-adult .t-inner, .postflex.r-adult {
@@ -642,11 +662,24 @@ div.menu-button-wide {
 	-webkit-box-shadow: 2px 2px 2px #2a2a2a;
 }
 
+.postrow {
+	display: flex;
+	margin: 4px;
+	padding: 4px;
+	text-align: initial;
+}
+
+.postrow img {
+	max-height: 250px;
+	max-width: 320px;
+}
+
 .postflex {
 	display: inline-block;
 	margin: 4px;
 	padding: 4px;
 	min-width: 334px;
+	vertical-align: top;
 }
 
 .postflex-wide {
@@ -662,13 +695,24 @@ div.menu-button-wide {
 }
 
 .postflex-wide:first-child {
-	font-size: 18px
+	font-size: 18px;
 	line-height: 22px;
 	font-weight: 600;
 }
 
+.postflex-col {
+	display: inline-block;
+	vertical-align: top;
+	flex-direction: column;
+}
+.postflex-col .postflex-quad {
+	margin: 10px 0;
+	display: block;
+}
+
 .postflex-quad {
 	display: inline-block;
+	text-align: center;
 	min-width: 80px;
 	flex-grow: 4;
 	font-size: 20px;
