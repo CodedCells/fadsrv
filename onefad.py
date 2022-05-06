@@ -77,6 +77,7 @@ def crude_json(d):
     elif '\\' in d:pass
     elif d.startswith('"') and d.endswith('"'):return d[1:-1]
     elif d == '[]':return []
+    elif d == '{}':return {}
     
     return json.loads(d)
 
