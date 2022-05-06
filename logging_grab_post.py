@@ -377,19 +377,18 @@ def has_post(post, ext):
     
     for n, k in post_stores:
         if post in post_store[k]:
+            src  = data_path(post, 'post_store', k, fmt=ext)
+            if not os.path.isfile(src):
+                logging.warning(f'{post} was not in store {k}')
+                continue
+            
             if n == 0:
                 return 'already'
             
-            else:
-                src  = data_path(post, 'post_store', k, fmt=ext)
-                if not os.path.isfile(src):
-                    logging.warning(f'{post} was not in store {k}')
-                    continue
-                
-                logging.info(f'COPYIMG {post} (from {k})')
-                dst = data_path(post, 'post_store', main_post, fmt=ext)
-                shutil.copyfile(src, dst)
-                return 'added'
+            logging.info(f'COPYIMG {post} (from {k})')
+            dst = data_path(post, 'post_store', main_post, fmt=ext)
+            shutil.copyfile(src, dst)
+            return 'added'
     
     # check directories for unlisted files
     for n, k in post_stores:
