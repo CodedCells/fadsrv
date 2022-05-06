@@ -626,9 +626,9 @@ def squash_more():
     elif mode == 'single' or mode == None:
         files = os.listdir(main_post)
     
-    logging.info('{:,} files'.format(len(files)))
+    logging.info(f'{len(files):,} local files')
     com = set(os.listdir('ncomp'))
-    print('{:,} compressed'.format(len(com)))
+    logging.info(f'{len(com):,} compressed')
     
     fl = cfg["squash_server"] + 'data/filelist'
     if not os.path.isfile(fl):
@@ -637,11 +637,10 @@ def squash_more():
     
     rem = set(apc_read(fl).keys())
     
-    print('{:,} remote'.format(len(rem)))
+    logging.info(f'{len(rem):,} remote')
     
-    print(' ')
     copyf = what_to_copy()
-    print('Pinging')
+    logging.info('Pinging')
     tell_unpack()
 
 
