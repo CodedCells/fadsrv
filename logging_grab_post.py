@@ -189,7 +189,7 @@ def check_post(post, where):
     mt = 'download'
     if 'class="download"><a href="' in data:
         fp = get_prop('class="download"><a href="', data)
-
+    
     elif 'data-fullview-src="' in data:
         fp = get_prop('data-fullview-src="', data)
         mt = 'fullview'
@@ -204,6 +204,7 @@ def check_post(post, where):
         os.makedirs(fd)
     
     hd = has_post(post, '{}.' + fp.split('.')[-1])
+    
     if hd == 'no':
         logging.info(f'get img {post}')
         sg = sget('http:' + fp)
