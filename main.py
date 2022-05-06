@@ -4376,22 +4376,24 @@ class builtin_pack(builtin_base):
 
 
 def serve_image(handle, path):
+    if '.' not in path:path += '.'
     ext = path.split('.')[-1]
     
+    fp = path
     if cfg['post_split']:
-        d = cfg['image_dir']
+        d = cfg['media_dir']
         if path.startswith(d):
             fid = get_prop('/', path, '.', -1)
             
             if fid.isdigit():
-                path = path.replace(d, d + f'{int(fid[-2:]):02d}/')
+                fp = path.replace(d, d + f'{int(fid[-2:]):02d}/')
     
-    if len(path) > 2 and os.path.isfile(path) and is_safe_path(path):
+    if fp and os.path.isfile(fp) and is_safe_path(fp):
         handle.send_response(200)
         handle.send_header('Content-type', ctl.get(ext, 'text/plain'))
         handle.end_headers()
 
-        handle.wfile.write(safe_readfile(path, mode='rb'))
+        handle.wfile.write(safe_readfile(fp, mode='rb'))
     
     elif ext != 'jpg':
         serve_image(handle, path.replace('.' + ext, '.jpg'))
