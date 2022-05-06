@@ -629,7 +629,14 @@ def squash_more():
     logging.info('{:,} files'.format(len(files)))
     com = set(os.listdir('ncomp'))
     print('{:,} compressed'.format(len(com)))
-    rem = set(apc_read(cfg["squash_server"] + 'filelist').keys())
+    
+    fl = cfg["squash_server"] + 'data/filelist'
+    if not os.path.isfile(fl):
+        logging.warning(f'Can\'t find filelist at {fl}')
+        return
+    
+    rem = set(apc_read(fl).keys())
+    
     print('{:,} remote'.format(len(rem)))
     
     print(' ')
