@@ -667,7 +667,7 @@ if __name__ == '__main__':
     
     logging.info('Done!')
     
-    poke_servers()
-    
     if cfg['squash_server']:
         squash_more()
+    
+    poke_servers()
