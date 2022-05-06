@@ -82,6 +82,18 @@ def crude_json(d):
     return json.loads(d)
 
 
+def crude_json_out(d):
+    if isinstance(d, int):return str(d)
+    if d:return json.dumps(d, ensure_ascii=False)
+    
+    if isinstance(d, dict):
+        return '{}'
+    elif isinstance(d, list) or isinstance(d, tuple) or isinstance(d, set):
+        return '[]'
+    
+    return json.dumps(d, ensure_ascii=False)
+
+
 def prepare_apd(filename, encoding='utf8'):
     
     if not os.path.isfile(filename):
@@ -233,7 +245,7 @@ def apc_write(
             if k not in existing:
                 out += '\n{}\t{}'.format(
                     k,
-                    json.dumps(i, ensure_ascii=False))
+                    crude_json_out(i))
         
         elif depth == 2:
             any_post = k in existing
@@ -241,7 +253,7 @@ def apc_write(
                 #if any_post and t in has[k]:continue
                 out += '\n{}\t{}\t{}'.format(
                     k, t,
-                    json.dumps(v, ensure_ascii=False))
+                    crude_json_out(v))
         
         if line % 1000 == 0 and len(out) > 0:
             fileno = bigapd_writer_block(filename, line, fileno, out,
