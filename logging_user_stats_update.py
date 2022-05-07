@@ -142,6 +142,7 @@ def userinfostate(user, force=True):
     u = 'https://www.furaffinity.net/{}/{}/'
     urlser = user.replace('_', '')
     h = 'userstats/h/{}_{}.html'
+    
     p, a = cache(
         u.format('user', urlser),
         h.format('user', user),
@@ -183,15 +184,14 @@ def userinfostate(user, force=True):
     if posts > 0:
         
         last_date = datetime(2000, 1, 1)
-    
-        upbox = 'uploaded: <span class="preview_date"><span title="'
+        
+        upbox = 'uploaded: <span class="preview_date">'
         last_id = -1
         last_id_scrap = -1
         
         if upbox in p:
             last_id = int(get_prop('View Gallery', p, t='/"><').split('/')[-1])
-            last_date = fa_datebox(get_prop(upbox, p, t='</strong>'))
-            last_date = strdate(last_date)
+            last_date = get_prop(upbox, p, '</span')
         
         p, a = cache(
             u.format('scraps', urlser),
@@ -214,9 +214,10 @@ def userinfostate(user, force=True):
                     force)
                 asked = asked or a
             
-            last_date = get_prop('popup_date">', p, t='</')
-            # MMM DDth, CCYY hh:mm AM
-            last_date = strdate(last_date)
+            last_date = get_prop('<span class="hideonmobile">posted </span>', p, t='</strong')
+        
+        last_date = fa_datebox(last_date)
+        last_date = strdate(last_date)
         
         info['lastPostID'] = last_id
         info['lastPostDate'] = last_date.isoformat()
