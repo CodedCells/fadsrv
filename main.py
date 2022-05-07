@@ -559,11 +559,12 @@ def load_text_attach():
         "values": ["textattach"],
         "excludeMarked": False,
         "order": 200,
-        "apdm": "textattach",
         "disabled": True,
         "hidden": True
         }
-    dprefm['textattach'] = apdmm['textattach']
+    
+    if 'textattach' not in ent['apdmark']:
+        ent['apdmark'].append('textattach')
     
     apdm['textattach'] = {}
     tadir = cfg['image_dir'] + '_ta/'
@@ -597,7 +598,6 @@ def load_text_attach():
         attach = {}
     
     ent['_attach'] = attach
-    dpref['textattach'] = attach
     apdm['textattach'] = {x: ['textattach', 0] for x in attach}
 
 
@@ -951,7 +951,7 @@ class mark_button(object):
     
     def build_for(self, thing, state=None, size=60):
         
-        if self.data.get('hidden'):
+        if self.data.get('hidden') and not cfg.get('show_hidden_marks'):
             return '', ''
         
         state = mark_state(self.mark, thing)
@@ -1315,7 +1315,7 @@ class eyde_base(builtin_base):
     def get_file_link(self, post, data):
         fn = f'{post}.' + data.get('ext', 'png')
         
-        link = f"/i/{cfg['image_dir']}{fn}"
+        link = f"/i/{fn}"
         if cfg['remote_images'] != '':# do remote link
             link = cfg['remote_images'].format(fn)
         
@@ -1337,11 +1337,11 @@ class eyde_base(builtin_base):
         if post in ent['_attach']:
             ta = ent['_attach'][post]
             
-            ret += strings['eyde_link_ta'].format(
-                ta.get('words'), ta.get('filename'))
+            ret += f'<p><a href="/textattach/{ta.get("filename")}" target="_blank">'
+            ret += f'View Attached Document, {ta.get("words"):}</a></p>\n'
         
-        desc = apdfadesc.get(post, None)
-        if desc != None:
+        desc = apdfadesc.get(post)
+        if desc:
             desc_word_count = data.get('descwc', -1)
             
             if desc_word_count > cfg['collapse_desclength']:
@@ -1462,7 +1462,7 @@ class eyde_base(builtin_base):
             if not compare_for(d, 'posts'):
                 continue
             
-            if d.get('disabled') or d.get('hidden'):
+            if d.get('hidden') and not cfg.get('show_hidden_marks'):
                 continue
             
             mtype = d.get('type')
@@ -2777,7 +2777,7 @@ hide_empty: {self.hide_empty}\n-->'''
             mdata = data
         
         f = pick_thumb(mdata)
-        l = f'/t/{cfg["image_dir"]}{f}'
+        l = f'/t/{f}'
         if cfg['remote_images'] != '':
             l = cfg['remote_images'].format(f)
         
@@ -4400,66 +4400,98 @@ class builtin_pack(builtin_base):
         handle.wfile.write(bytes(htmlout, cfg['encoding_serve']))
 
 
-def serve_image(handle, path):
+def post_path(fp):
+    if cfg.get('post_split', True):
+        fid = fp.split('.')[0]
+        
+        if fid.isdigit():
+            fp = f'{int(fid[-2:]):02d}/' + fp
+    
+    return cfg['image_dir'] + fp
+
+
+def serve_image(handle, path, head=True):
     if '.' not in path:path += '.'
     ext = path.split('.')[-1]
     
-    fp = path
-    if cfg['post_split']:
-        d = cfg['media_dir']
-        if path.startswith(d):
-            fid = get_prop('/', path, '.', -1)
-            
-            if fid.isdigit():
-                fp = path.replace(d, d + f'{int(fid[-2:]):02d}/')
+    fp = post_path(path.split('/')[-1])
     
-    if fp and os.path.isfile(fp) and is_safe_path(fp):
-        handle.send_response(200)
-        handle.send_header('Content-type', ctl.get(ext, 'text/plain'))
-        handle.end_headers()
-
+    if fp and os.path.isfile(fp):
+        if head:
+            handle.send_response(200)
+            handle.send_header('Content-type', ctl.get(ext, 'text/plain'))
+            handle.send_header('Cache-Control', 'max-age=3600, must-revalidate')
+            handle.end_headers()
         handle.wfile.write(safe_readfile(fp, mode='rb'))
     
     elif ext != 'jpg':
-        serve_image(handle, path.replace('.' + ext, '.jpg'))
+        serve_image(handle, path.replace('.' + ext, '.jpg'), head=head)
     
     else:
+        logging.warning(f'File missing: {path}')
         serve_resource(handle, 'parrot.svg', code=404)
 
 
-class builtin_textattach(builtin_base):
+class builtin_reader(builtin_base):
+
+    def __init__(self, title='Reader', icon=33):
+        super().__init__(title, icon)
     
-    def __init__(self, title='', link='', icon=ii(99), pages=False):
-        super().__init__(title, link, icon, pages)
+    def post_path(self, path):
+        return post_path(path)
     
-    def serve(self, handle, path, head=True, foot=True):
-        path += ['', '']
+    def find_file(self, handle, path):
+        if len(path) < 2 or not path[1]:
+            self.write(handle, 'Specify a file.')
+            return
+        
+        path = path[1]
+        if '.' not in path:path += '.'
+        
+        fp = self.post_path(path)
+        
+        if not os.path.isfile(fp):
+            self.write(handle, 'File not found.')
+            return
+        
+        return fp
+    
+    def page(self, handle, path):
+        h = '<div class="container list">\n'
+        h += '<div class="talking">\n<p>'
+        self.write(handle, h)
+        
+        fp = self.find_file(handle, path)
+        if fp:
+            h = readfile(fp, mode='rb')
+            h = h.replace(b'\n', b'</p>\n<p>')
+            handle.wfile.write(h)
+        
+        h = '</p>\n</div>'
+        h += '</div>\n<div class="foot">\n'
+        self.write(handle, h)
+
+
+class builtin_textattach(builtin_reader):
+
+    def __init__(self, title='Text Attach', icon=99):
+        super().__init__(title, icon)
+    
+    def post_path(self, path):
+        return 'im/_ta/' + path
+    
+    def page(self, handle, path):
         name = path[1].split('.')[0]
         if not name:
             name = 'No Data'
         
         self.title = name
-        self.head(handle)
-        h = f'<div class="head"><h2 class="pagetitle">{name}</h2></div>'
         
         if name.isdigit():
-            h += mark_for('posts', name, wrap=True)
+            self.write(handle,
+                       mark_for('posts', name, wrap=True))
         
-        h += '<div class="container list"><div class="talking">\n'
-        
-        handle.wfile.write(bytes(h, cfg['encoding_serve']))
-        
-        spath = 'im/_ta/' + path[1]
-        if len(spath) > 2 and os.path.isfile(spath) and is_safe_path(spath):
-            h = readfile(spath, mode='rb')
-            h = h.replace(b'\n', b'<br>\n')
-            handle.wfile.write(h)
-        
-        else:
-            handle.wfile.write(b'File not found.')
-        
-        handle.wfile.write(b'<br></div></div>')
-        self.foot(handle)
+        super().page(handle, path)
 
 
 class post_search(post_base):
@@ -5281,7 +5313,6 @@ if __name__ == '__main__':
 'cfg.ent.butt_state.name': 'Butt State',
 'cfg.ent.butt_state.label': 'Joke option, set to your preference I guess',
 
-'eyde_link_ta': '<br>\nAttached document: {:,} words <a href="/textattach/{}" target="_blank">Click here to open in new tab</a><br>\n',
 'eyde_post_title': '<a class="title" href="/view/{0}/1"><h2>{1}</h2></a>\n<a href="https://www.furaffinity.net/view/{0}/">view fa</a><br>\n',
 'link_tf': '<a href="/filter/{}:{}/1">{}</a>:',
 'stripeytablehead': '<table class="stripy">\n<tr>\n\t<td colspan={}>{}</td>\n</tr>\n',
