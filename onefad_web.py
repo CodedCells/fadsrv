@@ -471,7 +471,7 @@ var t = setTimeout(function(){window.location.reload(1);}, 5000);
     
     @staticmethod
     def page(handle, path):
-        handle.wfile.write(b'Sphinx of black quartz, judge my vow\n<br>\n')
+        handle.wfile.write(b'<p>Sphinx of black quartz, judge my vow.</p>\n')
     
     def menu_ele(self, handle, path):
         self.optiondoc(handle, path)
