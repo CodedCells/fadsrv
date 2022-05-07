@@ -478,9 +478,9 @@ var t = setTimeout(function(){window.location.reload(1);}, 5000);
         self.optiondoc(handle, path)
         
         p = self.do_menu_name
-        d = path + [cfg['homepage_menu']]
+        d = path + [cfg.get('homepage_menu')]
         
-        if not p:p = cfg['dropdown_menu']
+        if not p:p = cfg.get('dropdown_menu')
         if d[0] != p:
             self.popdown(handle, p)
     
