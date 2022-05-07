@@ -1302,12 +1302,15 @@ class eyde_base(builtin_base):
     def place_file(self, ext, link, srcbytes, prop='', dolinks=True):
         cat = file_category(ext)
         if cat == 'image':
-            return f'<img loading="lazy" src="{link}"{prop}/>'
+            return f'<img loading="lazy" src="{link}"{prop}/>\n'
         
-        ret = f'{ext} file'
+        ret = f'<p>{ext.upper()} file'
         if ext == 'txt':
             apwc = int(srcbytes / 6.5)# dumb word count
-            ret += wrapme(apwc, f=' Approx {:,} words, ')
+            ret += wrapme(apwc, f=' Approx {:,} words')
+            link = link.replace('i/im', 'reader')
+        
+        ret += '</p>\n'
         
         if dolinks:
             ret += f'<a href="{link}" target="_blank">Click here to open in new tab</a>'
