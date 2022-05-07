@@ -1974,14 +1974,14 @@ class eyde_filter(eyde_base):
         
         self.page_options += [
             ['@unavilable'],
-            ['@unmarked', '@marked'],
+            ['@all', '@unmarked', '@marked'],
             ['@reversed']
             ]
     
     def filter_widget(self, itype, nameid, label, values, state):
         h = ''
         if isinstance(label, str):label = [label]
-        if label[0] != '':
+        if label[0]:
             h += f'<label for="ctx{nameid}">{label[0]}</label>\n'
         
         if itype == 'text':
@@ -1995,7 +1995,12 @@ class eyde_filter(eyde_base):
             h += '</select>\n'
         
         elif itype == 'checkbox':
-            h += '<input type="checkbox" name="ctx{0}" id="ctx{0}"{1} />\n'.format(nameid, ['', ' checked'][state])
+            check = ['', ' checked'][state]
+            h += f'<input type="checkbox" name="ctx{nameid}" id="ctx{nameid}"{check} />\n'
+        
+        elif itype == 'radio':
+            check = ['', ' checked'][state]
+            h += f'<input type="radio" name="ctx{label[2]}" id="ctx{nameid}"{check} />\n'
         
         else:
             pass
@@ -2128,25 +2133,42 @@ class eyde_filter(eyde_base):
     
     def filter_widgets(self, pbar, p_or, p_and, p_not, p_arg):
         
-        h = '<div class="abox" id="filterParams">\n'
+        h = '<div class="filterContainer" id="filterParams">\n'
         h += '<h3>Filter Options</h3>\n'
         
         h += self.filter_widget('text', 'Pargs', '', [], pbar)
-
+        
+        h += '<div class="filterWidgets">\n'
         h += '<div class="filterTab">\n'
         a = [''.join(x) for x in p_arg]
-        for k in ['Reversed', 'Unmarked', 'Marked', 'Unavailable', 'Descpost']:
-            h += self.filter_widget('checkbox', k, ['', k], [], '@'+k.lower() in a)
+        
+        state = 'All'
+        for k in ['All', 'Unmarked', 'Marked']:
+            if '@'+k.lower() in a:
+                state = k
+        
+        for k in ['All', 'Unmarked', 'Marked']:
+            h += self.filter_widget(
+                'radio', k, ['', k, 'markstate'], [], k==state)
+        
+        h += '</div>\n<div class="filterTab">\n'
+        
+        for k in ['Unavailable', 'Descpost']:
+            h += self.filter_widget(
+                'checkbox', k, ['', k], [], '@'+k.lower() in a)
         
         h += '</div>\n<div class="filterTab">\n'
         h += self.filter_widget(
-            'select', 'Sort', 'Sort by:',
+            'select', 'Sort', 'Sort:',
             self.f_sorts,
             self.f_sort)
+        k = 'Reversed'
+        h += self.filter_widget(
+            'checkbox', k, ['', k], [], '@'+k.lower() in a)
         
         h += '</div>\n<div class="filterTab">\n'
         h += '<button class="mbutton " onclick="filterGo()">Filter</button>\n'
-        h += '</div>\n</div>\n<br>\n'
+        h += '</div>\n</div>\n</div>\n<br>\n'
         return h
     
     def gimme(self, pargs):
@@ -2196,6 +2218,7 @@ class eyde_filter(eyde_base):
             m, t, b = p_and, 0, True
             if p in [
                 '@unavailable',
+                '@all',
                 '@unmarked',
                 '@marked',
                 '@reversed',

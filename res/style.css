@@ -42,10 +42,12 @@ a.btn, .mbutton {
 	user-select: none;
 	font-size: initial;
 }
-.abox div {
+
+.floatingmark div {
     display: inline-block;
     vertical-align: bottom;
 }
+
 .btn.abox {
 	padding: 6px;
 	margin: 10px;
@@ -57,7 +59,7 @@ a.btn, .mbutton {
 	display: inline-block;
     vertical-align: bottom;
 	
-	padding: 6px;
+	padding: 12px;
 	margin: 10px;
 	
 	margin-bottom: 15px;
@@ -149,7 +151,7 @@ a {
 
 .pageinner {
 	min-width: 100%;
-	min-height: 100%;
+	min-height: 60vh;
 }
 
 .container {
@@ -725,23 +727,30 @@ div.menu-button-wide {
 	font-weight: initial;
 }
 
-#filterParams {
-    display: inline-block;
+.filterContainer {
+	display: inline-block;
     min-width: calc(50vw - 140px);
     text-align: initial;
 }
 
-#filterParams h3, #filterParams .widebar {
+.filterContainer h3, .filterContainer .widebar {
 	margin: 5px 0;
 }
 
-#filterParams div {
-	width: 32%;
-    vertical-align: top;
+.filterWidgets {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	justify-content: space-between;
 }
 
-#filterParams .mbutton {
+.filterTab .mbutton {
 	float: right;
+}
+
+.filterTab {
+	text-align: initial;
+	vertical-align: middle;
 }
 
 .lds-ring {

@@ -465,23 +465,28 @@ function aprefBack() {// why didn't i comment this
 }
 
 function processFilterElement(e) {
-    if (e.classList.contains("filterTab")){
-         return processFilterChildren(e);
+    if (e.classList.contains("filterTab") || e.classList.contains("filterWidgets")){
+        return processFilterChildren(e);
     }
     else if (e.tagName == "SELECT") {
-        n = e.name.substr(3);
+        n = e.id.substr(3);
         return [n + ":" + e.value];
     }
     else if (e.tagName == "INPUT") {
-        n = e.name.substr(3);
+        n = e.id.substr(3);
         if (e.type == "checkbox") {
+            if (e.checked)
+                return ["@" + n];
+        }
+		
+        else if (e.type == "radio") {
             if (e.checked)
                 return ["@" + n];
         }
         
         else if (e.type == "text") {
             if (e.value.length > 0)
-                return [e.value];
+                return [e.value.trim()];
         }
     }
     
