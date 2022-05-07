@@ -885,3 +885,13 @@ code.logERROR {
 	min-width: 250px;
 	flex-grow: 1;
 }
+
+.iconusername {
+	min-height: 50px;
+}
+
+.iconusername img {
+	color: transparent;
+	max-height: 50px;
+    max-width: 50px;
+}
