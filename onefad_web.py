@@ -447,9 +447,10 @@ var t = setTimeout(function(){window.location.reload(1);}, 5000);
         dur = self.metric_stop()
         h = ''
         
-        if self.do_rebut:
+        butts = ent.get('reentry_buttons', [])
+        if self.do_rebut and butts:
             h += '<span>'
-            for clas, func, text in ent['reentry_buttons']:
+            for clas, func, text in butts:
                 h +=  f'<a class="btn{clas}" onclick="postReload(this, \'/{func}\')">{text}</a>\n'
             
             h += '</span>'
