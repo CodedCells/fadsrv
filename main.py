@@ -3205,29 +3205,25 @@ class mort_postamark(mort_amark):
         self.pagetype = 'remort_postmark'
     
     def get_items(self):
-        userc = {}
+        datas = {}
         for file in dpref.get(self.val, []):
             if file not in ent['_posts'] or apdfa.get(file, {}).get('data') == 'deleted':
                 continue
             
             user = apdfa[file]['uploader'].replace('_', '')
-            if user in userc:userc[user] += 1
-            else:userc[user] = 1
+            if user not in datas:datas[user] = []
+            datas[user].append(file)
         
-        items = sorted(userc.items(), key=itemgetter(1), reverse=False)
-        return items
+        items = [(k, i) for i, k in sorted([(len(i), k) for k, i in datas.items()])]
+        return items, datas
         
     def gimme(self, pargs):
-        if not self.items:
-            self.items = self.get_items()
+        if not self.items or not self.datas:
+            self.items, self.datas = self.get_items()
         
-        self.datas = users
-        
+        self.link = f'/filter/@{self.val} user:{{}}/1'
         if 'uploader' in str(pargs[1]):
             self.link = '/user/{}/1'
-        
-        else:
-            self.link = f'/filter/@{self.val} user:{{}}/1'
         
         for i in self.items:
             if i[0] not in self.datas:
@@ -3343,7 +3339,7 @@ class mort_addedpost(mort_base):
     def gimme_idc(self):
         self.datas = users
         tusers = [(d, a) for a, d in users_mod.items()]
-        self.items = [(a, d) for d, a in sorted(tusers)]
+        self.items = [(a, trim_date(d*1000)) for d, a in sorted(tusers)]
 
 
 class mort_review(mort_base):
