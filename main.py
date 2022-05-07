@@ -2,9 +2,10 @@
 # pep8 non-compliant :(
 
 from onefad_functions import *
+from tasker import *
 import requests
 
-ent['version'] = '31#2022-05-06'
+ent['version'] = '31#2022-05-06+TASKER'
 
 class builtin_base(builtin_base):
     
@@ -776,6 +777,10 @@ def build_entries(reload=0):
         loadpages()
     
     save_config()
+    
+    find_avialble_tasks()
+    check_running_tasks()
+    find_runningg_tasks()
     
     apdm_divy()
     markedposts()
@@ -5329,6 +5334,10 @@ if __name__ == '__main__':
         'collapse_desclength': 250,# collapse descriptions longer than this
         "collapse_linkylength": 10,
         
+        'task_dir': 'tasks/',
+        'log_dirs': ['log/'],
+        'display_lines': 500,
+        
         'allow_data': True,# external data access
         'show_unparsed': False,
         'static': False,# disable changing values
@@ -5440,6 +5449,11 @@ if __name__ == '__main__':
         'menu_file': 'fadmenus.json',
         'strings_file': 'fadstrings.txt',
         
+        'tasks': {},
+        'log_data': {},
+        'task_logs': {},
+        'log_by_id': {},
+        
         'force_datasort': True,
         'resources': [
             'style.css',
@@ -5447,7 +5461,8 @@ if __name__ == '__main__':
             'icons.svg',
             'mark.js',
             'client.js',
-            'chart.js'
+            'chart.js',
+            'logger.js',
             ],
         
         '_kwd': {},
@@ -5478,7 +5493,8 @@ if __name__ == '__main__':
             '_apref': post_apref(),
             '_flag': post__flag(),
             'data': post_data(),
-            'profiles': post_profiles()
+            'profiles': post_profiles(),
+            'logupdate': post_logupdate()
             }
     })
     
