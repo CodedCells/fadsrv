@@ -91,7 +91,7 @@ class mark_button(object):
         self.action = action
     
     def disabled(self):
-        return self.data.get('disabled', False) or cfg['static']
+        return self.data.get('disabled', False) or cfg.get('static')
     
     def pick_action(self):
         
@@ -455,11 +455,11 @@ var t = setTimeout(function(){window.location.reload(1);}, 5000);
             h += '</span>'
             h += '<div id="rebuildLoad" class="lds-ring hide"><div></div><div></div><div></div><div></div></div>'
         
-        srvname = cfg['server_name']
+        srvname = cfg.get('server_name')
         if type(srvname) != str or not srvname:
             srvname = 'FADSRV'
         
-        h += f'\n<p>{srvname} build#{ent["version"]}'
+        h += f'\n<p>{srvname} build#{ent.get("version", "unknown")}'
         
         if self.do_time:
             h += f' - Served in {wrapme(dur)}ms'
@@ -584,7 +584,7 @@ class builtin_config(builtin_base):
         
         handle.wfile.write(b'<div class="container">\n')
         
-        self.mode = globals()[self.name]
+        self.mode = globals().get(self.name, {})
         cfgsub = 'cfg.'
         if self.name != 'cfg':
             cfgsub += f'{self.name}.'
@@ -613,7 +613,7 @@ class builtin_config(builtin_base):
                     inner += f'<div>\n<p>Unrepresentable type: {inptype.__name__}'
                     if inptype in [dict, list, set]:
                         inner += f'<br>Contains {len(v):,} items'
-                    if cfg['allow_data']:
+                    if cfg.get('allow_data'):
                         inner += f'<br><a href=/data/{self.name}/{k}>View as data</a>'
                     inner += '</p>\n</div>'
             
@@ -679,7 +679,7 @@ def save_config():
         logging.warning('Preventing accidental config loss, please fix config file.')
         return
     
-    dd = cfg['apd_dir']
+    dd = cfg.get('apd_dir', 'data/')
     
     if ent.get('config_file'):
         user_friendly_dict_saver(
@@ -717,7 +717,7 @@ class post__flag(post_base):
         if cfg.get('static_cfg'):
             return {'status': 'Server set to Static for cfg'}
         
-        dd = cfg['apd_dir']
+        dd = cfg.get('apd_dir', 'data/')
         ret = {}
         
         flag = pargs[1]
