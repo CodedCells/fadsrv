@@ -1,7 +1,8 @@
 from onefad_web import *
 from uuid import uuid4
 
-ent['version'] = 7
+ent['version'] = 8
+ent['internal_name'] = 'tasker'
 
 def register_page(k, kind):
     global ent
@@ -73,8 +74,9 @@ class log_filter(object):
 
 class builtin_logs(builtin_base):
     
-    def __init__(self, title='Logs', link='/logs', icon=ii(22), pages=False):
-        super().__init__(title, link, icon, pages)
+    def __init__(self, title='Logs', icon=22):
+        super().__init__(title, icon)
+        self.pagetype = 'builtin_tasker'
     
     def taskpage(self, handle, path):
         pid = path[1]
@@ -252,8 +254,9 @@ class builtin_logs(builtin_base):
 
 class builtin_run(builtin_logs):
     
-    def __init__(self, title='Run', link='/run', icon=ii(11), pages=False):
-        super().__init__(title, link, icon, pages)
+    def __init__(self, title='Run', icon=11):
+        super().__init__(title, icon)
+        self.pagetype = 'builtin_tasker'
     
     def taskpage(self, handle, path):
         if path[1] not in ent['tasks']:
@@ -309,7 +312,7 @@ class builtin_run(builtin_logs):
         htmlout += '<div class="container list">\n'
         self.write(handle, htmlout)
         
-        if path[1] != 'all' and not path[1].isdigit():
+        if len(path) > 1 and path[1] != 'all' and not path[1].isdigit():
             self.taskpage(handle, path)
             return
         
@@ -340,34 +343,65 @@ def register_pages():
 
 
 def create_menus():
-    menus['remort_buttons'] = []
+    
+    if 'all_pages' not in menus['pages']:
+        menus['pages']['all_pages'] = {
+            "title": "All Pages",
+            "mode": "wide-icons-flat",
+            "buttons": "all_pages_buttons",
+            "icon": [9, 9]
+            }
+    
+    menus['all_pages_buttons'] = []
+    rbcat = {}
+    
+    for m, c in list(ent['builtin'].items()):
+        if type(c) == builtin_menu:
+            del ent['builtin'][m]
     
     for m in menus['pages']:
-        if m not in ent['builtin']:
-            ent['builtin'][m] = builtin_menu(which=m)
+        ent['builtin'][m] = builtin_menu(which=m)
     
     for m, v in ent['builtin'].items():
-        icn = {'label': m, 'href': m, 'label2': ''}
+        c = ''
         pagetype = v.pagetype
-        if pagetype.startswith('builtin'):
-            c = 'builtin'
-            icn['label2'] = 'builtin'
-            if '_' in pagetype:
-                icn['label2'] = pagetype.split('_')[-1]
-            
+        if cfg.get('purge') and hasattr(v, 'purge'):
+            v.purge(1)
+        
+        icn = {'label': m, 'href': m, 'label2': ''}
+        sorter = '_' + m
+        c = pagetype.replace('_', ' ')
+        if pagetype.startswith('remort'):
+            if hasattr(v, 'marktype'):
+                icn['label2'] = v.marktype
+        
+        elif pagetype == 'pages':
+            icn['label'] = v.title
+        
+        elif pagetype.startswith('builtin'):
             if v.pages:
-                icn['label2'] += ' pages'
+                icn['label2'] = ' pages'
+            
             else:
                 icn['href'] = '/'+icn['href']
         
-        if c and '_' in pagetype:
-            c += ' ' + pagetype.split('_')[-1]
-        
-        if icn['label2'] != '':
-            icn['label'] = f"<b>{icn['label']}</b><br><i>{icn['label2']}</i>"
+        if icn['label'] == icn['label2']:
             del icn['label2']
         
-        menus['remort_buttons'].append(icn)
+        elif icn['label2'] != '':
+            icn['label'] = f"<b>{icn['label']}</b><br><i>{icn['label2']}</i>"
+            sorter = icn['label2'] + m
+            del icn['label2']
+        
+        if c not in rbcat:
+            rbcat[c] = []
+        
+        rbcat[c].append((sorter, icn))
+    
+    for c, d in rbcat.items():
+        if not d:continue
+        menus['all_pages_buttons'].append({'type': 'section', 'label': c.title()})
+        menus['all_pages_buttons'] += [icn for m, icn in sorted(d)]
 
 
 def config_save():
@@ -378,7 +412,7 @@ def config_save():
     user_friendly_dict_saver(
         cfg['apd_dir'] + 'taskermenus.json',
         menus,
-        ignore_keys=['remort_buttons', 'page_buttons'])
+        ignore_keys=['all_pages_buttons', 'page_buttons'])
 
 
 def group_flush(kind):
@@ -555,24 +589,25 @@ def big_action_list_time(reload=0):
     start = time.perf_counter()
     ent['built_at'] = datetime.now()
     
-    load_global('cfg', 'taskeroptions.json')
-    load_global('menus', 'taskermenus.json')
-    config_save()
+    ent['building_entries'] = True
     
-    create_menus()
+    read_config()
     register_pages()
+    create_menus()
+    save_config()
     
     find_avialble_tasks()
     check_running_tasks()
     find_runningg_tasks()
     
     logging.info(f'Done in {time.perf_counter() - start}')
+    ent['building_entries'] = False
 
 
 class post_logupdate(post_base):
     
-    def __init__(self, title='', link='/_logupdate', icon=ii(99), pages=False):
-        super().__init__(title, link, icon, pages)
+    def __init__(self, title='', icon=99):
+        super().__init__(title, icon)
     
     def post_logic(self, handle, pargs, data):
         ret = {'output': []}
@@ -627,16 +662,17 @@ class fa_req_handler(BaseHTTPRequestHandler):
             return
         
         b = builtin_base()
+        target = ent['builtin'].get(path_split[0])
         
-        if ent['builtin'].get(path_split[0], b).pages is False:
-            ent['builtin'][path_split[0]].serve(self, path_split)
+        if target and target.pages is False:
+            target.serve(self, path_split)
             return
         
         elif path_split == ['']:
             home = ent['builtin'].get(cfg['homepage_menu'])
             
             if home is None:
-                home = ent['builtin'].get('remort', b)
+                home = ent['builtin']['users']
             
             home.serve(self, path_split)
             return
@@ -646,6 +682,14 @@ class fa_req_handler(BaseHTTPRequestHandler):
             self.send_response(307)
             self.send_header('Location', '/')
             self.end_headers()
+            return
+        
+        elif path_split[0] == 'stop':
+            b.do_head = True
+            b.do_foot = True
+            b.title = f'Server terminated'
+            b.error(self, b.title, 'Goodbye')
+            stop()
             return
         
         if path_split[-1].isdigit():
@@ -665,8 +709,8 @@ class fa_req_handler(BaseHTTPRequestHandler):
             b.building_entries(self)
             return
         
-        elif path_split[0] in ent['builtin']:
-            ent['builtin'][path_split[0]].serve(self, path_split)
+        elif target:
+            target.serve(self, path_split)
             return
 
         b.do_head = True
@@ -710,16 +754,24 @@ class fa_req_handler(BaseHTTPRequestHandler):
         return
 
 
+def stop():
+    logging.info('Stopping server')
+    time.sleep(2)
+    httpd.shutdown()
+
+
 if __name__ == '__main__':
     code_path = os.path.dirname(__file__)
-    init_logger('tasker', disp=':' in code_path, level=logging.INFO)
-    
     os.chdir(code_path)
+    
+    name = ent.get('internal_name', '')
+    if len(name) < 4:name += 'srv'
+    init_logger(name, disp=':' in code_path, level=logging.INFO)
     
     load_global('cfg', {
         'developer': False,
         
-        'server_name': 'TASKER',
+        'server_name': name,
         'server_addr': '127.0.0.1',
         'server_port': 6979,
         
@@ -736,8 +788,6 @@ if __name__ == '__main__':
         'allow_data': False,
         })
     
-    load_global('cfg', 'taskeroptions.json')
-    
     load_global('menus', {
         'pages': {
             "menu": {
@@ -748,23 +798,11 @@ if __name__ == '__main__':
                 },
             },
         'menu_buttons': [
-            { "label": "remort", "href": "/remort" },
-            { "label": "Run", "href": "run" },
-            { "label": "Logs", "href": "logs" },
+            { "href": "all_pages" },
+            { "href": "run" },
+            { "href": "logs" },
             ],
         })
-    
-    load_global('menus', 'taskermenus.json')
-    
-    if 'remort' not in menus['pages']:
-        menus['pages']['remort'] = {
-            "title": "Remort Menu",
-            "mode": "wide-icons-flat",
-            "buttons": "remort_buttons",
-            "icon": [9, 9]
-            }
-    
-    config_save()
     
     load_global('ent', {
         'resources': [
@@ -780,6 +818,10 @@ if __name__ == '__main__':
         'builtin': {},
         'builtin_post': {},
         
+        'config_file': f'{name}_options.json',
+        'menu_file': f'{name}_menus.json',
+        'strings_file': f'{name}_strings.txt',
+        
         'building_entries': False,
         'tasks': {},
         'log_data': {},
@@ -790,18 +832,6 @@ if __name__ == '__main__':
             (' rebuild', 'rebuild', 'Rebuild')
             ]
         })
-    
-    register_pages()
-    
-    for fn in ent['resources']:
-        dfn = cfg['res_dir'] + fn
-        fn = '_' + fn
-        ent[fn] = b''
-        if os.path.isfile(dfn):
-            #print(dfn)
-            ent[fn] = readfile(dfn, mode='rb', encoding=None)
-    
-    del fn# I should tidy up global spaces
     
     big_action_list_time(reload=3)
     
