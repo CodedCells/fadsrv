@@ -56,12 +56,14 @@ def get_posts(posts):
     for srv, tag in cfg['altdatsrv']:
         if not find:break
         try:
+            logging.debug(f'Asking {srv} for {len(find):,} posts')
             remote = get_post_alt(srv, {tag: find})
             for post, data in remote.items():
                 find.remove(post)
                 local[post] = data
         
         except requests.exceptions.ConnectionError:
+            logging.debug(f'Gave up on {srv}')
             continue
             
     
