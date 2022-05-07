@@ -4691,7 +4691,7 @@ class post_data(post_base):
         
         if pargs[1] == 'postdata':
             datsrc = apdfa
-            print(data)
+            
             if pargs[-1].isdigit():
                 return datsrc.get(pargs[-1], {'error': 'data not foud'})
             
@@ -4700,7 +4700,7 @@ class post_data(post_base):
                     return {'error': 'data list error'}
                 
                 data['posts'] = pargs[-1].split(' ')
-            print(data)
+            
             ret = {}
             for i in data['posts']:
                 data = datsrc.get(i)
