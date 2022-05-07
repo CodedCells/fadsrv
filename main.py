@@ -686,7 +686,7 @@ def register_dynamic():
             ent['builtin'][m] = builtin_menu(which=m)
     
     
-    menus['remort_buttons'] = []
+    menus['all_pages_buttons'] = []
     rbcat = {
         'builtin': [],
         'builtin menu': [],
@@ -734,8 +734,8 @@ def register_dynamic():
     
     for c, d in rbcat.items():
         if not d:continue
-        menus['remort_buttons'].append({'type': 'section', 'label': c.title()})
-        menus['remort_buttons'] += [icn for m, icn in sorted(d)]
+        menus['all_pages_buttons'].append({'type': 'section', 'label': c.title()})
+        menus['all_pages_buttons'] += [icn for m, icn in sorted(d)]
 
 
 def build_entries(reload=0):
@@ -4939,11 +4939,11 @@ def load_user_config():
     load_global('menus', ent['menu_file'])
     ent['profiles'] = load_global('profiles', 'fadprofiles.json')
     
-    if 'remort' not in menus['pages']:
-        menus['pages']['remort'] = {
+    if 'all_pages' not in menus['pages']:
+        menus['pages']['all_pages'] = {
             "title": "Remort Menu",
             "mode": "wide-icons-flat",
-            "buttons": "remort_buttons",
+            "buttons": "all_pages_buttons",
             "icon": [9, 9]
             }
     

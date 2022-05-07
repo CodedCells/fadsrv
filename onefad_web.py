@@ -502,6 +502,9 @@ class builtin_menu(builtin_base):
             icon = menus['pages'][which]['icon']
         
         super().__init__(title, icon)
+        if not which:
+            which = 'all_pages'
+        
         self.which = which
         self.pagetype = 'builtin_menu'
         self.page_options = []
@@ -635,6 +638,7 @@ class builtin_entpoke(builtin_config):
     def __init__(self, title='Ent Poke', icon=12, name='ent'):
         super().__init__(title, icon, name)
 
+
 class post_base(builtin_base):
     
     def __init__(self, title='', icon=99):
@@ -693,7 +697,7 @@ def save_config():
     if ent.get('menu_file'):
         user_friendly_dict_saver(
             dd + ent['menu_file'], menus,
-            ignore_keys=['remort_buttons', 'page_buttons'])
+            ignore_keys=['all_pages_buttons', 'page_buttons'])
     
     sf = ent.get('strings_file')
     if sf and not os.path.isfile(dd + sf):
