@@ -3495,8 +3495,8 @@ def pick_thumb(posts, do_ext=True):
 
 class builtin_search(builtin_base):
 
-    def __init__(self, title='Search', link='/search', icon=ii(20), pages=False):
-        super().__init__(title, link, icon, pages)
+    def __init__(self, title='Search', link='/search', icon=20):
+        super().__init__(title, icon)
     
     def page(self, handle, path):
         
@@ -3566,8 +3566,8 @@ def trtd(things):
 
 class builtin_info(builtin_base):
 
-    def __init__(self, title='Info', link='/stats', icon=ii(51), pages=False):
-        super().__init__(title, link, icon, pages)
+    def __init__(self, title='Info', link='/stats', icon=51):
+        super().__init__(title, icon)
     
     def page(self, handle, path):
         srvname = cfg['server_name']
@@ -3603,8 +3603,8 @@ apdfafol: {len(apdfafol):,}<br><br>
 
 class builtin_stats(builtin_base):
 
-    def __init__(self, title='Stats', link='/stats', icon=ii(2), pages=False):
-        super().__init__(title, link, icon, pages)
+    def __init__(self, title='Stats', link='/stats', icon=ii(2)):
+        super().__init__(title, icon)
     
     def page(self, handle, path):
         
@@ -3686,8 +3686,8 @@ def table_template(i, f):
 """OBSOLETE
 class builtin_statsold(builtin_base):
 
-    def __init__(self, title='Old Stats', link='/statsold', icon=ii(2), pages=False):
-        super().__init__(title, link, icon, pages)
+    def __init__(self, title='Old Stats', link='/statsold', icon=2):
+        super().__init__(title, icon, pages)
     
     def page(self, handle, path):
         
@@ -3805,8 +3805,8 @@ def do_stat_seesion(items, data=None, fallback=100):
 
 class builtin_statsess(builtin_base):
 
-    def __init__(self, title='Stats Session', link='/statsess', icon=ii(2), pages=False):
-        super().__init__(title, link, icon, pages)
+    def __init__(self, title='Stats Session', link='/statsess', icon=ii(2)):
+        super().__init__(title, icon)
         self.table_name = 'Add a name silly!'
         self.cluster = True
         self.charte = '<canvas id="{}" style="width:100%;max-width:700px"></canvas>\n'
@@ -4060,8 +4060,7 @@ class builtin_statsess(builtin_base):
 
 class builtin_statadd(builtin_statsess):
 
-    def __init__(self, title='Stats Add', link='/statsess', icon=ii(2), pages=False):
-        super().__init__(title, link, icon, pages)
+    def __init__(self, title='Stats Add', link='/statsess', icon=2):
         self.cluster = False
         self.field = 'filedate'
         self.table_name = 'Add'
@@ -4125,16 +4124,16 @@ class builtin_statadd(builtin_statsess):
 
 class builtin_statupl(builtin_statadd):
 
-    def __init__(self, title='Stats Upload', link='/statsess', icon=ii(2), pages=False):
-        super().__init__(title, link, icon, pages)
+    def __init__(self, title='Stats Upload', link='/statsess', icon=2):
+        super().__init__(title, icon)
         self.field = 'date'
         self.table_name = 'Upload'
 
 
 class builtin_markedit(builtin_base):
 
-    def __init__(self, title='Mark Edit', link='/markedit', icon=ii(24), pages=False):
-        super().__init__(title, link, icon, pages)
+    def __init__(self, title='Mark Edit', link='/markedit', icon=24):
+        super().__init__(title, icon)
     
     def icobar(self, xy, s=-24):
         return f'icon: <i class="iconsheet teenyicon" {markicon(xy[0], xy[1], s)} vertical-align: middle;"></i> {xy}<br>\n'
@@ -4203,8 +4202,8 @@ class builtin_markedit(builtin_base):
 
 class builtin_quest(builtin_base):
 
-    def __init__(self, title='Quest', link='/quest/1', icon=ii(21), pages=True):
-        super().__init__(title, link, icon, pages)
+    def __init__(self, title='Quest', link='/quest/1', icon=21):
+        super().__init__(title, icon)
         self.pagetype = 'remort'
     
     def stat_block(self, stat_marka):
@@ -4254,7 +4253,7 @@ class builtin_menu_mark(builtin_menu):
     def __init__(self, which, aaa):
         icon = apdmm[which].get('icon', [8, 8])
         link = '/' + apdmm[which].get('values', [which])[0]
-        super().__init__(which, link, icon, False, which)
+        super().__init__(which, icon, which)
     
     def page(self, handle, path):
         minfo = {
@@ -4288,7 +4287,7 @@ class builtin_menu_mark(builtin_menu):
 
 class mort_postmarks(mort_base, builtin_menu):
 
-    def __init__(self, marktype='postmarks', title='Post Marks', link='/postmark/{}/1', icon=ii(0)):
+    def __init__(self, marktype='postmarks', title='Post Marks', link='/postmark/{}/1', icon=ii(3)):
         which = 'dummy'
         super().__init__(which, '/'+which, icon, False, which)
         self.title = title
@@ -4351,10 +4350,8 @@ class mort_postmarks(mort_base, builtin_menu):
 class builtin_rebuild(builtin_base):
     def __init__(self,
                  title='Rebuild',
-                 link='/rebuild',
-                 icon=ii(60),
-                 pages=False):
-        super().__init__(title, link, icon, pages)
+                 icon=60):
+        super().__init__(title, icon)
     
     def page(self, handle, pathe):
         build_entries()
@@ -4368,10 +4365,8 @@ class builtin_pack(builtin_base):
 
     def __init__(self,
                  title='Pack Files',
-                 link='/pack',
-                 icon=ii(63),
-                 pages=False):
-        super().__init__(title, link, icon, pages)
+                 icon=63):
+        super().__init__(title, icon)
     
     def page(self, handle, pathe):
         files =  ['ds_' + x for x in ent['apdmark']]
@@ -4793,9 +4788,10 @@ class fa_req_handler(BaseHTTPRequestHandler):
             return
         
         b = builtin_base()
+        target = ent['builtin'].get(path_split[0])
         
-        if ent['builtin'].get(path_split[0], b).pages is False:
-            ent['builtin'][path_split[0]].serve(self, path_split)
+        if target and target.pages is False:
+            target.serve(self, path_split)
             return
         
         elif path_split == ['']:
@@ -4839,8 +4835,8 @@ class fa_req_handler(BaseHTTPRequestHandler):
             b.building_entries(self)
             return
         
-        elif path_split[0] in ent['builtin']:
-            ent['builtin'][path_split[0]].serve(self, path_split)
+        elif target:
+            target.serve(self, path_split)
             return
 
         b.do_head = True

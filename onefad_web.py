@@ -230,12 +230,11 @@ class mark_button(object):
 
 class builtin_base(object):
     
-    def __init__(self, title='', link='/', icon=59, pages=None):
+    def __init__(self, title='', icon=59):
         self.pagetype = 'builtin'
-        self.link = link
         self.title = title
         
-        self.pages = pages
+        self.pages = False
         self.do_time = True
         self.metric = None
         self.do_menu = True
@@ -485,11 +484,11 @@ var t = setTimeout(function(){window.location.reload(1);}, 5000);
 
 class builtin_menu(builtin_base):
 
-    def __init__(self, title='Menu', link='/menu', icon=None, pages=False, which='menu'):
+    def __init__(self, title='Menu', icon=None, which=None):
         if icon is None and 'icon' in menus['pages'].get(which, {}):
             icon = menus['pages'][which]['icon']
         
-        super().__init__(title, link, icon, pages)
+        super().__init__(title, icon)
         self.which = which
         self.pagetype = 'builtin_menu'
         self.page_options = []
@@ -559,8 +558,8 @@ class builtin_menu(builtin_base):
 
 class builtin_config(builtin_base):
 
-    def __init__(self, title='Configure', link='/config', icon=ii(12), pages=False, name='cfg'):
-        super().__init__(title, link, icon, pages)
+    def __init__(self, title='Configure', icon=12, name='cfg'):
+        super().__init__(title, icon)
         self.name = name
         if self.name != 'cfg':
             self.title += ' ' + self.name
@@ -621,8 +620,8 @@ class builtin_config(builtin_base):
 
 class post_base(builtin_base):
     
-    def __init__(self, title='', link='/', icon=ii(99), pages=False):
-        super().__init__(title, link, icon, pages)
+    def __init__(self, title='', icon=99):
+        super().__init__(title, icon)
         self.pagetype = 'post'
         self.content_type_post = 'application/json'
     
@@ -675,8 +674,8 @@ class post__flag(post_base):
     # bad performance when files got big
     # but stiill works well for simple data modifications
     
-    def __init__(self, title='', link='/_flag', icon=ii(99), pages=False):
-        super().__init__(title, link, icon, pages)
+    def __init__(self, title='', icon=99):
+        super().__init__(title, icon)
         
     def post_logic(self, handle, pargs, data):
         global cfg, ent

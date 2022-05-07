@@ -174,8 +174,8 @@ def sort_collection(col, ret=True, rebuild=False):
 
 class builtin_pages(builtin_base):
     
-    def __init__(self, title, icon, data, link='', pages=False):
-        super().__init__(title, link, icon, pages)
+    def __init__(self, title, icon, data):
+        super().__init__(title, icon)
         self.pagetype = 'pages'
         self.pagehtml = data
     
