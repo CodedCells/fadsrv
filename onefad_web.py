@@ -1,23 +1,35 @@
 from onefad import *
 
 load_global('strings',{# todo migrate more from code and clean up
-'thumb': '<span class="thumb{2}"><a class="thumba" href="{0}"><span>{1}</span></a></span>\n',
 'menubtn-narrow-icons': '<span class="menubtn"><a href="{href}" alt="{alt}"><span class="iconsheet" style="background-position:{x}px {y}px;"></span>{label}</a></span>\n',
 'menubtn-wide-icons': '<span class="menubtn wide"><a href="{href}" alt="{alt}"><span class="iconsheet" style="background-position:{x}px {y}px;"></span> {label}</a></span>\n',
 'menubtn-list': '<a class="btn wide" style="font-size:initial;" href="{href}" alt="{alt}">{label}</a>\n',
 'menubtn-narrow-icons-flat': '<a href="{href}" alt="{alt}">\n<div class="menu-button">\n<span class="iconsheet" style="background-position:{x}% {y}%;"></span>\n<span class="menu-label">{label}</span>\n</div>\n</a>\n',
+'menubtn-wide-icons-flat': '<a href="{href}" alt="{alt}">\n<div class="menu-button menu-button-wide">\n<span class="iconsheet" style="background-position:{x}% {y}%;"></span>\n<span class="menu-label">{label}</span>\n</div>\n</a>\n',
 'nb': '<a class="btn{2}" href="{1}">{0}</a>\n',
 'popdown': '<div class="pdbox{}"><button class="mbutton" onclick="popdown(this);">&#9660;</button>\n<div id="popdown" class="popdown">',
-'setlogic': '<div id="sets-man" class="hidden">\n<div class="ctrl">\n<input class="niceinp" id="setsName" oninput="setSearch()">\n<button class="mbutton" onclick="setsNew()">+</button>\n<button class="mbutton" onclick="setsClose()">X</button>\n</div>\n<div class="list" id="sets-list">\n</div>\n</div>\n',
-'menubtn-wide-icons-flat': '<a href="{href}" alt="{alt}">\n<div class="menu-button menu-button-wide">\n<span class="iconsheet" style="background-position:{x}% {y}%;"></span>\n<span class="menu-label">{label}</span>\n</div>\n</a>\n',
+'error': '<div class="errorpage">\n<div>\n<h2>{}</h2>{}</div><img src="/parrot.svg" alt="Got his fibre, on his way." /></span>\n<br>',
 
-'eyde_link_ta': '<br>\nAttached document: {:,} words <a href="/textattach/{}" target="_blank">Click here to open in new tab</a><br>\n',
-'eyde_post_title': '<a class="title" href="/view/{0}/1"><h2>{1}</h2></a>\n<a href="https://www.furaffinity.net/view/{0}/">view fa</a><br>\n',
-'link_tf': '<a href="/filter/{}:{}/1">{}</a>:',
-'stripeytablehead': '<table class="stripy">\n<tr>\n\t<td colspan={}>{}</td>\n</tr>\n',
-'pt_items': '<div class="desc tags"><details><summary>{} ({:,} items)</summary>\n{}</details>\n</div><br>\n',
-'search_bar': '<input id="searchbar" class="niceinp widebar" placeholder="Search..." oninput="search(false)" />\n',
-'error': '<div class="errorpage">\n<div>\n<h2>{}</h2>{}</div><img src="/parrot.svg" alt="Got his fibre, on his way." /></span>\n<br>'
+'cfg.developer.name': 'Developer Mode',
+'cfg.developer.label': 'Enables some debugging features, including reloading resources.',
+'cfg.apd_dir.name': 'Append Data Directory',
+'cfg.apd_dir.label': 'Path to core server files',
+'cfg.res_dir.name': 'Resource Directory',
+'cfg.res_dir.label': 'Path to server resources',
+'cfg.server_name.name': 'Server Name',
+'cfg.server_name.label': 'Set a different name for identifying.',
+'cfg.server_addr.name': 'Server Address',
+'cfg.server_addr.label': 'IP Address, Changes will not be reflected until restart!',
+'cfg.server_port.name': 'Server Port',
+'cfg.server_port.label': 'Port Number, Changes will not be reflected until restart!',
+'cfg.homepage_menu.name': 'Homepage Menu',
+'cfg.homepage_menu.label': 'Choose which menu should be displayed as home',
+'cfg.dropdown_menu.name': 'Dropdown Menu',
+'cfg.dropdown_menu.label': 'Choose which menu should drop down\nLeave blank for no dropdown',
+'cfg.static_cfg.name': 'Static Config',
+'cfg.static_cfg.label': 'Disable changing this config from the web',
+'cfg.allow_data.name': 'Allow /data/*',
+'cfg.allow_data.label': 'Enable data access over http, used for tools'
     })
 
 
