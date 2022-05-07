@@ -574,8 +574,8 @@ class builtin_config(builtin_base):
     def __init__(self, title='Configure', icon=12, name='cfg'):
         super().__init__(title, icon)
         self.name = name
-        if self.name != 'cfg':
-            self.title += ' ' + self.name
+        if self.name != 'cfg' and self.title == 'Configure':
+            self.title += f': {self.name}'
     
     def page(self, handle, path):
         
@@ -630,6 +630,10 @@ class builtin_config(builtin_base):
         handle.wfile.write(bytes(body, 'utf-8'))
         handle.wfile.write(b'</div>\n')
 
+
+class builtin_entpoke(builtin_config):
+    def __init__(self, title='Ent Poke', icon=12, name='ent'):
+        super().__init__(title, icon, name)
 
 class post_base(builtin_base):
     

@@ -5467,7 +5467,6 @@ if __name__ == '__main__':
            },
         
         'builtin': {
-            'entpoke': builtin_config(name='ent'),
             'data': post_data(),
             'profiles': post_profiles()
             },
