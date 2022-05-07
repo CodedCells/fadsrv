@@ -84,16 +84,18 @@ def big_action_list_time(reload=0):
     logging.info('Performing all actions')
     start = time.perf_counter()
     ent['built_at'] = datetime.now()
-
+    
     ent['building_entries'] = True
     
     read_config()
+    register_pages()
     create_menus()
     save_config()
     
-    register_pages()
+    # do work here
     
     logging.info(f'Done in {time.perf_counter() - start}')
+    ent['building_entries'] = False
 
 
 class fa_req_handler(BaseHTTPRequestHandler):
