@@ -453,7 +453,11 @@ def main():
     logging.info(f'{len(user_update)} update users')
     
     if user_update:
-        check_existing_users(user_update)
+        try:
+            check_existing_users(user_update)
+        except Exception as e:
+            logging.error('Crash during check', exc_info=True)
+            return
 
 
 if __name__ == '__main__':

@@ -398,7 +398,11 @@ def main():
     logging.info(f'{len(user_new)} mew users')
     
     if user_new:
-        get_new_users(user_new)
+        try:
+            get_new_users(user_new)
+        except Exception as e:
+            logging.error('Crash during check', exc_info=True)
+            return
 
 
 def poke_servers():
