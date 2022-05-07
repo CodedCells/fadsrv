@@ -33,15 +33,15 @@ load_global('strings',{# todo migrate more from code and clean up
     })
 
 
-def serve_resource(handle, resource):
+def serve_resource(handle, resource, code=200):
     global ent
-    handle.send_response(200)
+    handle.send_response(code)
     handle.send_header('Content-type', ext_content(resource))
     
-    fn = cfg['res_dir'] + resource
+    fn = cfg.get('res_dir', 'res/') + resource
     rf = f'_{resource}'
     
-    should_load = cfg['developer'] or f'_{resource}' not in ent
+    should_load = cfg.get('developer') or f'_{resource}' not in ent
     if should_load and os.path.isfile(fn):
         logging.debug(f'loading resource {resource} from {fn}')
         ent[rf] = readfile(fn, mode='rb')
