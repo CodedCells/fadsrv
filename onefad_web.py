@@ -651,6 +651,29 @@ class post_base(builtin_base):
         handle.wfile.write(bytes(json.dumps(ret), 'utf-8'))
 
 
+def read_config():
+    global strings
+    
+    load_global('cfg', ent['config_file'])
+    load_global('menus', ent['menu_file'])
+    
+    dd = cfg.get('apd_dir', 'data/')
+    
+    sf = ent.get('strings_file')
+    if not sf or not os.path.isfile(dd + sf):
+        return
+    
+    sf = safe_readfile(dd + sf)
+    for line in sf.split('\n')[1:]:
+        line = line.split('\t')
+        if len(line) == 2:
+            line[1] = line[1].replace('\\n', '\n')
+            if line[0].startswith('b.'):
+                line[1] = bytes(line[1][2:-1], 'utf8')
+            
+            strings[line[0]] = line[1]
+
+
 def save_config():
     if ent.get('config_read_error'):
         logging.warning('Preventing accidental config loss, please fix config file.')
