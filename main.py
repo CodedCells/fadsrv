@@ -4,7 +4,7 @@
 from onefad_functions import *
 import requests
 
-ent['version'] = '31#2022-05-03'
+ent['version'] = '31#2022-05-06'
 
 class builtin_base(builtin_base):
     
@@ -680,10 +680,12 @@ def register_dynamic():
             if v not in ent['builtin']:
                 ent['builtin'][v] = cla(m, v)
     
+    for m, c in list(ent['builtin'].items()):
+        if type(c) == builtin_menu:
+            del ent['builtin'][m]
     
     for m in menus['pages']:
-        if m not in ent['builtin']:
-            ent['builtin'][m] = builtin_menu(which=m)
+        ent['builtin'][m] = builtin_menu(which=m)
     
     
     menus['all_pages_buttons'] = []
@@ -4061,6 +4063,7 @@ class builtin_statsess(builtin_base):
 class builtin_statadd(builtin_statsess):
 
     def __init__(self, title='Stats Add', link='/statsess', icon=2):
+        super().__init__(title, icon)
         self.cluster = False
         self.field = 'filedate'
         self.table_name = 'Add'
@@ -4292,6 +4295,7 @@ class mort_postmarks(mort_base, builtin_menu):
         super().__init__(which, '/'+which, icon, False, which)
         self.title = title
         self.link = link
+        self.icon = icon
         self.pagetype = 'remort'
         self.marktype = marktype
     
@@ -4307,9 +4311,8 @@ class mort_postmarks(mort_base, builtin_menu):
             if compare_for(d, 'posts', sw=True):
                 for n, v in enumerate(d.get('values', [])):
                     if v not in eles:
-                        label = v
-                        if dpref.get(v, []):
-                            label += f'<br>({len(dpref.get(v, {})):,})'
+                        label = f'<b>{v}</b><br>\n'
+                        label += f'{len(dpref.get(v, {})):,}'
                         
                         icon = d.get('icon', ii(45))
                         if len(d.get('valueicon', [])) > n:
