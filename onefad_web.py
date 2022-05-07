@@ -497,9 +497,13 @@ var t = setTimeout(function(){window.location.reload(1);}, 5000);
 
 class builtin_menu(builtin_base):
 
-    def __init__(self, title='Menu', icon=None, which=None):
-        if icon is None and 'icon' in menus['pages'].get(which, {}):
-            icon = menus['pages'][which]['icon']
+    def __init__(self, title=None, icon=None, which=None):
+        data = menus['pages'].get(which, {})
+        if icon is None:
+            icon = data.get('icon')
+        
+        if title is None:
+            title = data.get('title', 'Menu')
         
         super().__init__(title, icon)
         if not which:
