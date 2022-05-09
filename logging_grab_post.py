@@ -164,6 +164,10 @@ def download_data(post):
 def check_post(post, where):
     request = False
     data_src = data_path(post, 'data_store', where, fmt='{}_desc.html')
+    if not os.path.isfile(data_src):
+        logging.error(f'data file not found! {data_src}')
+        return
+    
     try:
         # iso-whatever breaks rus, idk
         with open(data_src, 'r', encoding='utf8') as fh:
