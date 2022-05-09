@@ -444,7 +444,7 @@ def get_new_data():
             if state:
                 apd.append(post)
             else:
-                write_apd(cfg['pp'] + 'posts404', {post: ''}, fnf, 1)
+                apc_write(cfg['apd_dir'] + 'posts404', {post: ''}, fnf, 1)
                 fnf[post] = ''
         
         elif hd.startswith('added'):
