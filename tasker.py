@@ -581,9 +581,12 @@ def find_runningg_tasks():
                 
                 if task not in ent['task_logs'][pid]:
                     old = c > 20
+                    
+                    mod = datetime.strptime(task[:-4], '%Y-%m-%dT%H-%M-%S.%f')
+                    
                     ent['task_logs'][pid][task] = {
-                        'mod': 0,
-                        'dmod': now,
+                        'mod': mod.timestamp() * 1000,
+                        'dmod': mod,
                         'old': old
                         }
                     
