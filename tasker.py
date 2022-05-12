@@ -198,27 +198,24 @@ class builtin_logs(builtin_base):
         htmlout = '<div class="pageinner"><div class="head">'
         htmlout += f'<h2 class="pagetitle"><span id="progName">{title}</span></h2></div>\n'
         htmlout += '<div class="container list">\n'
-        tl = self.tasklist(pid, True)
-        if tl.startswith('<h4>Old'):
-            htmlout += '<p>No recently updated logs.</p>\n'
         
-        htmlout += tl
+        htmlout += self.tasklist(pid, True)
         
         self.write(handle, htmlout)
-
+    
     def loglistlink(self, pid):
         prog = ent['log_by_id'][pid]
         ldata = ent['log_data'][prog]
         title = ldata.get('name', ldata['prog'])
         htmlout = '<div class="tasklogbox">'
-        htmlout += f'<h2>{title}</h2>\n'
+        htmlout += f'<a href="/logs/{ldata["id"]}">'
+        htmlout += f'<span class="title">{title}</span>'
         logc = len(ent["task_logs"][pid])
-        htmlout += f'{logc:,} log{plu(logc)} on disk,\n'
-        htmlout += f'<a href="/logs/{ldata["id"]}">View All</a><br>\n'
+        htmlout += f' ({logc:,})</a><br>\n'
         
         tl = self.tasklist(pid, False)
         if not tl:
-            tl = '<p>No recently updated logs.</p>\n'
+            tl = '<p>No recent logs.</p>\n'
         
         htmlout += tl
         htmlout += '</div>'
@@ -246,8 +243,6 @@ class builtin_logs(builtin_base):
             htmlout = '<div class="taskloglist">'
             
             gtasks = ent['log_group'][group]
-            if c and gtasks:
-                self.write(handle, '<hr>\n')
             
             if not group.startswith('_'):
                 self.write(handle, f'<h2>{group}</h2>\n')
@@ -309,23 +304,15 @@ class builtin_run(builtin_logs):
         icon = d.get('icon', 99)
         if isinstance(icon, int):
             icon = ii(icon)
-        
-        return strings['menubtn-narrow-icons-flat'].format(
-            href=f'/run/{fn}',
-            alt=fn, x=icon[0]*-100, y=icon[1]*-100,
-            label=d.get("title", fn)
-            )
+
+        ret = f'<div class="taskbutton"><a href="/run/{fn}" alt="{fn}">\n'
+        x = icon[0]*-100
+        y = icon[1]*-100
+        ret += f'<i class="iconsheet ico-40" style="background-position:{x}% {y}%;"></i>\n'
+        ret += f'<span class="menu-label"> {d.get("title", fn)}</span>\n</a>\n</div>\n'
+        return ret
     
-    def page(self, handle, path):
-        htmlout = '<div class="pageinner"><div class="head">'
-        htmlout += f'<h2 class="pagetitle">Run Task</h2></div>\n'
-        htmlout += '<div class="container list">\n'
-        self.write(handle, htmlout)
-        
-        if len(path) > 1 and path[1] != 'all' and not path[1].isdigit():
-            self.taskpage(handle, path)
-            return
-        
+    def taskpickpage(self, handle, path):
         htmlout = ''
         for group, order in ent['task_group_order']:
             gtasks = ent['task_group'][group]
@@ -333,14 +320,32 @@ class builtin_run(builtin_logs):
                 continue# removed or hidden
             
             if not group.startswith('_'):
-                if htmlout:htmlout += '<hr>\n'
-                htmlout += f'<h2>{group}</h2>\n'
+                if htmlout:
+                    htmlout += '</div>\n\n'
+                
+                htmlout += '<div class="taskgroup">\n'
+                htmlout += f'<h2 class="tasksheader">{group}</h2>\n'
             
             for task in gtasks:
                 htmlout += self.taskicon(task)
         
+        if htmlout:
+            htmlout += '</div>\n\n'
+        
         htmlout += '</div></div>'
         self.write(handle, htmlout)
+    
+    def page(self, handle, path):
+        htmlout = '<div class="pageinner"><div class="head">'
+        htmlout += f'<h2 class="pagetitle">Run Task</h2></div>\n'
+        htmlout += '<div class="container list">\n'
+        self.write(handle, htmlout)
+        
+        if len(path) < 2 or path[-1] == 'all' or path[-1].isdigit():
+            self.taskpickpage(handle, path)
+            return
+        
+        self.taskpage(handle, path)
 
 
 def register_pages():

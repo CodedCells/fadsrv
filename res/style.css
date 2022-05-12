@@ -888,11 +888,17 @@ code.logERROR {
 	display: flex;
 	flex-wrap: wrap;
 	justify-content: space-evenly;
+	gap: 20px;
+	border-bottom: 2px solid #272727;
 }
 
 .tasklogbox {
-	min-width: 250px;
-	flex-grow: 1;
+	min-width: 120px;
+	margin: 10px;
+}
+
+.tasklogbox .title {
+	font-weight: bold;
 }
 
 .iconusername {
@@ -903,4 +909,22 @@ code.logERROR {
 	color: transparent;
 	max-height: 50px;
     max-width: 50px;
+}
+
+.taskgroup {
+	display: inline-block;
+	border-bottom: 2px solid #272727;
+	gap: 20px;
+	padding: 5px;
+	margin: 10px;
+}
+
+.tasksheader {
+	margin-top: 24pt;
+	margin-bottom: 4pt;
+}
+
+.taskbutton {
+	display: inline-block;
+	margin: 15px 10px;
 }
