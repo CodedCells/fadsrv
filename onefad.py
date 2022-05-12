@@ -215,7 +215,7 @@ def apc_write(
         existing = {}
     
     else:
-        existing = apc_read(filename, encoding=encoding)
+        existing = apc_master().read(filename, encoding=encoding)
     
     line = len(existing)
     fileno = ''

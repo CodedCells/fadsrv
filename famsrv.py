@@ -82,7 +82,7 @@ def create_menus():
 
 def filelist():
     dd = cfg['apd_dir']
-    files = apc_read(dd + 'filelist')
+    files = apc_master().read(dd + 'filelist')
     if files:
         return set(files.keys())
     
