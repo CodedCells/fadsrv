@@ -425,7 +425,7 @@ def apdlist_add(d):
 
 
 def get_new_data():
-    fnf = apc_read(cfg['apd_dir'] + 'posts404')
+    fnf = apc_master().read(cfg['apd_dir'] + 'posts404')
     
     logging.info('Finding new posts')
     
@@ -529,7 +529,7 @@ def configgy():
 
 def main():
     global know, knows
-    know = apc_read(cfg['apd_dir'] + 'known_faves', do_time=True)
+    know = apc_master().read(cfg['apd_dir'] + 'known_faves', do_time=True)
     knows = set(know.keys())
     
     list_local_data()
@@ -639,7 +639,7 @@ def squash_more():
         logging.warning(f'Can\'t find filelist at {fl}')
         return
     
-    rem = set(apc_read(fl).keys())
+    rem = set(apc_master().read(fl).keys())
     
     logging.info(f'{len(rem):,} remote')
     

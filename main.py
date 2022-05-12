@@ -3,8 +3,9 @@
 
 from onefad_functions import *
 import requests
+import gc
 
-ent['version'] = '31#2022-05-06'
+ent['version'] = '31#2022-05-11'
 
 class builtin_base(builtin_base):
     
@@ -31,7 +32,9 @@ def get_post_alt(path, rd):
 
 def get_post(post):
     data = apdfa.get(post)
-    if data:return data
+    if data:
+        return data
+    
     data = altfa.get(post)
     if data:
         data['origin'] = 'alt'
@@ -256,7 +259,7 @@ def apd_findnew():
         
         if 'rating' in add:
             if knowns is None:
-                knownf = apc_read(cfg['data_dir'] + 'known_faves')
+                knownf = apc_master().read(cfg['data_dir'] + 'known_faves')
                 knownf = {x: y['rating'] for x, y in knownf.items()}
                 knowns = set(knownf)
             
@@ -570,7 +573,7 @@ def load_text_attach():
     tadir = cfg['image_dir'] + '_ta/'
     
     if os.path.isdir(tadir):
-        attach = apc_read(tadir + 'apdta')
+        attach = apc_master().read(tadir + 'apdta')
         ch_attach = {}
         if not attach:
             logging.info('Preparing text attach info')
@@ -608,7 +611,7 @@ def load_userstats():
     ent['artup'] = {}
     ent['ustatus'] = {}
     
-    ustats = apc_read(cfg['apd_dir'] + 'apduserstats')
+    ustats = apc_master().read(cfg['apd_dir'] + 'apduserstats')
     if not ustats:
         logging.info('User statistics unavilable')
     
@@ -625,7 +628,7 @@ def load_userstats():
             ent['ustats'][j] = -1
             ent['ustatus'][j] = d.get('status', None)
     
-    ent['udatas'] = apc_read(cfg['apd_dir'] + 'apduserdata')
+    ent['udatas'] = apc_master().read(cfg['apd_dir'] + 'apduserdata')
 
 
 def fpref_make():
@@ -764,10 +767,10 @@ def build_entries(reload=0):
             load_apd()
         
         if reload > 2:
-            altfa = apc_read(cfg['apd_dir'] + 'altfa')
+            altfa = apc_master().read(cfg['apd_dir'] + 'altfa')
+            load_bigapd()
             if not cfg.get('skip_bigdata'):
                 ent['force_datasort'] = True
-                load_bigapd()
                 ent['added_content'] = apd_findnew()
         
         load_text_attach()
@@ -4982,7 +4985,7 @@ def load_user_config():
 def load_wp(fn):
     global wp, wpm
     
-    data = apc_read(cfg['mark_dir'] + 'wp_' + fn)
+    data = apc_master().read(cfg['mark_dir'] + 'wp_' + fn)
     if '//' in data:
         wpm[fn] = data['//']
         del data['//']
@@ -4994,7 +4997,7 @@ def load_apx(fn):
     global xlink
     
     apdfile = fn[4:]
-    data = apc_read(cfg['apd_dir'] + fn, do_time=True, encoding='iso-8859-1')
+    data = apc_master().read(cfg['apd_dir'] + fn, do_time=True, encoding='iso-8859-1')
     prop = {}
     if '//' in data:
         prop = data['//']
@@ -5022,11 +5025,22 @@ def load_apx(fn):
 
 def load_bigapd():
     global apdfa, apdfadesc, apdfafol
-    dd = cfg['apd_dir']
+    
+    apdfa = {}
+    apdfadesc = {}
+    apdfafol = {}
+    
+    gc.collect()
+    
+    if cfg.get('skip_bigdata'):
+        return
+    
     logging.info('Loading data files...')
-    apdfa = apc_read(dd + 'apdfa', do_time=True, encoding='iso-8859-1')
-    apdfadesc = apc_read(dd + 'apdfadesc', do_time=True, encoding='iso-8859-1')
-    apdfafol = apc_read(dd + 'apdfafol', do_time=True, encoding='iso-8859-1')
+    
+    for k in ['apdfa', 'apdfadesc', 'apdfafol']:
+        globals()[k] = apc_master().read(
+            cfg['apd_dir'] + k,
+            do_time=True, encoding='iso-8859-1')
 
 
 def load_apd():
@@ -5057,7 +5071,7 @@ def load_apd():
     
     datas  = {}
     for apdfile in apdmark:
-        data = apc_read(scandir + 'ds_' + apdfile, encoding='iso-8859-1')
+        data = apc_master().read(scandir + 'ds_' + apdfile, encoding='iso-8859-1')
         prop = {}
         if '//' in data:
             prop = data['//']
@@ -5511,10 +5525,6 @@ if __name__ == '__main__':
     
     logging.info(isdocats())
     
-    apdfa = {}
-    apdfadesc = {}
-    apdfafol = {}
-    altfa = {}
     build_entries(reload=3)
     
     httpd = ThreadedHTTPServer(

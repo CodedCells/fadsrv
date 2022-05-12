@@ -106,7 +106,7 @@ def rip_new_users():
 
 def add_dates():
     # because i forgot to
-    udata = apc_read(pp + 'apduserdata', encoding='utf8')
+    udata = apc_master().read(pp + 'apduserdata', encoding='utf8')
     c = 0
     for user, data in udata.items():
         if '_meta_filedate' not in data:
@@ -430,7 +430,7 @@ def main():
     if not os.path.isdir('userstats/h'):
         os.makedirs('userstats/h')
     
-    apduserstats = apc_read(pp + 'apduserstats', do_time=True)
+    apduserstats = apc_master().read(pp + 'apduserstats', do_time=True)
     got_json = set(apduserstats.keys())
     
     default = list(cfg['poke_servers'])[0]

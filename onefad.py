@@ -106,95 +106,83 @@ def prepare_apd(filename, encoding='utf8'):
     return False
 
 
-def bigapd_reader_block(
-    filename, block, do_time=False, encoding='utf8'):
+class apc_master(object):
     
-    if block > 0:
-        filename += '_{:02d}'.format(block)
-    
-    raw = []
-    if os.path.isfile(filename):
-        if do_time or os.stat(filename).st_size > 4000000:# >4mb
-            logging.debug(f'Reading {filename}')
-            saidname = True
+    def data_value(self, d):
+        if self.parse:
+            d = json.loads(d)
         
+        return d
+    
+    def process_line_key(self, line):
+        self.ret[line] = 0
+    
+    def process_line_single(self, line):
+        pd, kv = line.split('\t')
+        self.ret[pd] = self.data_value(kv)
+    
+    def process_line_split(self, line):
+        pd, kd, kv = line.split('\t')
+        
+        if pd not in self.rets:
+            self.rets.add(pd)
+            self.ret[pd] = {}
+        
+        self.ret[pd][kd] = self.data_value(kv)
+    
+    def process_line(self, line):
+        depth = line.count('\t')
+        if 0 > depth or depth > 2:
+            logging.warning(f'unspported depth: {depth}')
+            return
+        
+        [self.process_line_key,
+         self.process_line_single,
+         self.process_line_split
+         ][depth](line)
+    
+    def read_next_block(self):
+        filename = self.filename
+        if self.block > 0:
+            filename += f'_{self.block:02d}'
+        
+        if not os.path.isfile(filename):
+            self.block_found = False
+            return
+        
+        size = os.stat(filename).st_size
+        if self.do_time or size > 4000000:# >4mb
+            logging.debug(f'Reading {filename} ({size/1000000:,}mb)')
+            self.do_time = True
+        
+        with open(filename, 'r', encoding=self.encoding) as fh:
+            for x in fh.readlines()[1:]:
+                self.process_line(x.strip())
+            
+            fh.close()
+    
+    def read(self, filename, do_time=False, encoding='utf8', parse=True):
+        self.filename = filename
+        self.do_time = do_time
+        self.encoding = encoding
+        self.parse = True
+        self.block = 0
+        
+        self.ret = {}
+        self.rets = set()
+        
+        self.block_found = True
         try:
-            with open(filename, 'r', encoding=encoding) as fh:
-                raw = [x.strip() for x in fh.readlines()[1:]]
-                fh.close()
+            while self.block_found:
+                self.read_next_block()
+                self.block += 1
         
-        except UnicodeDecodeError as e:
-            logging.warning(f'Fucking Unicode', exc_info=True)
-            with open(filename, 'rb') as fh:
-                raw = [unicode_stripper(x)
-                       for x in fh.readlines()[1:]]
-                
-                logging.debug(raw[:1])
-                fh.close()
-    
-    return raw
-
-
-def apc_read(
-    filename, do_time=False, encoding='utf8', parse=True):
-    
-    saidname = False
-    nraw = None
-    
-    raw = []
-    block = 0
-    while True:
-        add = bigapd_reader_block(
-            filename, block, do_time=True, encoding=encoding)
+        except Exception as e:
+            logging.error("SERIUS DATA PARSE ERROR", exc_info=True)
+            logging.error(f'While reading {filename}')
+            logging.error(line)
         
-        if add == []:
-            break
-        
-        raw += add
-        block += 1
-    
-    if raw == []:
-        return {}
-    
-    if do_time:
-        t = datetime.now()
-    
-    out = {}
-    outs = set()
-    try:
-        for line in raw:
-            depth = line.count('\t')
-            
-            if depth == 2:
-                pd, kd, kv = line.split('\t')
-                if parse:
-                    kv = json.loads(kv)
-                
-                if pd in outs:
-                    out[pd][kd] = kv
-                else:
-                    outs.add(pd)
-                    out[pd] = {kd: kv}
-        
-            elif depth == 1:
-                pd, kv = line.split('\t')
-                if parse:
-                    kv = json.loads(kv)
-                
-                out[pd] = kv
-            
-            elif depth == 0:
-                out[line] = 0
-    
-    except Exception as e:
-        logging.error("SERIUS DATA PARSE ERROR", exc_info=True)
-        logging.error(f'While reading {filename}')
-        logging.error(line)
-    
-    if do_time:
-        logging.debug((datetime.now() - t).total_seconds())
-    
-    return out
+        return self.ret
 
 
 def bigapd_writer_block(
