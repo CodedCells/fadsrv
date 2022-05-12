@@ -135,17 +135,26 @@ class builtin_logs(builtin_base):
     
     @staticmethod
     def ago(s):
-        if s < 61:
-            return f'{s} second{plu(s)} ago'
+        if s < 16:
+            return f'just now'
+        
+        elif s < 61:
+            return f'{s} seconds ago'
         
         elif s < 3601:
-            return f'{s/60:0.0f} minute{plu(s)} ago'
+            return f'{s/60:0.0f} minutes ago'
         
         elif s < 86401:
-            return f'{s/3600:.01f} hour{plu(s)} ago'
+            return f'{s/3600:.01f} hours ago'
         
-        elif s < 31536001:
-            return f'{s/86400:.01f} day{plu(s)} ago'
+        elif s < 604800:
+            return f'{s/86400:.01f} days ago'
+        
+        elif s < 2629800:
+            return f'{s/604800:.01f} weeks ago'
+        
+        elif s < 3153600001:
+            return f'{s/2629800:.01f} months ago'
         
         else:
             return 'a long time ago'
