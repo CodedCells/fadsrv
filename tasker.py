@@ -160,10 +160,10 @@ class builtin_logs(builtin_base):
             return 'a long time ago'
     
     def loglink(self, pid, m, t, d):
-        name = '.'.join(t.split('.')[:-1])
-        name += f'<br><i>Last modified {self.ago(int(m))}</i>'
-            
-        return f'<p><a href="/logs/{pid}/{t}">{name}</a></p>\n'
+        name = t.split('.')[0]
+        mod = f'Modified {self.ago(int(m))}'
+        
+        return f'<p><a href="/logs/{pid}/{t}">{name}<br>{mod}</a></p>\n'
     
     def tasklist(self, pid, showold):
         now = datetime.now()
@@ -184,6 +184,7 @@ class builtin_logs(builtin_base):
             return htmlout
         
         htmlout += '<h4>Old Logs:</h4\n>'
+        
         for m, t, d in old:
             htmlout += self.loglink(pid, m, t, d)
         
