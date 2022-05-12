@@ -126,7 +126,7 @@ def get_watched(user):
     outbuf = '\nWatched\t'
     outbuf += json.dumps({
         "modified": int(datetime.now().timestamp()*1000),
-        "icon": [4, 5],
+        "icon": [3, 5],
         "items": list(users),
         "lock": True
         })
