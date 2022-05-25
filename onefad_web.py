@@ -568,10 +568,27 @@ class builtin_menu(builtin_base):
         
         self.write(handle, htmlout + '</div>\n')
     
+    def reverse(self, eles):
+        buf = []
+        out = []
+        
+        for e in reversed(eles):
+            if e.get('type', 'button') == 'button':
+                buf.append(e)
+                continue
+            
+            out = [e] + buf + out
+            buf = []
+        
+        return buf + out
+    
     def page(self, handle, path):
         minfo = menus['pages'].get(self.which, {})
         butts = minfo.get('buttons', f'{self.which}_buttons')
         eles = menus.get(butts, {})
+        
+        if 'reversed' in path[1:]:
+            eles = self.reverse(eles)
         
         self.build_menu(handle, self.which, minfo, eles)
 
