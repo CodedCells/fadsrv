@@ -683,6 +683,9 @@ def register_dynamic():
         for v in d.get('values', []):
             if v not in ent['builtin']:
                 ent['builtin'][v] = cla(m, v)
+        
+        if d.get('stats') and 'charts' in d['stats']:
+            ent['builtin'][f'stats{m}'] = builtin_statsmark(m)
     
     for m, c in list(ent['builtin'].items()):
         if type(c) == builtin_menu:
@@ -3610,75 +3613,170 @@ class builtin_stats(builtin_base):
 
     def __init__(self, title='Stats', link='/stats', icon=ii(2)):
         super().__init__(title, icon)
+        self.pagetype = 'builtin_stats'
+    
+    @staticmethod
+    def perc_builder(label, out):
+        doc = f'<div class="markinfobox"><h3>{label}</h3>'
+        for l, v in out:
+            if type(l) == int:
+                l, v = out[l][1], out[v][1]
+                v = max(1, max(l, v))
+                doc += f'{l/v:.02%}<br>\n'
+                continue
+            
+            doc += f'{l}: {v:,}<br>\n'
+        
+        return doc + '</div>\n'
+    
+    def do_percent(self, mark):
+        
+        data = apdmm[mark]
+        
+        tx = ''
+        out = [
+            ['Total', 0],
+            ['Marked', 0],
+            [1, 0],
+            ]
+        
+        dfor = data.get('for', 'posts')
+        label = data.get("label", mark.title())
+        
+        if dfor == 'posts':
+            out[0][1] = len(apdfa)
+            out[1][1] = len(apdm.get(mark, []))
+        
+        elif dfor == 'posts_unav':
+            out[0][1] = len(xlink.get('descpostback', {}))
+            out[1][1] = len(apdm.get(mark, []))
+        
+        elif dfor == 'users':
+            m = set(apdm.get(mark, []))
+
+            tx = self.perc_builder(
+                label + ' (Users)', [
+                ['Users', len(users)],
+                ['Marked', len(m)],
+                [1, 0]
+                ])
+            label += ' (Posts)'
+            
+            for user, posts in users.items():
+                if user not in m:
+                    continue
+                
+                posts = len(posts)
+                out[1][1] += posts
+                
+                k = ent['ustats'].get(user, 0)
+                out[0][1] += max(posts, k)
+        
+        elif dfor == 'folders':
+            m = set(apdm.get(mark, []))
+            
+            for user, data in apdfafol.items():
+                posts = len(data.get('items', []))
+                out[0][1] += posts
+                
+                if user in m:
+                    out[1][1] += posts
+        
+        return tx + self.perc_builder(label, out)
+    
+    def do_breakdown(self, mark):
+        data = apdmm[mark]
+        
+        count = 0
+        dfor = data.get('for', 'posts')
+        if dfor == 'posts':
+            count = len(apdfa)
+        
+        elif dfor == 'posts_unav':
+            count = len(xlink.get('descpostback', {}))
+        
+        elif dfor == 'users':
+            count = len(users)
+        
+        elif dfor == 'folders':
+            count = len(apdfafol)
+        
+        subtr = 0
+        if len(data.get('values', [])) < 2:
+            return ''
+        
+        doc = '<div class="markinfobox">'
+        label = data.get("label", mark.title())
+        doc += f'<h3>{label}</h3>\n'
+        doc += strings['stripeytablehead'].format(3, '')
+        doc += trtd(['Type', 'Count', 'Perecent'])
+        vals = []
+        
+        for value in data.get('values', []):
+            qty = len(dpref.get(value, []))
+            subtr -= qty
+            vals.append((value, qty))
+        
+        if not vals:
+            return ''
+        
+        subtr += count
+        if subtr < 0:
+            count -= subtr
+            subtr = 0
+        
+        vals.append(('remaining', subtr))
+        
+        c = 0
+        cla = [' class="odd"', '']
+        for label, qty in vals:
+            doc += f'<tr{cla[c%2]}>\n\t'
+            doc += f'<td>{label}</td>\n\t'
+            doc += f'<td>{qty:,}</td>\n\t'
+            minc = max(count, 1)
+            doc += f'<td>{qty/minc:.02%}\n</tr>\n'
+            c += 1
+        
+        doc += '</table></div>\n'
+        return doc
     
     def page(self, handle, path):
         
         doc = '<div class="head"><h2 class="pagetitle">Stats</h2></div>\n'
         doc += '<div class="container list">\n'
         
-        allart = ent['usersort']
-        
-        la = len(allart)
-        la -= len([x for x in allart if x.startswith('@')])
-        pas = set(dpref.get('passed', {}))
-        lp = len(pas)
-        
-        doc += '<div style="display: inline-block; vertical-align: top">'
-        doc += f'<h2>Passed</h2>\nUsers: {la:,}<br>\nPassed: {lp:,}\n<br>{lp/max(la, 1):.02%}\n</div>'
-        handle.wfile.write(bytes(doc, cfg['encoding_serve']))
-        
-        doc = '\n<h2>Mark</h2>\n'
-        imgs = len(apdfa)
-        
-        l8r = 0
-        l8rp = 0
-        imgsp = 0
-        
-        for k, v in ent['ustats'].items():
-            if v == -1:
-                v = len(users.get(k, []))
-            
-            elif v < 0:
-                v = -v
-            
-            l8r += v
-            
-            if k in pas:
-                l8rp += v
-                imgsp += len(users.get(k, []))
-        
-        tot = len(apdm['marka'])
+        self.write(handle, doc)
 
-        perc = imgs/max(l8r, 1)
-        doc += f'\nAll: Known: {l8r:,}, Faved: {imgs:,}, thats\'s {min(perc, 1):.02%}\n<br><br>'
-        if l8rp:
-            perc = imgsp / max(l8rp, 1)
-            doc += f'\nPassed: Known: {l8rp:,}, Faved: {imgsp:,}, thats\'s {min(perc, 1):.02%}\n<br><br>'
+        know = 0
+        for user, posts in users.items():
+            posts = len(posts)
+            
+            k = ent['ustats'].get(user, 0)
+            k = max(posts, k)
+            if k:
+                know += k
         
-        doc += f'\nTotal: {imgs:,}, Marked: {tot:,}, that\'s {tot/max(imgs,1):.02%}\n'
-        
-        handle.wfile.write(bytes(doc, cfg['encoding_serve']))
-
         doc = ''
-        if apdmm.get('usertype', None) != None:
-            doc += '<br>\n<br>\n'
-            doc += '<h2>User Classification</h2>\n'
-            doc += strings['stripeytablehead'].format(3, '')
-            doc += trtd(['Type', 'Count', 'Perecent'])
-            line = '<tr>\n\t<td>{}</td>\n\t<td>{:,}</td>\n\t<td>{:.02%}\n</tr>\n'
-            d = int(la)
-            la = max(la, 1)
-            
-            for k in apdmm['usertype']['values']:
-                c = len(dpref.get(k, []))
-                d -= c
-                doc += line.format(k, c, c/la)
-            
-            doc += line.format('remaining', d, d/la)
-            doc += '</table>\n'
         
-        doc += '<br>\n<br>\n'
-        handle.wfile.write(bytes(doc, cfg['encoding_serve']))
+        out = [['Known', know], ['Faved', len(apdfa)], [1, 0]]
+        doc += self.perc_builder('All', out)
+        
+        sorty = sorted([(d.get('for', 'posts'), k, d.get('stats'))
+                       for k, d in apdmm.items()], reverse=True)
+        
+        for t, k, d in sorty:
+            if d and 'percent' in d:
+                doc += self.do_percent(k)
+        
+        self.write(handle, doc + '<br>\n')
+        
+        doc = ''
+        for t, k, d in sorty:
+            if d and 'breakdown' in d:
+                doc += self.do_breakdown(k)
+        
+        doc += '</div>'
+        self.write(handle, doc)
 
 
 def table_odd(c):
@@ -3688,93 +3786,6 @@ def table_odd(c):
 def table_template(i, f):
     return f'\n\t<td>{wrapme(i, f=f)}</td>'
 
-"""OBSOLETE
-class builtin_statsold(builtin_base):
-
-    def __init__(self, title='Old Stats', link='/statsold', icon=2):
-        super().__init__(title, icon, pages)
-    
-    def page(self, handle, path):
-        
-        doc = '<div class="head"><h2 class="pagetitle">Old Stats</h2></div>\n'
-        doc += '<div class="container">\n'
-        handle.wfile.write(bytes(doc, cfg['encoding_serve']))
-        
-        allart = ent['usersort']
-        
-        read = dpref.get('read', {})
-        ent['by_day_read'] = do_general_stat(
-            read,
-            {item: apdfa.get(item, {}).get('descwc', 100) for item in read},
-            100)
-        
-        dsr = set(ent['by_day_read'])
-        
-        by_day_passed = do_general_stat(dpref.get('passed', {}))
-        h = strings['stripeytablehead'].format(3, 'Passed')
-        h += trtd(['Date', 'Count'])
-        c = 1
-        for k in sorted(by_day_passed, reverse=True):
-            
-            h += f'<tr class="{table_odd(c)}">'
-            for i, f in [
-                (k, '{}'),
-                (by_day_passed[k], '{:,}')
-                ]:
-                h += table_template(i, f)
-            
-            h += '\n</tr>\n'
-            c += 1
-        
-        handle.wfile.write(bytes(h + '</table>\n\n', cfg['encoding_serve']))
-        
-        by_day_usertype = do_general_stat({x: v[1] for x, v in apdm['usertype'].items()})
-        h = strings['stripeytablehead'].format(3, 'User Type')
-        h += trtd(['Date', 'Count'])
-        c = 1
-        for k in sorted(by_day_usertype, reverse=True):
-            
-            h += f'<tr class="{table_odd(c)}">'
-            for i, f in [
-                (k, '{}'),
-                (by_day_usertype[k], '{:,}')
-                ]:
-                h += table_template(i, f)
-            
-            h += '\n</tr>\n'
-            c += 1
-        
-        handle.wfile.write(bytes(h + '</table>\n\n', cfg['encoding_serve']))
-        
-        by_day = do_general_stat({x: v[1] for x, v in apdm['marka'].items()})
-        ent['by_day'] = by_day
-        
-        tot = 0
-        high = 0
-        for k, c in by_day.items():
-            tot += c
-            if c > high:high = c
-        
-        h = strings['stripeytablehead'].format(3, 'Content Reviewed')
-        h += trtd(['Date', 'Count', '% of Best', 'Read Words'])
-        c = 1
-        for k in sorted(by_day, reverse=True):
-            phi = by_day[k]/high
-            
-            h += f'<tr class="{table_odd(c)}">'
-            for i, f in [
-                (k, '{}'),
-                (by_day[k], '{:,}'),
-                (phi, '{:.02%}'),
-                (ent['by_day_read'].get(k, 0), '{:,}')
-                ]:
-                h += table_template(i, f)
-            
-            h += '\n</tr>\n'
-            c += 1
-        
-        handle.wfile.write(bytes(h + '</table>\n</div>', cfg['encoding_serve']))
-"""
 
 def do_stat_seesion(items, data=None, fallback=100):
     # ah see, much nicer
@@ -3808,9 +3819,9 @@ def do_stat_seesion(items, data=None, fallback=100):
     return sep
 
 
-class builtin_statsess(builtin_base):
-
-    def __init__(self, title='Stats Session', link='/statsess', icon=ii(2)):
+class stats_base(builtin_base):
+    
+    def __init__(self, title='', link='', icon=ii(99)):
         super().__init__(title, icon)
         self.table_name = 'Add a name silly!'
         self.cluster = True
@@ -3838,7 +3849,9 @@ class builtin_statsess(builtin_base):
   }
 });
 '''.replace('##name##', 'chart_##data##')
+        self.mode_default = 'simple'
         self.modes = {
+            'simple': 'Simplified',
             'hour': 'Hourly',
             'day': 'Daily',
             'week': 'Weekly',
@@ -3846,6 +3859,8 @@ class builtin_statsess(builtin_base):
             'quart': 'Quarterly',
             'year': 'Yearly'
             }
+        self.pagetype = 'builtin_stats'
+    
     @staticmethod
     def fromiso(d):
         try:
@@ -3858,7 +3873,8 @@ class builtin_statsess(builtin_base):
         if isinstance(d, int):
             d = jsdate(d).isoformat()
         
-        if mode == 'day':       return d[:10]
+        if mode == 'simple':    return d[:7]
+        elif mode == 'day':     return d[:10]
         elif mode == 'month':   return d[:7]
         elif mode == 'year':    return d[:4]
         elif mode == 'hour':    return d[:13]
@@ -3869,7 +3885,7 @@ class builtin_statsess(builtin_base):
         elif mode == 'week':
             d = self.fromiso(d).isocalendar()
             return f'{d[0]} w{d[1]}'
-        
+    
     def path_pick(self, path, options, default):
         
         for i in options:
@@ -3896,82 +3912,36 @@ class builtin_statsess(builtin_base):
         
         return target, ' - '.join(doc) + '<br><br>\n'
     
-    def data_prep_cluster(self, path, mode):
-        self.table_name = 'Marka'
-        doc =  self.charte.format('chart_new')
-        doc += self.charte.format('chart_tot')
-        
-        stat_marka = do_stat_seesion({k: v[1] for k, v in apdm['marka'].items() if v[0] != 'n/a'})
-        dat = {}
-        per = set()
-        
-        hi = 0
-        for k, v in stat_marka.items():
-            w = jsdate(k).isoformat()[:7]
-            if w not in per:
-                dat[w] = 0
-                per.add(w)
-            
-            dat[w] += v
-            
-            if v > hi:
-                hi = v
-        
-        chart_labels = []
-        chart_new = []
-        tot = 0
-        chart_tot = []
-        for k, v in sorted(dat.items()):
-            chart_labels.append(k)
-            chart_new.append(v)
-            tot += v
-            chart_tot.append(tot)
-        
-        doc += '<script>\n'
-        doc += f'var chart_labels = {json.dumps(chart_labels)};\n'
-        doc += f'var chart_new = {json.dumps(chart_new)};\n'
-        doc += f'var chart_tot = {json.dumps(chart_tot)};\n'
-        
-        doc += self.chartc.replace('##data##', 'new').replace('##TYPE##', 'bar')
-        doc += self.chartc.replace('##data##', 'tot').replace('##TYPE##', 'line')
-        doc += '</script>\n<br>'
-        
-        doc += self.stat_table_cluster(stat_marka, hi)
-        
-        return doc
+    def data(self):
+        return do_stat_seesion({
+            k: v[1]
+            for k, v in apdm['marka'].items()
+            if v[0] != 'n/a'})
     
     def data_prep(self, path, mode):
-        self.table_name = 'Marka'
         doc =  self.charte.format('chart_new')
         doc += self.charte.format('chart_tot')
         
-        stat_marka = do_stat_seesion({k: v[1] for k, v in apdm['marka'].items() if v[0] != 'n/a'})
-        
+        stat = self.data()
         dat = {}
         per = set()
         
         hi = 0
-        rt = 0
-        for k, v in sorted(stat_marka.items()):
+        for k, v in stat.items():
             w = self.process_date(k, mode)
-            
             if w not in per:
                 dat[w] = 0
-                rt = 0
                 per.add(w)
             
             dat[w] += v
-            rt += v
             
-            if rt > hi:
-                hi = rt
+            if dat[w] > hi:
+                hi = dat[w]
         
         chart_labels = []
         chart_new = []
         tot = 0
         chart_tot = []
-        prev = ''
-        carry = 0
         for k, v in sorted(dat.items()):
             chart_labels.append(k)
             chart_new.append(v)
@@ -3987,25 +3957,28 @@ class builtin_statsess(builtin_base):
         doc += self.chartc.replace('##data##', 'tot').replace('##TYPE##', 'line')
         doc += '</script>\n<br>'
         
-        doc += self.stat_table(dat, hi)
+        if mode == 'simple':
+            dat = stat
         
-        return doc
+        return doc, dat, hi
     
-    def stat_table_cluster(self, dat, hi):
-        doc = strings['stripeytablehead'].format(3, f'{self.table_name} Stats')
+    def stat_table(self, mode, dat, hi):
+        doc = strings['stripeytablehead'].format(3, 'Stats')
         doc += trtd(['Date', 'Count', 'High%'])
         c = 1
+        iscluster = mode == 'simple'
         carry = 0
         
         for k, v in sorted(dat.items(), reverse=True):
+            if iscluster:
+                if v < 5:
+                    carry += v
+                    continue
+                
+                k = self.process_date(k, 'hour')
+                v += carry
             
-            if v < 5:
-                carry += v
-                continue
-            
-            k = jsdate(k).isoformat()[:13]
             doc += f'<tr class="{table_odd(c)}">'
-            v += carry
             for i, f in [
                 (k, '{}'),
                 (v, '{:,}'),
@@ -4014,33 +3987,11 @@ class builtin_statsess(builtin_base):
                 doc += table_template(i, f)
             
             carry = 0
-            
             doc += '\n</tr>\n'
             c += 1
         
         doc += '</table>\n<br>\n<br>\n'
         return doc
-    
-    def stat_table(self, dat, hi):
-        doc = strings['stripeytablehead'].format(3, f'{self.table_name} Stats')
-        doc += trtd(['Date', 'Count', 'High%'])
-        c = 1
-        
-        for k, v in reversed(list(dat.items())):
-            doc += f'<tr class="{table_odd(c)}">'
-            for i, f in [
-                (k, '{}'),
-                (v, '{:,}'),
-                (v / hi, '{:.02%}')
-                ]:
-                doc += table_template(i, f)
-            
-            doc += '\n</tr>\n'
-            c += 1
-        
-        doc += '</table>\n<br>\n<br>\n'
-        return doc
-
     
     def page(self, handle, path):
         doc = f'<div class="head"><h2 class="pagetitle">{self.title}</h2></div>\n'
@@ -4048,85 +3999,47 @@ class builtin_statsess(builtin_base):
         
         doc += '<script src="chart.js"></script>\n'
         
-        mode, pickmode = self.build_picker(path, self.modes, 'day')
+        mode, pickmode = self.build_picker(path, self.modes, self.mode_default)
         modename = self.modes.get(mode, mode)
         doc += pickmode
         
         handle.wfile.write(bytes(doc, cfg['encoding_serve']))
-
-        if mode == 'day' and self.cluster:
-            doc = self.data_prep_cluster(path, mode)
         
-        else:
-            doc = self.data_prep(path, mode)
+        doc, dat, hi = self.data_prep(path, mode)
+        doc += self.stat_table(mode, dat, hi)
         
         handle.wfile.write(bytes(doc, cfg['encoding_serve']))
 
 
-class builtin_statadd(builtin_statsess):
+class builtin_statsmark(stats_base):
+    
+    def __init__(self, mark):
+        self.meta = apdmm[mark]
+        icon = self.meta.get('icon', None)
+        super().__init__(mark, icon)
+        self.mark = mark
+    
+    def data(self):
+        return do_stat_seesion({
+            k: v[1]
+            for k, v in apdm.get(self.mark, {}).items()
+            if v[0] != 'n/a'})
+
+
+class builtin_statadd(stats_base):
 
     def __init__(self, title='Stats Add', link='/statsess', icon=2):
         super().__init__(title, icon)
-        self.cluster = False
+        #self.cluster = False
         self.field = 'filedate'
         self.table_name = 'Add'
     
-    def data_prep(self, path, mode):
-        showerr = 'err' in path
-        doc =  self.charte.format('chart_new')
-        doc += self.charte.format('chart_tot')
-        
-        stat_marka = do_general_stat({k: v[self.field]*1000 for k, v in apdfa.items() if 'filedate' in v if type(v['filedate']) == float})
-        
-        hi = 0
-        dat = {}
-        per = set()
-        
-        hi = 0
-        rt = 0
-        for k, v in sorted(stat_marka.items()):
-            if not showerr and v > 4000:continue
-            w = self.process_date(k+'T00:00:00', mode)
-            
-            if w not in per:
-                dat[w] = []
-                per.add(w)
-                rt = 0
-            
-            dat[w].append(v)
-            
-            rt += v
-            if rt > hi:
-                hi = rt
-        
-        chart_labels = []
-        chart_new = []
-        tot = 0
-        chart_tot = []
-        
-        for k, v in sorted(list(dat.items())):
-            s = sum(v)
-            tot += s
-            chart_tot.append(tot)
-            
-            v = s / len(v)
-            chart_labels.append(k)
-            chart_new.append(v)
-            
-            dat[k] = s
-        
-        doc += '<script>\n'
-        doc += f'var chart_labels = {json.dumps(chart_labels)};\n'
-        doc += f'var chart_new = {json.dumps(chart_new)};\n'
-        doc += f'var chart_tot = {json.dumps(chart_tot)};\n'
-        
-        doc += self.chartc.replace('##data##', 'new').replace('##TYPE##', 'bar')
-        doc += self.chartc.replace('##data##', 'tot').replace('##TYPE##', 'line')
-        doc += '</script>\n<br>'
-        
-        doc += self.stat_table(dat, hi)
-        
-        return doc
+    def data(self):
+        return do_general_stat({
+            k+'T00:00:00': v[self.field]*1000
+            for k, v in apdfa.items()
+            if 'filedate' in v if type(v['filedate']) == float})
+
 
 class builtin_statupl(builtin_statadd):
 
@@ -4301,6 +4214,7 @@ class mort_postmarks(mort_base, builtin_menu):
         self.icon = icon
         self.pagetype = 'remort'
         self.marktype = marktype
+        self.page_options = ['reversed']
     
     def page(self, handle, path):
         minfo = {
@@ -4329,26 +4243,9 @@ class mort_postmarks(mort_base, builtin_menu):
                         eles.append({'label': label,
                                      'icon': icon,
                                      'href': url})
-                        
         
-        if False:#for url, d in apdm[self.which].items():
-            if d[0] == 'n/a':pass#continue
-            for s, v in [('%20', ' '),
-                         ('%64', '@'),
-                         ('%3E', '>'),
-                         ('%3C', '<')]:
-                url = url.replace(s, v)
-            
-            label = url.replace(' ', '<br>')
-            
-            for n, i in enumerate(list(label.split('/'))):
-                if i and not label.startswith('<'):
-                    label = f'<b>{i}</b>'
-                
-                elif i != '1':
-                    label += f'<br>\n{i}'
-            
-            eles.append({'label': label, 'href': url})
+        if 'reversed' in path[1:]:
+            eles = self.reverse(eles)
         
         self.build_menu(handle, self.which, minfo, eles)
 
