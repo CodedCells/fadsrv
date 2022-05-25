@@ -906,14 +906,17 @@ def mark_state(mark, thing):
     return ret
 
 
-def butt_maker(thing, mark, action, icon, state):
+def butt_maker(thing, mark, action, text, icon, state):
     # format html buttons
+    if not (state or (state and state[-1])):
+        state = 'markbutton mbutton' + state
+    
     if '{' in action:
         logging.warning(f'old action {thing}@{mark}')
-        return '<button name="{0}@{1}" onclick="{action}" class="markbutton mbutton {3}">{2}</button>\n'.replace(
+        return '<button name="{0}@{1}" onclick="{action}" class="{3}">{2}</button>\n'.replace(
         '{action}', action).format(thing, mark, icon, state)
     
-    return f'''<button name="{thing}@{mark}" onclick="{action}" class="markbutton mbutton {state}">{icon}</button>\n'''
+    return f'''<button name="{thing}@{mark}" title="{text}" onclick="{action}" class="mar{state}">{icon}</button>\n'''
 
 
 class mark_button(object):
@@ -960,7 +963,7 @@ class mark_button(object):
         
         return self.icon_html(icon, size)
     
-    def build_for(self, thing, state=None, size=60):
+    def build_for(self, thing, state=None, size=60, origin=None, page=None):
         
         if self.data.get('hidden') and not cfg.get('show_hidden_marks'):
             return '', ''
@@ -995,6 +998,8 @@ class mark_button(object):
         self.t_press = pressed
         self.t_class = cla
         self.t_size  = size
+        self.t_origin = origin
+        self.t_page = page
         
         return build_input()
     
@@ -1040,18 +1045,28 @@ class mark_button(object):
         links = []
         action = f' onclick="{self.pick_action()}"'
         inner = self.pick_icon(self.t_state, self.t_size)
-        
+
+        haspage = False
         for coln in self.col:
+            if self.t_page == f'{self.t_state}:{coln[0]}':
+                haspage = True
+            
             links.append(
                 create_linktodathing(
                     self.mark,
                     coln[0],
-                    con=self.data.get('name', self.mark)
+                    con=self.data.get('name', self.mark),
+                    origin=self.t_origin
                     ))
+        
+        if haspage and len(links) == 1:
+            links = []
         
         link = ''
         if links:
-            link = f'<div class="tags">\n{self.data["name_plural"]}:<br>\n' + '\n'.join(links) + '</div>\n'
+            link = '<div class="linkthings">\n'
+            link += f'{self.data["name_plural"]}:\n'
+            link += '\n'.join(links) + '</div>\n'
         
         return self.build_wrap(
             [self.t_thing, self.mark],
@@ -1076,7 +1091,7 @@ class mark_button(object):
             inner), ''
 
 
-def mark_for(kind, thing, wrap=False, size=60):
+def mark_for(kind, thing, wrap=False, size=60, page=None):
     # get all marks for a thing of a kind
     # wrap adds a container box
     out = ''
@@ -1086,24 +1101,31 @@ def mark_for(kind, thing, wrap=False, size=60):
         if not compare_for(apdmm[p], kind):
             continue
         
-        o, l = c.build_for(thing, size=size)
+        o, l = c.build_for(thing, size=size, origin=thing, page=page)
         
         out += o
-        if l:
-            if not link:
-                link = '<br>\nIncluded in:'
-            
-            link += f'\n{l}'
+        if not l:
+            continue
+        
+        if not link:
+            link = '<div class="flexbreak">Included in:</div>'
+        
+        link += f'\n{l}'
     
-    out = f'\n{out}\n{link}</div>\n'
-    if wrap and out:
+    if wrap:
         p = lister_linker(kind).format(thing)
-        out = f'<div class="floatingmark markbox">\nMarks for <A href="{p}">{kind} <b>{thing}</b></a>\n<br><br>{out}'
+        hout = '<div class="floatingmark markbox">\nMarks for '
+        hout += f'<a href="{p}">{kind} <b>{thing}</b></a>\n'
+        if out or link:
+            hout += f'\n<br><br>\n{out}\n{link}'
+        
+        hout += '</div>\n'
     
     else:
-        out = f'<div class="floatingmark abox mark{kind}">{out}'
+        hout = f'<div class="floatingmark abox mark{kind}">'
+        hout += f'\n{out}\n{link}</div>\n'
     
-    return out
+    return hout
 
 
 def markicons_for(kind, thing):
