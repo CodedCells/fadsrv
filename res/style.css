@@ -1,11 +1,11 @@
 body {
-    font-family: sans-serif;
+	font-family: sans-serif;
 	color: #cfcfcf;
 	text-align: center;
 	margin: 0;
-	min-height: 100vh;
+	min-width: fit-content;
+	max-width: 100vw;
 	background-color: #121212;
-	width: 100%;
 }
 
 a.btn, .mbutton {
@@ -23,6 +23,10 @@ a.btn, .mbutton {
 	min-width: 200px;
 }
 
+.reentry .btn {
+	margin-bottom: 10px;
+}
+
 .btn.wide {
 	min-width: 300px;
 }
@@ -31,21 +35,43 @@ a.btn, .mbutton {
 	color: cyan;
 }
 
+
+@media screen and (max-width: 100px) {
+	.pagetitle
+		min-width: auto;
+	}
+}
+
 .pagetitle {
 	display: inline-block;
 	padding: 10px 20px;
 	font-size: 20pt;
-	min-width: 300px;
+	min-width: 500px;
 }
 
 .abox {
 	user-select: none;
 	font-size: initial;
+	display: flex;
+	flex-flow: wrap;
+	justify-content: center;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 10px;
 }
 
-.floatingmark div {
-    display: inline-block;
-    vertical-align: bottom;
+.flexbreak {
+	flex-basis: 100%;
+}
+
+.abox .mbutton {
+	min-width: 20px;
+	margin: 0;
+}
+
+.mbutton .niceinp {
+	font-size: initial;
+	margin-left: 10px;
 }
 
 .btn.abox {
@@ -57,7 +83,7 @@ a.btn, .mbutton {
 .markbox {
 	user-select: none;
 	display: inline-block;
-    vertical-align: bottom;
+	vertical-align: top;
 	
 	padding: 12px;
 	margin: 10px;
@@ -82,18 +108,22 @@ img, video, embed {max-width: 90vw;}
 	border: none;
 	background: #424242;
 	color: #cfcfcf;
-    padding: 5px;
+	padding: 5px;
 }
 
 
 a[href^="https://www.furaffinity.net"]:visited {
-      color: hsla(116, 70%, 80%, 0.6)!important;
+	color: hsla(116, 70%, 80%, 0.6)!important;
 }
 
 .desc {
-	width: 80vw;
+	text-align: initial;
+	width: 500px;
+	max-width: 80vw;
+	display: block;
 	margin: 0 auto;
 	margin-top: 7pt;
+	overflow-wrap: break-word;
 }
 
 .desc a {
@@ -112,7 +142,7 @@ a[href^="https://www.furaffinity.net"]:visited {
 	display: inline-block;
 }
 .linky a {
-	color: white!imported;
+	color: inherit!imported;
 }
 .linky a:visited {
 	color: black!important;
@@ -131,10 +161,16 @@ a {
 	text-decoration: none;
 }
 
+@media screen and (max-width: 100px) {
+	.head {
+		margin-top: 65px;
+		color: #f00;
+	}
+}
+
 .head, .foot {
 	display: block;
 	min-height: 76px;
-	width: 100%;
 	background-color: #272727;
 }
 
@@ -142,10 +178,14 @@ a {
 	padding-bottom: 5px;
 }
 
-.head h2 {
-	padding-top: 25px;
+.head h2, .foot h2 {
+	min-width: 300px;
+	margin: 0 30px;
+	display: inline-block;
+	padding: 25px 0;
 }
-.head h2.btn {
+
+.head h2.btn, {
 	padding-top: 10px;
 }
 
@@ -182,6 +222,10 @@ a {
 	background: #424242;
 }
 
+.thumb .thumba {
+	margin-bottom: 10px;
+}
+
 .thumba img {
 	width: initial;
 	display: inline-block;
@@ -208,7 +252,7 @@ a {
 	z-index: 5;
 	display: inline-block;
 	border: none;
-	color: #cfcfcf;
+	color: inherit;
 	background-color: #202020;
 	transition: background-color .2s;
 	padding: 10px;
@@ -243,8 +287,8 @@ a {
 }
 
 .menubtn.wide a {
-    width: 250px;
-    height: 60px;
+	width: 250px;
+	height: 60px;
 }
 
 .menubtn span {
@@ -259,14 +303,52 @@ a {
 
 .menubtn.wide span {
 	float: left;
-    left: 5px;
-    top: -35px;
+	left: 5px;
+	top: -35px;
 }
 
-.artistinfo {
+.linkthings {
+	text-align: center;
+	vertical-align: text-top!important;
+	display: flex;
+	flex-flow: wrap;
+	justify-content: center;
+	gap: 10px;
+	max-width: 80vw;
 }
+
+.linkthings.centered {
+	margin: 0 auto;
+	margin-bottom: 20px;
+}
+
+.linkthings a, .linkthings button {
+	display: flex;
+	gap: 5px;
+	background: #424242;
+	padding: 3px;
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+.linkthings .linkhead {
+	font-weight: bold;
+	padding: 3px 8px;
+}
+
+.linkthings button {
+	border: none;
+	color: inherit;
+}
+
+.linkthings span {
+	flex-grow: 1;
+	text-align: right;
+}
+
 
 .tags {
+	background: #077;
 	text-align: center;
 	margin: 0 auto;
 	vertical-align: text-top!important;
@@ -389,7 +471,7 @@ i.ico-40 {
 	display: inline-block;
 	width: 40px;
 	height: 40px;
-	margin: -6px -8px;
+	margin: 2px -8px -6px -8px;
 	vertical-align: middle;
 }
 
@@ -403,14 +485,8 @@ i.ico-60 {
 	vertical-align: middle;
 }
 
-.mbutton .niceinp {
-	margin-left: 15px;
-}
 .mbutton .iconsheet {
 	vertical-align: top;
-}
-.mbutton input.niceinp {
-	width: 100px;
 }
 
 .teenyicon {
@@ -421,12 +497,12 @@ i.ico-60 {
 	background-size: 240px 240px;
 }
 
-a > i.teenyicon {
+a > i.teenyicon, .icons i.teenyicon {
 	margin: -6px -3px -6px 0px;
 }
 
 .popdown::-webkit-scrollbar {
-  display: none;
+	display: none;
 }
 
 .popdown {
@@ -513,11 +589,11 @@ label input, label .mbutton, label select {
 	text-align: initial;
 }
 
-.setting div .niceinp{
+.setting div .niceinp {
 	width: 150px;
 }
 
-@media only screen and (max-width: 800px) {
+@media screen and (max-width: 800px) {
 	.setting div {
 		display: block;
 		width: initial;
@@ -546,10 +622,10 @@ div.menu-button {
 }
 
 div.menu-button-wide {
-    min-width: 180px;
+	min-width: 180px;
 	
 	background-color: #1a1a1a;
-    border-bottom: 2px solid #0c0c0c;
+	border-bottom: 2px solid #0c0c0c;
 }
 
 .menu-button .iconsheet {
@@ -568,7 +644,7 @@ div.menu-button-wide {
 .menu-button-wide .menu-label {
 	margin-top: 0;
 	display: inline-block;
-    width: calc(100% - 90px);
+	width: calc(100% - 90px);
 }
 
 .stripy {
@@ -596,14 +672,6 @@ div.menu-button-wide {
 
 .title h2 {
 	display: inline;
-}
-
-@media only screen and (max-width: 1000px) {
-	
-	.head h2, .foot h2 {
-		font-size: 14pt;
-		padding: 0;
-	}
 }
 
 .t-image {
@@ -658,7 +726,7 @@ div.menu-button-wide {
 }
 
 .r-general .t-inner, .postflex.r-general {
-	   border: 1px solid #333;
+	border: 1px solid #333;
 	box-shadow: 2px 2px 2px #2a2a2a;
 	-moz-box-shadow: 2px 2px 2px #2a2a2a;
 	-webkit-box-shadow: 2px 2px 2px #2a2a2a;
@@ -729,16 +797,19 @@ div.menu-button-wide {
 
 .filterContainer {
 	display: inline-block;
-    min-width: calc(50vw - 140px);
-    text-align: initial;
+	min-width: calc(50vw - 140px);
+	max-width: 60%;
+	text-align: initial;
 }
 
 .filterContainer h3, .filterContainer .widebar {
 	margin: 5px 0;
+	width: 100%;
 }
 
 .filterWidgets {
 	display: flex;
+	gap: 20px 40px;
 	flex-direction: row;
 	flex-wrap: wrap;
 	justify-content: space-between;
@@ -754,64 +825,64 @@ div.menu-button-wide {
 }
 
 .lds-ring {
-  display: inline-block;
-  position: relative;
-  width: 24px;
-  height: 24px;
+	display: inline-block;
+	position: relative;
+	width: 24px;
+	height: 24px;
 }
 .lds-ring div {
-  box-sizing: border-box;
-  display: block;
-  position: absolute;
-  width: 24px;
-  height: 24px;
-  margin: 2px;
-  border: 3px solid #cfcfcf;
-  border-radius: 50%;
-  animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
-  border-color: #cfcfcf transparent transparent transparent;
+	box-sizing: border-box;
+	display: block;
+	position: absolute;
+	width: 24px;
+	height: 24px;
+	margin: 2px;
+	border: 3px solid #cfcfcf;
+	border-radius: 50%;
+	animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+	border-color: #cfcfcf transparent transparent transparent;
 }
 .lds-ring.hide {
 	visibility: hidden;
 }
 .lds-ring div:nth-child(1) {
-  animation-delay: -0.45s;
+	animation-delay: -0.45s;
 }
 .lds-ring div:nth-child(2) {
-  animation-delay: -0.3s;
+	animation-delay: -0.3s;
 }
 .lds-ring div:nth-child(3) {
-  animation-delay: -0.15s;
+	animation-delay: -0.15s;
 }
 @keyframes lds-ring {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+	0% {
+	transform: rotate(0deg);
+	}
+	100% {
+	transform: rotate(360deg);
+	}
 }
 .parrot-ring {
-  width: 300px;
-  height: 300px;
+	width: 300px;
+	height: 300px;
 }
 .parrot-ring div {
-  width: 300px;
-  height: 300px;
-  border: 15px solid #cfcfcf;
-  
-  border-radius: 50%;
-  animation: lds-ring 5s cubic-bezier(0.5, 0, 0.5, 1) infinite;
-  border-color: #cfcfcf transparent transparent transparent;
+	width: 300px;
+	height: 300px;
+	border: 15px solid #cfcfcf;
+	
+	border-radius: 50%;
+	animation: lds-ring 5s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+	border-color: #cfcfcf transparent transparent transparent;
 }
 .parrot-ring div:nth-child(1) {
-  animation-delay: -0.5s;
+	animation-delay: -0.5s;
 }
 .parrot-ring div:nth-child(2) {
-  animation-delay: -0.75s;
+	animation-delay: -0.75s;
 }
 .parrot-ring div:nth-child(3) {
-  animation-delay: -1s;
+	animation-delay: -1s;
 }
 .parrot-ring div:nth-child(4) {
 	border: none;
@@ -855,9 +926,10 @@ div.menu-button-wide {
 	border: none;
 	background: #424242;
 	color: #cfcfcf;
-    padding: 5px;
+	padding: 5px;
 	min-width: 30px;
 	margin-bottom: 10px;
+	border-radius: 4px;
 }
 
 #logOutput {
@@ -908,7 +980,7 @@ code.logERROR {
 .iconusername img {
 	color: transparent;
 	max-height: 50px;
-    max-width: 50px;
+	max-width: 50px;
 }
 
 .taskgroup {
