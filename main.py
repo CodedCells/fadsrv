@@ -1,11 +1,11 @@
-###############################################################################
+#############################################################################
 # pep8 non-compliant :(
 
 from onefad_functions import *
 import requests
 import gc
 
-ent['version'] = '31#2022-05-11'
+ent['version'] = '31#2022-05-24'
 
 class builtin_base(builtin_base):
     
