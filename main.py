@@ -4891,7 +4891,7 @@ def load_user_config():
     
     if 'all_pages' not in menus['pages']:
         menus['pages']['all_pages'] = {
-            "title": "Remort Menu",
+            "title": "All Pages",
             "mode": "wide-icons-flat",
             "buttons": "all_pages_buttons",
             "icon": [9, 9]
