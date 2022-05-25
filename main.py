@@ -2790,7 +2790,8 @@ hide_empty: {self.hide_empty}\n-->'''
         else:
             mdata = data
         
-        f = pick_thumb(mdata)
+        f = choose_thumb(self.marktype, item, do_ext=False)
+        
         l = f'/t/{f}'
         if cfg['remote_images'] != '':
             l = cfg['remote_images'].format(f)
@@ -2934,7 +2935,10 @@ class mort_collection_list(mort_base):
             self.datas[k] = ent['collection_' + self.colname][k]['items'].copy()
             
             for i, u in enumerate(self.datas[k]):
-                t = pick_thumb(users.get(u, []), do_ext=False)
+                t = choose_thumb(
+                    self.meta.get('for', 'posts'),
+                    u, do_ext=False)
+                
                 if t != 'parrot.svg':
                     self.datas[k][i] = t
                     break
@@ -3485,8 +3489,7 @@ class mort_percgot(mort_base):
         self.items = sorted(self.items.items(), key=itemgetter(1))
 
 
-def pick_thumb(posts, do_ext=True):
-    if isinstance(posts, int):posts = []#hack
+def select_thumb(posts, do_ext=True):
     i = None
     for i in posts:
         if cfg['docats'] and i in ent['_marked']:
@@ -3494,13 +3497,55 @@ def pick_thumb(posts, do_ext=True):
         
         break
     
-    if i:
-        d = apdfa.get(i, {'ext': 'error'})
-        if file_category(d.get('ext', '')) == 'image':
-            if do_ext:i += '.' + d['ext']
-            return i
+    if not i:
+        return 'parrot.svg'
     
-    return 'parrot.svg'
+    d = apdfa.get(i, {'ext': 'error'})
+    if file_category(d.get('ext', '')) == 'image':
+        if do_ext:i += '.' + d['ext']
+        return i
+
+
+def choose_thumb(marktype, thing, level=0, do_ext=True):
+    
+    if marktype == 'posts':
+        return select_thumb([thing], do_ext=do_ext)
+    
+    if marktype == 'users':
+        posts = users.get(thing, [])
+        return select_thumb(posts, do_ext=do_ext)
+    
+    if marktype == 'tags':
+        posts = kwd.get(thing, [])
+        return select_thumb(posts, do_ext=do_ext)
+    
+    if marktype == 'folders':
+        posts = apdfafol.get(thing, {}).get('items', [])
+        return select_thumb(posts, do_ext=do_ext)
+    
+    if apdmm.get(marktype):
+        posts = ent.get('collection_' + marktype, {})
+        posts = posts.get(thing, {}).get('items', [])
+        
+        marktype = apdmm[marktype].get('for', 'posts')
+        if not posts:
+            return 'parrot.png'
+        
+        elif marktype == 'posts':
+            return select_thumb(posts, do_ext=do_ext)
+        
+        elif level < cfg.get('thumbnail_recursion_limit', 5):
+            posts = choose_thumb(
+                marktype, posts[0], level=level+1, do_ext=do_ext)
+            
+            if posts == 'icons.svg':
+                logging.debug(f'Recursion limit reached: {level} {marktype} {thing}')
+            
+            return posts
+        
+        return 'icons.svg'
+    
+    return 'parrot.png'
 
 
 class builtin_search(builtin_base):
