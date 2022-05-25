@@ -460,12 +460,12 @@ var t = setTimeout(function(){window.location.reload(1);}, 5000);
         
         butts = ent.get('reentry_buttons', [])
         if self.do_rebut and butts:
-            h += '<span>'
+            h += '<div class="reentry">'
             for clas, func, text in butts:
                 h +=  f'<a class="btn{clas}" onclick="postReload(this, \'/{func}\')">{text}</a>\n'
             
-            h += '</span>'
             h += '<div id="rebuildLoad" class="lds-ring hide"><div></div><div></div><div></div><div></div></div>'
+            h += '</div>'
         
         srvname = cfg.get('server_name')
         if type(srvname) != str or not srvname:
