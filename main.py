@@ -5413,14 +5413,7 @@ if __name__ == '__main__':
             { "label": "Info", "href": "/info" },
             { "label": "Configure", "href": "/config" },
             { "label": "Pages", "href": "/pages" },
-            { "label": "remort", "href": "/remort" }
-            ],
-        'query_buttons': [
-            { "label": "Restricted Users", "href": "gone" },
-            { "label": "User Activity", "href": "activity" },
-            { "label": "Review Passed", "href": "review" },
-            { "label": "Unread by User", "href": "unread" },
-            { "label": "Folders", "href": "folders" }
+            { "label": "All Pages", "href": "/all_pages" }
             ],
         "mobile_buttons": [ 
             { "label": "by User", "href": "users" },
@@ -5434,8 +5427,7 @@ if __name__ == '__main__':
             { "label": "Search", "href": "/search" },
             { "label": "Stats", "href": "/stats" },
             { "label": "Configure", "href": "/config" },
-            { "label": "remort", "href": "/remort" },
-            { "label": "Pack", "href": "/pack" }
+            { "label": "all_pages", "href": "/all_pages" }
             ]
         })
     
