@@ -427,7 +427,7 @@ var t = setTimeout(function(){window.location.reload(1);}, 5000);
         
         h = strings['popdown'].format(' pageopt')
         h += '<div class="page-toptions">\n'
-        h += '<h2>Page options:</h2>\n'
+        h += '<h3>Page Parameters</h3>\n'
         for n, v in enumerate(outopt):
             
             for i in self.page_options[n]:
