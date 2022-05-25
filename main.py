@@ -1192,7 +1192,7 @@ def post_things(label, items, itype, me=None, op=None, all_here = False, con=Non
 
 class eyde_base(builtin_base):
 
-    def __init__(self, items=[], marktype='', domodes=True, icon=ii(89)):
+    def __init__(self, items=[], marktype='', icon=ii(89)):
         super().__init__()
         self.pagetype = 'eyde'
         self.items = items
@@ -1203,13 +1203,13 @@ class eyde_base(builtin_base):
         self.icon = icon
         
         self.marktype = marktype
-        if domodes:
-            self.modes_default = 'full'
-            self.modes = {
-            'full': 'Full mode',
-            'thumb': 'Thumb mode',
-            'fa': 'FA mode'
-            }
+        
+        self.modes_default = 'full'
+        self.modes = {
+        'full': 'Full mode',
+        'thumb': 'Thumb mode',
+        'fa': 'FA mode'
+        }
         
         self.name = ''
         self.title = 'EYDE'
@@ -1225,6 +1225,7 @@ class eyde_base(builtin_base):
             list(self.modes),
             ['cull', 'nocull']
             ]
+        self.filters = {}
     
     def page(self, handle, path):
         self.gimme(path)
@@ -1234,6 +1235,33 @@ class eyde_base(builtin_base):
     @staticmethod
     def gimme(pargs):
         pass
+    
+    def modes_fallback(self):
+        if cfg.get('eyde_default_mode') in self.modes:
+            return cfg.get('eyde_default_mode')
+        
+        return self.modes_default
+    
+    def process_filters(self, thing, filters):
+        return {label: link.format(thing)
+                for label, link in filters.items()}
+    
+    def build_filters(self, thing):
+        if not self.filters:
+            return ''
+        
+        filters = self.process_filters(thing, self.filters)
+        
+        h = '<div class="linkthings centered">\n'
+        c = 0
+        for label, link in filters.items():
+            if '/' not in link:
+                link = f'/filter/{link}/1'
+            
+            h += f'<a href="{link}">{label}</a>\n'
+            c += 1
+        
+        return h + '</div>\n'
     
     def build_page(self, handle, pargs):
         
@@ -1265,7 +1293,7 @@ class eyde_base(builtin_base):
         h += self.build_page_mode(list_mode, lse)
         
         if index_id == last_page and sa < si:
-            h += f"<br>\nThat's all I've got on record. {si:,} file{plu(si)}."
+            h += f"<br>\nThat's all I've got on record. {si:,} item{plu(si)}."
         
         h += f'\n</div><div class="foot">{nav}\n<br>'
         try:
@@ -1273,8 +1301,8 @@ class eyde_base(builtin_base):
         
         except UnicodeEncodeError as e:
             logging.error(f">Encountered a UnicodeDecodeError {handle.path}", exc_info=True)
-            handle.wfile.write(bytes(f'<p>Encountered a UnicodeDecodeError: {e}</p>\n', 'utf-8'))
-            handle.wfile.write(bytes(h, 'utf-8'))
+            self.write(handle, f'<p>Encountered a UnicodeDecodeError: {e}</p>\n')
+            self.write(handle, h)
         
         self.f_items = []
     
@@ -1294,26 +1322,26 @@ class eyde_base(builtin_base):
         
         si = len(self.f_items)
         last_page, sa, ea = lse
-        if self.modes:
-            list_mode, wr = self.mode_picker(pargs)
         
-        else:
-            list_mode, wr = self.modes_default, ''
+        list_mode, wr = self.mode_picker(pargs)
         
         nav = template_nav(self.title, index_id, last_page, enc=False)
         if cfg['lister_buttons']:
             nav = nav.join(lister_get(self.marktype, self.title))
         
-        h += '<div class="head">\n' + nav + '</div>\n<div class="container">\n'
+        h += f'<div class="head">\n{nav}</div>\n'
+        h += f'<div class="container">\n{wr}'
         
-        h += wr + '<br><br>\n'
+        h += self.build_filters(self.markid)
+        
         h += self.headtext[0]
+        
         if self.do_mark:
-            h += mark_for(self.marktype, self.markid) + '<br>\n'
+            h += mark_for(self.marktype, self.markid, page=self.name)
         
         h += self.headtext[1]
         
-        h += f'{si:,} item{plu(si)}<br>\n<br>\n'
+        h += f'<p>{si:,} item{plu(si)}</p>\n'
         
         return h, list_mode, nav, si
     
@@ -1392,7 +1420,13 @@ class eyde_base(builtin_base):
             ret += f'View Attached Document, {ta.get("words"):}</a></p>\n'
         
         desc = apdfadesc.get(post)
+        if cfg['show_unparsed']:
+            ret += very_pretty_json(f'post:{post}', data, ignore_keys=['tags'])
+        
         if desc:
+            if desc.count('<div') > desc.count('</div'):
+                desc += '</div>'
+            
             desc_word_count = data.get('descwc', -1)
             
             if desc_word_count > cfg['collapse_desclength']:
@@ -1404,9 +1438,6 @@ class eyde_base(builtin_base):
         
         if data.get('got', True):
             ret += post_things(
-            
-            if cfg['show_unparsed']:
-                ret += very_pretty_json(f'post:{post}', data, ignore_keys=['tags'])
                 'Tags:', data.get('tags', ''), 'tags')
             
             ret += post_things(
@@ -1494,7 +1525,7 @@ class eyde_base(builtin_base):
             not data.get('got', True) or cfg['all_marks_visible']):
             domark = 'posts_unav'
         
-        ret += '\n<br>\n' + mark_for(domark, post, size=40)
+        ret += '\n<br>\n' + mark_for(domark, post, size=40, page=self.name)
         
         ret += '</span></span>\n'
         
@@ -1580,7 +1611,7 @@ class get_icon_collection(builtin_base):
         
         return self.icon
     
-    def propButton(self, escname, markact, icon, state=True):
+    def propButton(self, escname, markact, text, icon, state=True):
         if isinstance(icon, int):
             icon = ii(icon)
         
@@ -1588,16 +1619,18 @@ class get_icon_collection(builtin_base):
             state = ['', ' on'][self.data.get(markact, False)]
         
         return butt_maker(
-            escname, markact, 'propMagic(this)',
+            escname, markact, 'propMagic(this)', text,
             mark_button.icon_html(None, icon, 60),
             state)
     
     def propCluster(self, escname):
-        h =  '<br>\nOptions:\n'
-        h += self.propButton(escname, 'lock', 50)
-        h += self.propButton(escname, 'pin', 52)
-        h += self.propButton(escname, 'sortmepls', 'Sort by ID', state='')
-        h += self.propButton(escname, 'delete', 'Delete')
+        h = '<div class="floatingmark abox options">Options:\n'
+        h += self.propButton(escname, 'lock', 'Lock', 50)
+        h += self.propButton(escname, 'pin', 'Pin', 52)
+        h += self.propButton(escname, 'pos', 'Show Positions', 80)
+        h += self.propButton(escname, 'sortmepls', 'Sort by ID', 51, state='')
+        h += self.propButton(escname, 'delete', 'Delete', 'Delete')
+        h += '</div>\n'
         return h
 
 
@@ -1607,9 +1640,25 @@ class eyde_collection(eyde_base, get_icon_collection):
         items = []
         marktype = colname
         self.colname = colname
-        domodes = True
-        super().__init__(items, marktype, domodes)
+        super().__init__(items, marktype)
         self.markid = colname + 'ERROR'
+        
+        self.filters = {
+            'Filter': '@{col}:{name}',
+            'Filter ID': '@{col}:id.{pos}'
+            }
+    
+    def process_filters(self, thing, filters):
+        namesingle = apdmm.get(self.colname, {}).get('name', self.colname)
+        items = list(ent[f'collection_{self.colname}'])
+        pos = 0
+        if thing in items:
+            pos = items.index(thing)
+        
+        escname = re.sub(r'\W+', '', thing.lower())
+        
+        return {label: links.format(col=namesingle, name=escname, pos=pos)
+                for label, links in filters.items()}
     
     def gimme(self, pargs):
         name = find_collection(self.colname, pargs[1])
@@ -1631,18 +1680,11 @@ class eyde_collection(eyde_base, get_icon_collection):
         h = f'<script>var con="{self.colname}";</script>\n'
         h += self.propCluster(escname)
         
-        h += '\n<br>\nFilter:\n'
+        self.headtext[0] = h
         
-        namesingle = apdmm.get(self.colname, {}).get('name', self.colname)
-        h += f'<a href="/filter/@{namesingle}:{escname}/1">{namesingle}</a>\n'
-        pos = list(ent[f'collection_{self.colname}']).index(name)
-        h += f'<a href="/filter/@{namesingle}:id.{pos}/1">id.{pos}id</a>\n'
-        h += '<br>\n'
-        
+        h = ''
         if cfg['show_unparsed']:
             h += very_pretty_json(f'{self.marktype}:{name}', data, ignore_keys=['items'])
-        
-        self.headtext[0] = h
         
         if apdmm[self.colname].get('doReadCount', False):
             unread = 0
@@ -1651,17 +1693,17 @@ class eyde_collection(eyde_base, get_icon_collection):
                 if p not in prefr:
                     unread += 1
             
+            h = 'All read - '
             if unread:
                 h = f'{unread:,} unread - '
-            else:
-                h = 'All read - '
             
-            self.headtext[1] = h
+        self.headtext[1] = '<br>' + h
+
 
 class eyde_view(eyde_base):
     
-    def __init__(self, items=[], marktype='', domodes=True):
-        super().__init__(items, marktype, domodes)
+    def __init__(self, items=[], marktype=''):
+        super().__init__(items, marktype)
         self.markid = 'VIEWERROR'
     
     def gimme(self, pargs):
@@ -1688,8 +1730,8 @@ class eyde_view(eyde_base):
 
 class eyde_dataurl(eyde_base):
     
-    def __init__(self, items=[], marktype='', domodes=True):
-        super().__init__(items, marktype, domodes)
+    def __init__(self, items=[], marktype=''):
+        super().__init__(items, marktype)
         self.markid = 'VIEWERROR'
     
     def gimme(self, pargs):
@@ -1758,10 +1800,16 @@ def format_wp(file, thing):
 
 class eyde_user(eyde_base):
 
-    def __init__(self, items=[], marktype='users', domodes=True):
-        super().__init__(items, marktype, domodes)
+    def __init__(self, items=[], marktype='users'):
+        super().__init__(items, marktype)
         
         self.page_options.append(['escape'])
+        self.filters = {
+            'Filter': 'user:{}',
+            'Linked From': 'userl:{}',
+            'Desc Posts': 'userdescpost:{}',
+            'Userlist': '/userlink/{}/1'
+            }
     
     def gimme(self, pargs):
         if len(pargs) > 1:
@@ -1779,46 +1827,43 @@ class eyde_user(eyde_base):
             user = html.escape(user)
         
         h = ''
-        for path, name in cfg['altsrv']:
-            path = path.format(user)
-            h += f'<a href="{path}">{name}</a><br>'
         
-        h += '<br>Filter:\n'
-        for k in ['user', 'userl', 'userdescpost']:
-            h += f'<a href="/filter/{k}:{user}/1">{k}</a>\n'
-        
-        h += f'<a href="/userlink/{user}/1">userlink</a>\n'
-        
-        h += '<br>\n'
-
         count = len(users.get(user, ''))
         know = max(ent['ustats'].get(user, 1), count)
         perc = count / max(know, 1)
         
-        self.headtext[0] = h + '<br>\n'
-        h = ''
+        h += '<div class="userinfo">\n<p>'
+        aud = ent['udatas'].get(user, {})
         
-        h += '<div class="userinfo">\n'
-        aud = ent['udatas'].get(user)
-        if aud:
-            if 'registered' in aud:
-                h += f'Registered: {trim_date(aud["registered"]*1000)}<br>\n'
-            
-            if cfg['show_unparsed']:
-                h += very_pretty_json(f'user:{user}', aud)
-
+        if 'registered' in aud:
+            registered = datetime.utcfromtimestamp(aud["registered"])
+            registered = registered.strftime('%b %d, %Y')
+            h += f'Registered: {registered}</br>\n'
+        
         udat = ustats.get(user)
         if udat:
-            for k, v in [('lastChk', 'Last checked'),
+            for k, v in [('lastChk', 'Checked'),
                          ('status', 'Account status'),
                          ('lastPostDate', 'Last posted')]:
                 if k in udat:
-                    h += f'{v}: {udat[k]}<br>\n'
+                    k = udat[k]
+                    if k[0].isdigit():
+                        k = datetime.fromisoformat(k).strftime('%b %d, %Y')
+                    
+                    h += f'{v}: {k}<br>\n'
         
+        h += '</p>\n'
+        
+        for path, name in cfg['altlinks'].get('users', []):
+            path = path.format(user)
+            h += f'<p><a href="{path}">{name}</a></p>\n'
+        
+        h += '<p>'
         passed = dpref.get('passed', {})
         if user in passed:
-            passdate = passed['user']
-            h += f'Passed: {trim_date(passdate)}<br>\n'
+            passdate = datetime.utcfromtimestamp(passed['user'] / 1000)
+            passdate = passdate.strftime('%b %d, %Y %H:%M')
+            h += f'Passed: {passdate}<br>\n'
         
         for w, d in wpm.items():
             if compare_for(d, self.marktype, sw=True):
@@ -1826,7 +1871,10 @@ class eyde_user(eyde_base):
                     h += format_wp(w, user)
         
         if user in ent['ustats']:
-            h += f'Got {count:,} of {ent["ustats"][user]:,} posts ({perc:.02%})'
+            h += f'Got {count:,} of {ent["ustats"][user]:,} posts ({perc:.02%})</p>'
+        
+        if cfg['show_unparsed']:
+                h += very_pretty_json(f'user:{user}', aud)
         
         h += '\n</div>'
         self.headtext[1] = h
@@ -1834,8 +1882,8 @@ class eyde_user(eyde_base):
 
 class eyde_postmark(eyde_base):
     # todo what is this, unused
-    def __init__(self, items=[], marktype='postmarks', domodes=True):
-        super().__init__(items, marktype, domodes)
+    def __init__(self, items=[], marktype='postmarks'):
+        super().__init__(items, marktype)
         self.headtext = ['', '', '']
     
     def gimme(self, pargs):
@@ -1863,10 +1911,13 @@ class eyde_postmark(eyde_base):
         self.headtext[0] = h
 
 class eyde_folder(eyde_base):
-    def __init__(self, items=[], marktype='folders', domodes=True):
-        super().__init__(items, marktype, domodes)
+    def __init__(self, items=[], marktype='folders'):
+        super().__init__(items, marktype)
         
         self.page_options.append(['nosort', 'sorted'])
+        self.filters = {
+            'Filter': 'folder:{}'
+            }
     
     def dosort(self, folid, pargs):
         if 'nosort' in pargs:return False
@@ -1888,51 +1939,50 @@ class eyde_folder(eyde_base):
         #self.titledoc(handle, self.title)
         self.name = f'folder:{folid}'
         self.items = f['items']
-
-        # todo option for this
-        h = f'<a href="//www.furaffinity.net{f["path"]}">FA Folder</a><br>'
         
-        h += '<br>Filter:\n'
-        h += f'<a href="/filter/folder:{folid}/1">folder</a>\n'
-        h += '<br>\n'
+        h = ''
+        for path, name in cfg['altlinks'].get('folders', []):
+            path = path.format(f["path"])
+            h += f'<p><a href="{path}">{name}</a></p>\n'
         
         if self.dosort(folid, pargs):
             self.items = sorted([int(x) for x in self.items])
             self.items = [str(x) for x in self.items]
         
-        else:
-            h += '<a href="sortid">Display sorted</a>'
-        
-        self.headtext[0] = h + '<br>\n' * 2
-        h = ''
-        
-        h += '<script>\nvar defaultSetName = "{}";\nvar posts = ['.format(f['title'].replace('"', '\\"'))
-        for i in self.items:
-            h += f'\n\t"{i}",'
-        
-        h = h[:-1] + '\n];\n</script>\n'
+        h += '<script>\n'
+        escname = f['title'].replace('"', '\\"')
+        h += f'var defaultSetName = "{escname}";\n'
+        h += 'var posts = ['
+        h += ','.join([f'\n\t"{i}"' for i in self.items])
+        h += '\n];\n</script>\n'
+
+        addto = ''
         for m, d  in apdmm.items():
             if not compare_for(d, 'posts', sw=True):
                 continue
             
-            if d.get('type', False) == 'collection':
-                name = d.get('name', m)
-                
-                h += butt_maker(folid, 'create',
-                    "folderToSet('Name the new {}', '{}')".format(name, m),
-                    f'Add all to {name}', '')
+            if d.get('type', False) != 'collection':
+                continue
+            
+            name = d.get('name', m)
+            
+            addto += butt_maker(folid, 'create',
+                f"folderToSet('Name the new {name}', '{m}')",
+                name, name, 'ass')
+        
+        if addto:
+            h += f'<div class="linkthings centered">\nAdd all to: {addto}</div>'
         
         h += '<div class="userinfo">\n'
         got = len(self.items)
         know = max(got, f['count'])
         perc = got / max(know, 1)
         
+        h += f'<p>Got {got:,} of {know:,} posts ({perc:.02%})</p>\n'
         if cfg['show_unparsed']:
             h += very_pretty_json(f'folder{folid}', f, ignore_keys=['items'])
         
-        h += f'Got {got:,} of {know:,} posts ({perc:.02%})'
-        h += '\n</div>'
-        self.headtext[1] = h
+        self.headtext[1] = h + '</div>\n'
 
 
 class post_sort_prop(object):
@@ -1982,8 +2032,11 @@ class post_sort_linked(object):
 
 class eyde_tag(eyde_base):
     
-    def __init__(self, items=[], marktype='tags', domodes=True):
-        super().__init__(items, marktype, domodes)
+    def __init__(self, items=[], marktype='tags'):
+        super().__init__(items, marktype)
+        self.filters = {
+            'Filter': '{}'
+            }
     
     def gimme(self, pargs):
         tag = ''
@@ -1993,20 +2046,14 @@ class eyde_tag(eyde_base):
         self.name = f'tag:{tag}'
         ent['visited_rebuild'].append([self.marktype, tag])
         self.title = tag
-        #self.titledoc(handle, tag)
         self.markid = tag
         self.items = kwd.get(tag, [])
-        
-        h = '<br>Filter:\n'
-        h += f'<a href="/filter/{tag}/1">tag</a>\n'
-        h += '<br>\n'
-        self.headtext[1] = h
 
 
 class eyde_filter(eyde_base):
 
-    def __init__(self, items=[], marktype='filters', domodes=True):
-        super().__init__(items, marktype, domodes)
+    def __init__(self, items=[], marktype='filters'):
+        super().__init__(items, marktype)
         
         self.icon = ii(55)
         self.f_sort = 'id'
@@ -2344,20 +2391,20 @@ class eyde_filter(eyde_base):
         
         h = self.filter_widgets(pbar, p_or, p_and, p_not, p_arg)
         m = ''
-
+        
         linked = set()
         for k, v in p_or + p_and + p_not + p_arg:
             if k in ['user', 'userl']:
                 uv = f'user:{v}'
                 if uv in linked:continue
                 linked.add(uv)
-                h += mark_for('users', v, wrap=True) + '<br>'
+                h += mark_for('users', v, wrap=True)
             
             elif k in ['linkto', 'linkfrom']:
                 uv = f'post:{v}'
                 if uv in linked:continue
                 linked.add(uv)
-                h += mark_for('posts', v, wrap=True) + '<br>'
+                h += mark_for('posts', v, wrap=True)
             
             elif k == '@' and v in self.dprefs:
                 pass
@@ -2369,7 +2416,7 @@ class eyde_filter(eyde_base):
                 k = self.col[k]
                 v = self.filter_param_colname(k, v)
                 if v != False:
-                    h += mark_for(k, v, wrap=True) + '<br>'
+                    h += mark_for(k, v, wrap=True)
             
             elif k == 'tag':
                 h += mark_for('tags', v, wrap=True)
@@ -2385,22 +2432,29 @@ class eyde_filter(eyde_base):
             self.name = None
 
 
-def iconlist(di, thing):
+def iconlist(di, thing, sp=False):
     pgm = ''
     
     for name, icon, ext, cssc in di:
+        cur = f' {icon}'
         if isinstance(icon, list):
-            pgm += f'<i name="{thing}@ico.{name}" class="teenyicon iconsheet{cssc + markicon(*icon, m=-24)}"></i>'
-        else:
-            pgm += f' {icon}'
-
-        if not ext:continue
+            cur = f'{thing}@ico.{name}" class="teenyicon iconsheet'
+            cur += f'{cssc + markicon(*icon, m=-24)}">'
+            cur = f'<i name="{cur}</i>'
+        
+        pgm += cur
+        if not ext:
+            continue
+        
         pgm += f'{ext} '
+    
+    if sp:
+        return f'<span class="icons">{pgm}</span>'
     
     return pgm
 
 
-def create_linktodathing(kind, thing, onpage=False, retmode='full', con=None):
+def create_linktodathing(kind, thing, onpage=False, retmode='full', con=None, origin=None):
     pi = []
     linky = thing
     
@@ -2485,7 +2539,12 @@ def create_linktodathing(kind, thing, onpage=False, retmode='full', con=None):
         if data.get('icon') != None:
             pi.append(['', data['icon'], '', ''])
         
-        linkdes += ' ' + wrapme(len(data['items']))
+        if data.get('pos') and origin:
+            pos = data['items'].index(origin) + 1
+            linkdes += f'<span class="position">#{pos}</span>'
+        
+        count = len(data['items'])
+        linkdes += f'<span class="count">({count:,})</span>'
     
     if kind == 'users':
         if thing in users:
@@ -2526,7 +2585,7 @@ def create_linktodathing(kind, thing, onpage=False, retmode='full', con=None):
         return linky
     
     href = href.format(linky)
-    return f'<a href="{href}">{iconlist(pi, thing)} {linkdes} {iconlist(di, thing)}</a>'
+    return f'<a href="{href}">{iconlist(pi, thing, sp=True)} {linkdes} {iconlist(di, thing, sp=True)}</a>'
 
 
 def overicon(kind, thing, con=None):
@@ -2571,6 +2630,7 @@ class mort_base(builtin_base):
         self.con = con
         self.hide_empty = self.marktype == 'users'
         self.headtext = ['', '', '']
+        self.markid = 'mark_id_error'
         
         self.can_list = True
         self.content_type = 'text/html'
@@ -2579,8 +2639,11 @@ class mort_base(builtin_base):
         self.page_options = [
             ['reversed'],
             ['cull', 'nocull'],
-            ['count', 'unmarked', 'ustats']
+            ['count']
             ]
+        
+        if self.marktype == 'users':
+            self.page_options[2] += ['unmarked', 'ustats']
     
     def page(self, handle, path, text='', head=True):
         self.gimme(path)
@@ -2795,22 +2858,24 @@ class mort_base(builtin_base):
 marktype: {self.marktype}\nlink: {self.link}\ntitle: {self.title}
 hide_empty: {self.hide_empty}\n-->'''
         
+        h += strings['setlogic']
+        
         if head:
             h += f'<div class="head">\n{nav}</div>\n'
         
         h += f'<div class="container list">\n{text}'
         h += self.headtext[0]
-        h += f'<p>{count:,} items</p>\n'
+        
+        h += f'<p>{count:,} item{plu(count)}</p>\n'
         h += self.headtext[1]
         
         for i in items[sa:ea]:
+            item = i
             if type(i) in [list, tuple]:
                 item = i[0]
-                
-            else:
-                item = i
             
-            h += self.build_item(i, self.datas.get(item, None), 'aaaaaaaaaaaaaaaaaaaaaa')
+            h += self.build_item(
+                i, self.datas.get(item, None), 'aaaaaaaaaaaaaaaaaaaaaa')
         
         h += f'\n</div><div class="foot">{nav}\n<br>'
         
@@ -2851,24 +2916,30 @@ hide_empty: {self.hide_empty}\n-->'''
             if inf is None or pos >= len(i):
                 continue
             
+            f = '{}'
+            if len(inf) == 2:f = inf[1]
+            app = None
+            
             if inf[0] == 'str':
-                if len(inf) == 2:f = inf[1]
-                else:f = '{}'
-                labelt.append(f.format(i[pos]))
+                app = f.format(i[pos])
             
             elif inf[0] == 'int':
-                if len(inf) == 2:f = inf[1]
-                else:f = '{:,}'
-                labelt.append(wrapme(i[pos], f=f))
+                if len(inf) < 2:f = '{:,}'
+                app = wrapme(i[pos], f=f)
+            
+            elif inf[0] == 'dateiso':
+                d = datetime.fromisoformat(i[pos])
+                app = d.strftime('<br>%b %d, %Y %H:%M')
             
             elif inf[0] == 'date':
-                if len(inf) == 2:f = inf[1]
-                else:f = ' {}'
-                labelt.append(f.format(jsdate(i[pos]).isoformat()[:10]))
+                app = jsdate(i[pos]).isoformat()[:10]
             
             elif inf[0] == 'replace':
                 if len(inf) != 2:continue
                 labelt[inf[1]] = i[pos]
+            
+            if app:
+                labelt.append(app)
         
         return label + ' '.join(labelt)
     
@@ -2879,7 +2950,7 @@ hide_empty: {self.hide_empty}\n-->'''
         h = f'<!-- {i} -->\n'
         
         if data is None:
-            logging.info(f'No data for item: {item}')
+            logging.debug(f'No data for item: {item}')
             data = []
         
         artm = markicons_for(self.marktype, item)
@@ -2943,10 +3014,13 @@ class mort_collection_list(mort_base):
         title = plural
         self.name = plural
         link = lister_linker(marktype)
-        icon = apdmm[colname].get('icon', None)
+        self.meta = apdmm[colname]
+        icon = self.meta.get('icon', None)
         self.rebuildread = True
         self.doread = apdmm[self.colname].get('doReadCount', False)
         super().__init__(marktype, title, link, icon, con=colname)
+        
+        self.markid = colname
         
         if self.doread:
             self.modes_default = 'all'
@@ -2987,8 +3061,8 @@ class mort_collection_list(mort_base):
                         self.read[k] += 1
         
         self.title = self.name
+        list_mode, wr = self.mode_picker(pargs)
         if self.modes:
-            list_mode, wr = self.mode_picker(pargs)
             if list_mode != 'all':
                 self.title += f' ({self.modes[list_mode]})'
             
@@ -3007,34 +3081,7 @@ class mort_collection_list(mort_base):
                               for k, d, n in self.items
                               if 0 < self.read.get(k, 0) < len(self.datas[k])]
         
-        else:
-            self.title = self.name
-            list_mode, wr = self.modes_default, ''
-        
         self.headtext[0] = wr
-        
-        
-        if False:#self.doread:
-            self.title = self.name
-            
-            if 'unread' in str(pargs[1]):
-                self.items = [(k, d, n) for k, d, n in self.items if self.read.get(k, 0)]
-                self.title += ' (Unread)'
-            
-            elif 'read' in str(pargs[1]):
-                self.items = [(k, d, n) for k, d, n in self.items if not self.read.get(k, 0)]
-                self.title += ' (Read)'
-            
-            elif 'partial' in str(pargs[1]):
-                self.items = [(k, d, n) for k, d, n in self.items if 0 < self.read.get(k, 0) < len(self.datas[k])]
-                self.title += ' (Partial)'
-            
-            h = '<div class="userinfo">'
-            for m in ['Unread', 'Read', 'Part']:
-                h += f'<a href="/{self.colname}/{m}/1">{m}</a><br>'
-            
-            h += '</div>'
-            self.headtext[0] = h
     
     def purge(self, strength):
         super().purge(strength)
@@ -3046,6 +3093,7 @@ class mort_collection_list(mort_base):
 
 def mimic_data(mimic, pargs):
     if mimic in ent['builtin']:
+        pargs = pargs[:-1] + ['nomimic', pargs[-1]]
         ent['builtin'][mimic].gimme(pargs)
         return ent['builtin'][mimic].datas
     
@@ -3091,8 +3139,10 @@ class mort_collection(mort_base, get_icon_collection):
                                   data, ignore_keys=['', 'items'][skip])
         
         self.headtext[0] = h
+        m = None
+        if 'nomimic' not in pargs:
+            m = mimic_data(self.marktype, pargs)
         
-        m = mimic_data(self.marktype, pargs)
         if m is None:
             self.datas = {}
         
@@ -3149,6 +3199,7 @@ class mort_list(mort_base):
     def __init__(self, marktype='', title='List', link='/{}/1', icon=ii(68)):
         super().__init__(marktype, title, link, icon)
         self.can_list = False
+        self.page_options = []
     
     def gimme(self, pargs):
         if len(pargs) < 2:
@@ -3167,8 +3218,11 @@ class mort_list(mort_base):
             self.items = lister_items(mimic)
             if 'query' in ent['_lists'][mimic]:
                 self.query = ent['_lists'][mimic]['query']
-
-            m = mimic_data(self.marktype, pargs)
+            
+            m = None
+            if 'nomimic' not in pargs:
+                m = mimic_data(self.marktype, pargs)
+            
             if m is None:
                 self.datas = {}
                 self.message = f"Don't know how to handle {mimic}"
@@ -3235,7 +3289,10 @@ class mort_amark(mort_base):
         return items
     
     def gimme(self, pargs):
-        m = mimic_data(self.marktype, pargs)
+        m = None
+        if 'nomimic' not in pargs:
+            m = mimic_data(self.marktype, pargs)
+        
         if m is None:self.datas = {}
         else:self.datas = m
         
@@ -3253,6 +3310,9 @@ class mort_postamark(mort_amark):
         self.marktype = 'users'
         self.link = f'/filter/@{val} user:{{}}/1'
         self.pagetype = 'remort_postmark'
+        self.page_options += [
+            ['user', 'mark', 'marked']
+            ]
     
     def get_items(self):
         datas = {}
@@ -3272,8 +3332,11 @@ class mort_postamark(mort_amark):
             self.items, self.datas = self.get_items()
         
         self.link = f'/filter/@{self.val} user:{{}}/1'
-        if 'uploader' in str(pargs[1]):
+        if 'user' in pargs:
             self.link = '/user/{}/1'
+        
+        elif 'marked' in pargs:
+            self.link = f'/filter/@marked user:{{}}/1'
         
         for i in self.items:
             if i[0] not in self.datas:
@@ -3361,7 +3424,7 @@ class mort_activity(mort_base):
     
     def __init__(self, marktype='users', title='Activity', link='/user/{}/1', icon=ii(22)):
         super().__init__(marktype, title, link, icon)
-        self.iteminf[1] = ['str', '<br>{}']
+        self.iteminf[1] = ['dateiso', '<br>{}']
     
     def gimme(self, pargs):
         self.datas = users
@@ -3384,7 +3447,7 @@ class mort_addedpost(mort_base):
     
     def __init__(self, marktype='users', title='Added Post', link='/user/{}/1', icon=ii(22)):
         super().__init__(marktype, title, link, icon)
-        self.iteminf[1] = ['str', '<br>{}']
+        self.iteminf[1] = ['dateiso', '<br>{}']
     
     def gimme_idc(self):
         self.datas = users
@@ -3596,8 +3659,6 @@ class builtin_search(builtin_base):
         nav = template_nav('Search', 1, 1)
         handle.wfile.write(nav + b'</div>\n')
         
-        handle.wfile.write(bytes(strings['setlogic'], cfg['encoding_serve']))
-        
         pagehtml = '<select id="searchOF" class="niceinp" onchange="search(true)">\n'
         col = [d.get('name_plural', f) for f, d in apdmm.items() if d.get('type') == 'collection']
         for label in ['Users', 'Titles', 'Tags', 'Folders'] + col:
@@ -3606,7 +3667,7 @@ class builtin_search(builtin_base):
         pagehtml += '</select>\n'
         pagehtml += strings['search_bar']
         searchicon = mark_button.icon_html(None, ii(20), 60)
-        pagehtml += butt_maker('', '', 'search(true)', searchicon, '')
+        pagehtml += butt_maker('', '', 'search(true)', 'Search', searchicon, '')
         pagehtml += '<div class="container list"></div>\n'
         pagehtml += f'<script>var page = 1;var listCount = {cfg["list_count"]};</script>'
         handle.wfile.write(bytes(pagehtml, cfg['encoding_serve']))
@@ -3687,7 +3748,6 @@ Server time now:<br>
         
         doc = f'''<br>
 apdfa: {len(apdfa):,}<br>
-apdfadesc: {len(apdfadesc):,}<br>
 apdfafol: {len(apdfafol):,}<br><br>
 '''
         handle.wfile.write(bytes(doc, cfg['encoding_serve']))
@@ -4390,6 +4450,7 @@ class builtin_reader(builtin_base):
 
     def __init__(self, title='Reader', icon=33):
         super().__init__(title, icon)
+        self.pagetype = 'eyde'
     
     def post_path(self, path):
         return post_path(path)
@@ -4430,12 +4491,16 @@ class builtin_textattach(builtin_reader):
 
     def __init__(self, title='Text Attach', icon=99):
         super().__init__(title, icon)
+        self.pagetype = 'eyde'
     
     def post_path(self, path):
         return 'im/_ta/' + path
     
     def page(self, handle, path):
-        name = path[1].split('.')[0]
+        name = None
+        if len(path) > 1:
+            name = path[1].split('.')[0]
+        
         if not name:
             name = 'No Data'
         
@@ -4689,6 +4754,18 @@ class post_data(post_base):
 
 class post_profiles(post_base):
     
+    def head(self, handle, status=200):
+        path = handle.path[1:].split('/')
+        if len(path) == 2:
+            rd = self.page_logic(handle, path, path[1])
+            if rd:
+                handle.send_response(307)
+                handle.send_header('Location', rd)
+                handle.end_headers()
+                return
+        
+        super().head(handle, status=status)
+    
     def post_logic(self, handle, pargs, data):
         global cfg
         
@@ -4699,12 +4776,29 @@ class post_profiles(post_base):
             
             save_config()
             
-            return {'status': 'success', 'href': '/'+cfg['dropdown_menu']}
+            return {'status': 'success', 'href': '/' + cfg['dropdown_menu']}
         
         return {'error': 'unhandled request'}
     
+    @staticmethod
+    def validate_icon(icon):
+        if isinstance(icon, list):
+            return icon
+        
+        if isinstance(icon, int):
+            return ii(icon)
+        
+        return [9, 9]
+    
+    def page_logic(self, handle, path, selected):
+        js = self.post_logic(handle, [], {'set': selected})
+        return js.get('href')
+    
     def page(self, handle, path):
-        doc = '<h2>Profiles</h2>\n'
+        self.title = 'Profiles'
+        
+        nav = template_nav(self.title, 1, 1, enc=False)
+        doc = f'<div class="head">\n{nav}</div>\n'
         if not ent['profiles']:
             doc += 'No profiles created.<br><br>\n'
             self.write(handle, doc)
@@ -4712,13 +4806,10 @@ class post_profiles(post_base):
         
         for idx, data in ent['profiles'].items():
             label = data.get('_label', idx)
-            icon = data.get('_icon', 99)
-            if isinstance(icon, list):pass
-            elif isinstance(icon, int):icon = ii(icon)
-            else:icon = [9, 9]
+            icon = self.validate_icon(data.get('_icon'))
             
             doc += strings['menubtn-narrow-icons-flat'].format(
-                href=f'#" onclick="setProfile(\'{idx}\')',
+                href=f'/profiles/{idx}',
                 alt=idx, x=icon[0]*-100, y=icon[1]*-100,
                 label=label
                 )
@@ -4953,11 +5044,11 @@ def load_apx(fn):
 
 
 def load_bigapd():
-    global apdfa, apdfadesc, apdfafol
+    global apdfa, apdfafol, blockup
     
     apdfa = {}
-    apdfadesc = {}
     apdfafol = {}
+    blockup = apc_master().read(cfg['apd_dir'] + 'blockup')
     
     gc.collect()
     
@@ -4966,7 +5057,7 @@ def load_bigapd():
     
     logging.info('Loading data files...')
     
-    for k in ['apdfa', 'apdfadesc', 'apdfafol']:
+    for k in ['apdfa', 'apdfafol']:
         globals()[k] = apc_master().read(
             cfg['apd_dir'] + k,
             do_time=True, encoding='iso-8859-1')
@@ -5110,7 +5201,9 @@ def apdm_divy():
 def init_apd():
     
     make_apd('apdfa', {'//': {}}, origin=cfg['apd_dir'])
-    make_apd('apdfadesc', {'//': {}}, origin=cfg['apd_dir'])
+    if not os.path.isdir(cfg['apd_dir'] + 'desc'):
+        os.mkdir(cfg['apd_dir'] + 'desc')
+    
     make_apd('apdfafol', {'//': {}}, origin=cfg['apd_dir'])
     
     make_apd('apx_descpost', {'//': {
@@ -5171,6 +5264,7 @@ if __name__ == '__main__':
     os.chdir(code_path)
     
     load_global('strings',{# todo migrate more from code and clean up
+'responsive': '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n',
 'thumb': '<span class="thumb{2}"><a class="thumba" href="{0}"><span>{1}</span></a></span>\n',
 'menubtn-narrow-icons': '<span class="menubtn"><a href="{href}" alt="{alt}"><span class="iconsheet" style="background-position:{x}px {y}px;"></span>{label}</a></span>\n',
 'menubtn-wide-icons': '<span class="menubtn wide"><a href="{href}" alt="{alt}"><span class="iconsheet" style="background-position:{x}px {y}px;"></span> {label}</a></span>\n',
@@ -5255,7 +5349,6 @@ if __name__ == '__main__':
 'cfg.ent.butt_state.label': 'Joke option, set to your preference I guess',
 
 'eyde_post_title': '<a class="title" href="/view/{0}/1"><h2>{1}</h2></a>\n<a href="https://www.furaffinity.net/view/{0}/">view fa</a><br>\n',
-'link_tf': '<a href="/filter/{}:{}/1">{}</a>:',
 'stripeytablehead': '<table class="stripy">\n<tr>\n\t<td colspan={}>{}</td>\n</tr>\n',
 'pt_items': '<div class="desc tags"><details><summary>{} ({:,} items)</summary>\n{}</details>\n</div><br>\n',
 'search_bar': '<input id="searchbar" class="niceinp widebar" placeholder="Search..." oninput="search(false)" />\n',
@@ -5304,11 +5397,12 @@ if __name__ == '__main__':
         'show_hidden_marks': False,
         'eyde_default_mode': 'full',
         
-        'altsrv': [
-            ['https://www.furaffinity.net/user/{}/', 'FA Userpage']
-            ],
-        'altdatsrv': [
-            ]
+        'altlinks': {
+            'users': [['https://www.furaffinity.net/user/{}/', 'FA Userpage']],
+            'folders': [['https//www.furaffinity.net{}', 'FA Folder']]
+            },
+        
+        'altdatsrv': []
         })
     
     load_global('menus', {
