@@ -395,7 +395,7 @@ var t = setTimeout(function(){window.location.reload(1);}, 5000);
             if out:out += ' - '# spacer
             out += f'<a href="/{r}">{n}</a>\n'
         
-        return current, out
+        return current, f'<p>{out}</p>\n'
     
     def optiondoc(self, handle, path):
         if not self.page_options:return
