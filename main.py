@@ -4367,38 +4367,7 @@ class builtin_rebuild(builtin_base):
         handle.wfile.write(bytes(htmlout, cfg['encoding_serve']))
 
 
-class builtin_pack(builtin_base):
-
-    def __init__(self,
-                 title='Pack Files',
-                 icon=63):
-        super().__init__(title, icon)
     
-    def page(self, handle, pathe):
-        files =  ['ds_' + x for x in ent['apdmark']]
-        files += ['wp_' + x for x in wpm]
-        
-        files =  [cfg['mark_dir'] + x for x in files]
-        
-        name = datetime.now()
-        name -= timedelta(seconds=1080)
-        
-        name = name.strftime('js%y%m%d.zip')
-        errorlevel = compress(name, files)
-        
-        htmlout = '<div class="head">\n<h2 class="pagetitle">Compressed'
-        if not errorlevel:
-            msg = f'{len(files)} files successfully packed into {name}'
-        
-        else:
-            htmlout += ' with errors'
-            msg = f'{len(files) - len(errorlevel)} files successfully packed into {name}<br>Could not pack:<br>'
-            msg += '<be>'.join(errorlevel)
-        
-        htmlout += '</h2>\n</div>\n<div class="container list">\n'
-        htmlout += f'{msg}<br>\n<br>\n'
-        
-        handle.wfile.write(bytes(htmlout, cfg['encoding_serve']))
 
 
 def post_path(fp):
