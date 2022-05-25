@@ -4492,11 +4492,11 @@ def desc_fol(item):
 
 
 def post_path(fp):
-    if cfg.get('post_split', True):
+    if cfg.get('post_split'):
         fid = fp.split('.')[0].zfill(2)
         
         if fid.isdigit():
-            fp = f'{int(fid[-2]):02d}/{fp}'
+            fp = f'{int(fid[-2:]):02d}/{fp}'
     
     return cfg['image_dir'] + fp
 
@@ -4505,10 +4505,9 @@ def serve_image(handle, path, head=True):
     if '.' not in path:path += '.'
     ext = path.split('.')[-1]
     
+    fp = post_path(path.split('/')[-1])
     if '/pageimg/' in path:
         fp = path
-    else:
-        fp = post_path(path.split('/')[-1])
     
     if fp and os.path.isfile(fp):
         if head:
