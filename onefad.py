@@ -165,7 +165,7 @@ class apc_master(object):
         self.filename = filename
         self.do_time = do_time
         self.encoding = encoding
-        self.parse = True
+        self.parse = parse
         self.block = 0
         
         self.ret = {}
