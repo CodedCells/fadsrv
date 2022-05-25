@@ -5,7 +5,7 @@ from onefad_functions import *
 import requests
 import gc
 
-ent['version'] = '31#2022-05-24'
+ent['version'] = '31#2022-05-25'
 
 class builtin_base(builtin_base):
     
@@ -204,7 +204,6 @@ def apd_findnew():
                 del apdfadesc[fi]
     
     c = 0
-    descset = set(apdfadesc)
     
     ch_apdfa = {}
     ch_apdfadesc = {}
@@ -240,10 +239,11 @@ def apd_findnew():
         add = [x for x in fields
                if x not in pd
                or (x in ['title', 'uploader'] and not pd[x].strip())]
-        if not postid in descset:add.append('desc')
         
         if not add:continue
         if file == 'apdlist':continue
+        
+        add.append('desc')
         
         logging.info(f'Adding data for {file}, adding {json.dumps(add)}')
         c += 1
@@ -475,14 +475,28 @@ def apd_findnew():
         
         logging.info('Writing Big APD')
         apc_write(dd + 'apdfa', ch_apdfa, apdfa, 1, encoding='utf8')
-        apc_write(dd + 'apdfadesc', ch_apdfadesc, apdfadesc, 1, encoding='utf8')
         apc_write(dd + 'apdfafol', ch_apdfafol, apdfafol, 1,  encoding='utf8')
+        if not cfg['desc_split']:
+            apc_write(dd + 'apdfadesc', ch_apdfadesc, apdfadesc, 1, encoding='utf8')
+            for post in ch_apdfadesc:
+                apdfadesc[post] = ch_apdfadesc[post]
         
         for post in ch_apdfa:
             apdfa[post] = ch_apdfa[post]
         
-        for post in ch_apdfadesc:
-            apdfadesc[post] = ch_apdfadesc[post]
+        if cfg['desc_split']:
+            ch_descblocks = {}
+            for item, data in ch_apdfadesc.items():
+                block = desc_fol(item)
+                if block not in ch_descblocks:
+                    ch_descblocks[block] = {}
+                
+                ch_descblocks[block][item] = data
+            
+            for block, data in ch_descblocks.items():
+                if not data:continue
+                apc_write(dd + f'descb/apdfadesc{block}b',
+                          data, {}, 1, encoding='utf8')
         
         for fol in ch_apdfafol:
             apdfafol[fol] = ch_apdfafol[fol]
@@ -496,7 +510,10 @@ def apd_findnew():
     
     ch_descpost = {}
     ch_descuser = {}
-    for postid, desc in apdfadesc.items():
+    if not cfg['desc_split']:
+        ch_apdfadesc = apdfadesc
+    
+    for postid, desc in ch_apdfadesc.items():
         thispostids = set()
         
         if postid not in descpost:
@@ -773,6 +790,8 @@ def build_entries(reload=0):
             load_apd()
         
         if reload > 2:
+            init_apd()
+            
             altfa = apc_master().read(cfg['apd_dir'] + 'altfa')
             load_bigapd()
             if not cfg.get('skip_bigdata'):
@@ -1190,6 +1209,52 @@ def post_things(label, items, itype, me=None, op=None, all_here = False, con=Non
     return out
 
 
+class descman(object):
+
+    def __init__(self):
+        self.ret = {}
+    
+    def get_block(self, block, posts):
+        data = apc_master().read(
+            cfg['apd_dir'] + f'descb/apdfadesc{block}b',
+            parse=False)
+        
+        for post in posts:
+            desc = data.get(post)
+            if desc:
+                self.ret[post] = json.loads(desc)
+    
+    def get_apc(self, posts):
+        out = {}
+        for post in posts:
+            desc = apdfadesc.get(post)
+            if desc:
+                out[post] = desc
+        
+        return out
+    
+    def get_for(self, posts):
+        if not cfg['desc_split']:
+            return self.get_apc(posts)
+        
+        blocks = {}
+        
+        for post in posts:
+            block = desc_fol(post)
+            if block not in blocks:
+                blocks[block] = []
+            
+            blocks[block].append(post)
+        
+        load = 0
+        for block, bposts in blocks.items():
+            self.get_block(block, bposts)
+            load += 1
+        
+        logging.info(f'Loaded {len(posts)} from {load} blocks')
+        return self.ret
+
+
 class eyde_base(builtin_base):
 
     def __init__(self, items=[], marktype='', icon=ii(89)):
@@ -1367,9 +1432,13 @@ class eyde_base(builtin_base):
         
         items = self.f_items[sa:ea]
         local = get_posts(items)
+        descs = descman().get_for(items)
         
         for item in items:
-            out += self.build_item_full(item, local.get(item, {'got': False}))
+            out += self.build_item_full(
+                item,
+                descs.get(item),
+                local.get(item, {'got': False}))
         
         return out
     
@@ -1400,7 +1469,7 @@ class eyde_base(builtin_base):
         
         return self.place_file(data.get('ext', 'png'), link, data.get('srcbytes', 0))
     
-    def build_item_full(self, post, data):
+    def build_item_full(self, post, desc, data):
         title = data.get('title', f'Unavailable: {post}')
         
         ret = strings['eyde_post_title'].format(
@@ -1419,7 +1488,6 @@ class eyde_base(builtin_base):
             ret += f'<p><a href="/textattach/{ta.get("filename")}" target="_blank">'
             ret += f'View Attached Document, {ta.get("words"):}</a></p>\n'
         
-        desc = apdfadesc.get(post)
         if cfg['show_unparsed']:
             ret += very_pretty_json(f'post:{post}', data, ignore_keys=['tags'])
         
@@ -4408,7 +4476,19 @@ class builtin_rebuild(builtin_base):
         handle.wfile.write(bytes(htmlout, cfg['encoding_serve']))
 
 
+def desc_fol(item):
+    data = apdfa.get(item, {})
+    user = data.get('uploader')
+    if not user:
+        return '9999'
     
+    block = blockup.get(user.replace('_', ''))
+    
+    if not block:
+        logging.warning(f'Can\'t find block for {item} by {user}')
+        return '9999'
+    
+    return f'{block:02d}'
 
 
 def post_path(fp):
@@ -5044,9 +5124,10 @@ def load_apx(fn):
 
 
 def load_bigapd():
-    global apdfa, apdfafol, blockup
+    global apdfa, apdfadesc, apdfafol, blockup
     
     apdfa = {}
+    apdfadesc = {}
     apdfafol = {}
     blockup = apc_master().read(cfg['apd_dir'] + 'blockup')
     
@@ -5057,7 +5138,11 @@ def load_bigapd():
     
     logging.info('Loading data files...')
     
-    for k in ['apdfa', 'apdfafol']:
+    data_files = ['apdfa', 'apdfafol']
+    if not cfg['desc_split']:
+        data_files.append('apdfadesc')
+    
+    for k in data_files:
         globals()[k] = apc_master().read(
             cfg['apd_dir'] + k,
             do_time=True, encoding='iso-8859-1')
@@ -5200,9 +5285,15 @@ def apdm_divy():
 
 def init_apd():
     
+    if not os.path.isdir(cfg['apd_dir']):
+        os.mkdir(cfg['apd_dir'])
+    
+    if not os.path.isdir(cfg['mark_dir']):
+        os.mkdir(cfg['mark_dir'])
+    
     make_apd('apdfa', {'//': {}}, origin=cfg['apd_dir'])
-    if not os.path.isdir(cfg['apd_dir'] + 'desc'):
-        os.mkdir(cfg['apd_dir'] + 'desc')
+    if not os.path.isdir(cfg['apd_dir'] + 'descb'):
+        os.mkdir(cfg['apd_dir'] + 'descb')
     
     make_apd('apdfafol', {'//': {}}, origin=cfg['apd_dir'])
     
@@ -5378,6 +5469,7 @@ if __name__ == '__main__':
         'mark_dir': 'data_mark/',
         'res_dir': 'res/',# prepend resource files
         'post_split': True,# better file op performance
+        'desc_split': False,
         'image_dir': 'im/',
         'data_dir': 'pm/',
         'server_addr': '127.0.0.1',
@@ -5531,14 +5623,6 @@ if __name__ == '__main__':
     
     mobile_path = fadcfg.get('content_path', '.')
     os.chdir(mobile_path)
-    
-    if not os.path.isdir(cfg['apd_dir']):
-        os.mkdir(cfg['apd_dir'])
-    
-    if not os.path.isdir(cfg['mark_dir']):
-        os.mkdir(cfg['mark_dir'])
-    
-    init_apd()
     
     logging.info(isdocats())
     
