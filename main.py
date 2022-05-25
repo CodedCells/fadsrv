@@ -1145,32 +1145,47 @@ def markicons_for(kind, thing):
 
 def post_things(label, items, itype, me=None, op=None, all_here = False, con=None):
     # cleaner link builder for posts
-    out = ''
     do_op = False
     if op != None and me != None:
         if me in op:
             pos = op.index(me)
             do_op = True
-
-    not_here = 0
-    if not (len(items) < 1 or (len(items) == 1 and me in items)):
-        for i in items:
-            ipos = int(i == me)
-            if ipos != 1 and do_op and i in op:
-                ipos = [2, 3][op.index(i) > pos]
-            
-            all_here = all_here and ipos
-            if not ipos:
-                not_here += 1
-            
-            out += create_linktodathing(itype, i, onpage=ipos, con=con) + '\n'
     
-        if itype == 'posts' and (all_here or cfg['collapse_linkylength'] < len(items)):
-            if not_here:
-                label += f'({not_here:,} not in page)'
-            out = strings['pt_items'].format(label, len(items), out)
-        else:
-            out = f'<div class="tags">\n{label}<br>\n{out}</div>\n'
+    not_here = 0
+    if not items:
+        return ''
+    
+    if len(items) == 1 and me in items:
+        return ''
+    
+    links = ''
+    for i in items:
+        ipos = int(i == me)
+        if ipos != 1 and do_op and i in op:
+            ipos = [2, 3][op.index(i) > pos]
+        
+        all_here = all_here and ipos
+        if not ipos:
+            not_here += 1
+        
+        links += create_linktodathing(itype, i, onpage=ipos, con=con) + '\n'
+    
+    if label.startswith('/'):
+        label = f'<a class="linkhead" href="{label}</a>'
+    
+    out = f'<div class="linkthings centered">\n{label}\n{links}</div>\n'
+    if itype != 'posts':
+        return out
+    
+    if cfg['collapse_linkylength'] <= len(items):
+        if not_here:
+            label += f'({not_here:,} not in page)'
+        
+        out = '<details>'
+        out += '<summary class="linkthings centered">'
+        out += f'{label} ({len(items):,} items)</summary>\n'
+        out += f'<div class="linkthings centered">{links}</div>'
+        out += '</details>\n</div>\n'
     
     return out
 
@@ -1389,13 +1404,13 @@ class eyde_base(builtin_base):
         
         if data.get('got', True):
             ret += post_things(
-                '<br>Tags:', data.get('tags', ''), 'tags')
             
             if cfg['show_unparsed']:
                 ret += very_pretty_json(f'post:{post}', data, ignore_keys=['tags'])
+                'Tags:', data.get('tags', ''), 'tags')
             
             ret += post_things(
-                strings['link_tf'].format('linkto', post, 'Linking To'),
+                f'/filter/linkto:{post}/1">Linking to',
                 xlink['descpost'].get(post, []),
                 'posts',
                 post,
@@ -1408,13 +1423,13 @@ class eyde_base(builtin_base):
             thisusers += [x for x in thisusersl if x not in thisusers]
             
             ret += post_things(
-                'Users mentioned:',
+                'Users:',
                 thisusers,
                 'users',
                 self.name[5:])
             
             ret += post_things(
-                'In folders:',
+                'Folders:',
                 data.get('folders', []),
                 'folders')
         
@@ -1424,14 +1439,14 @@ class eyde_base(builtin_base):
                     ret += format_wp(w, str(post))
         
         ret += post_things(
-            strings['link_tf'].format('linkfrom', post, 'Linked From'),
+            f'/filter/linkfrom:{post}/1">Linked From',
             sorted(xlink['descpostback'].get(post, [])),
             'posts',
             post,
             self.f_items,
             all_here=True)
         
-        ret += '\n<br>\n'
+        ret += '\n'
         if cfg['all_marks_visible'] or not data.get('got', True):
             ret += mark_for('posts_unav', post)
         
