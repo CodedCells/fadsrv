@@ -63,6 +63,7 @@ def get_posts(posts):
             remote = get_post_alt(srv, {tag: find})
             for post, data in remote.items():
                 find.remove(post)
+                data['origin'] = 'alt'
                 local[post] = data
         
         except requests.exceptions.ConnectionError:
