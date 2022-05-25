@@ -258,6 +258,7 @@ class builtin_base(object):
         
         self.do_head = True
         self.do_foot = True
+        self.do_wrap = True
         
         if icon is None:icon = 59
         if isinstance(icon, int):
@@ -331,9 +332,13 @@ var t = setTimeout(function(){window.location.reload(1);}, 5000);
         if self.do_script:
             h += '<script src="/mark.js"></script>\n'
         
-        h += '</head>\n<body onload="page_load()">\n<div class="pageinner">'
         if cfg.get('responsive'):
             h += strings.get('responsive', '')
+        
+        h += '</head>\n'
+        if self.do_wrap:
+            h += '<body onload="page_load()">\n<div class="pageinner">'
+        
         self.write(handle, h)
     
     def titledoc(self, handle):
