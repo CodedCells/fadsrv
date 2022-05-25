@@ -698,6 +698,7 @@ def register_dynamic():
     menus['all_pages_buttons'] = []
     rbcat = {
         'builtin': [],
+        'builtin stats': [],
         'builtin menu': [],
         'remort': [],
         'remort mark': [],
@@ -720,6 +721,7 @@ def register_dynamic():
         
         elif pagetype == 'pages':
             icn['label'] = v.title
+            icn['href'] = '/'+icn['href']
         
         elif pagetype.startswith('builtin'):
             if v.pages:
