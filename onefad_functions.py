@@ -178,6 +178,7 @@ class builtin_pages(builtin_base):
         super().__init__(title, icon)
         self.pagetype = 'pages'
         self.pagehtml = data
+        self.do_wrap = False
     
     def serve(self, handle, path):
         if cfg['developer'] or not self.pagehtml:
