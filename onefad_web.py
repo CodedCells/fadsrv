@@ -362,6 +362,9 @@ var t = setTimeout(function(){window.location.reload(1);}, 5000);
         
         return '/'.join([str(x) for x in outp])
     
+    def modes_fallback(self):
+        return self.modes_default
+    
     def mode_picker(self, path):
         # create a nice picker element and give the mode
         pargs = []
@@ -376,7 +379,7 @@ var t = setTimeout(function(){window.location.reload(1);}, 5000);
             else:
                 pargs = pargs.split(' ')
         
-        current = self.modes_default    
+        current = self.modes_fallback()
         # find the current mode
         for i in self.modes:
             if i in pargs:
