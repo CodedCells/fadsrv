@@ -1,6 +1,7 @@
 from onefad import *
 
 load_global('strings',{# todo migrate more from code and clean up
+'responsive': '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n',
 'menubtn-narrow-icons': '<span class="menubtn"><a href="{href}" alt="{alt}"><span class="iconsheet" style="background-position:{x}px {y}px;"></span>{label}</a></span>\n',
 'menubtn-wide-icons': '<span class="menubtn wide"><a href="{href}" alt="{alt}"><span class="iconsheet" style="background-position:{x}px {y}px;"></span> {label}</a></span>\n',
 'menubtn-list': '<a class="btn wide" style="font-size:initial;" href="{href}" alt="{alt}">{label}</a>\n',
@@ -331,6 +332,8 @@ var t = setTimeout(function(){window.location.reload(1);}, 5000);
             h += '<script src="/mark.js"></script>\n'
         
         h += '</head>\n<body onload="page_load()">\n<div class="pageinner">'
+        if cfg.get('responsive'):
+            h += strings.get('responsive', '')
         self.write(handle, h)
     
     def titledoc(self, handle):
