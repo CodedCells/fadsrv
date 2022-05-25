@@ -5214,6 +5214,8 @@ if __name__ == '__main__':
         'do_button_align': False,
         'mark_button_align': 'center',
         'modify_button_align': True,
+        'show_hidden_marks': False,
+        'eyde_default_mode': 'full',
         
         'altsrv': [
             ['https://www.furaffinity.net/user/{}/', 'FA Userpage']
