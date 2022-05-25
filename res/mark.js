@@ -382,13 +382,14 @@ function folderToSetMakeBack() {
 }
 
 function folderToSet(pr, addto) {
-    defaultSetName = title = prompt(pr, defaultSetName);
+    title = prompt(pr, defaultSetName);
     if (title == null) {
         return;
     }
+	
     svcon = addto;
     var meta = {
-        "name": defaultSetName,
+        "name": title,
         "time": Date.now(),
         "con": addto
     };
