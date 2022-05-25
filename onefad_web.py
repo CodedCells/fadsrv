@@ -483,6 +483,7 @@ var t = setTimeout(function(){window.location.reload(1);}, 5000);
         handle.wfile.write(b'<p>Sphinx of black quartz, judge my vow.</p>\n')
     
     def menu_ele(self, handle, path):
+        self.write(handle, '\n</div>\n')
         self.optiondoc(handle, path)
         
         p = self.do_menu_name
@@ -546,6 +547,7 @@ class builtin_menu(builtin_base):
             part = i['href'].lower().split('/')
             if i['href'] and '/' not in i['href']:
                 i['href'] = f'/{i["href"]}/1'
+            
             else:
                 part = part[1:]
             
