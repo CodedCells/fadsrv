@@ -400,7 +400,7 @@ def very_pretty_json(name, data, ignore_keys=[]):
     return f'''<details><summary>{name} data</summary>
 <pre style="text-align: initial;">
 {user_friendly_dict_formatter(data, ignore_keys=ignore_keys)}
-</pre></details><br>'''
+</pre></details>'''
 
 
 def user_firendly_line_parse(k, v):
