@@ -4902,31 +4902,6 @@ class fa_req_handler(BaseHTTPRequestHandler):
         return
 
 
-def load_user_json(fn, base, enforce_types=True):
-    out = base.copy()
-    if not os.path.isfile(cfg['apd_dir'] + fn):
-        logging.info(f'{fn} file missing, will be created')
-        return out
-    
-    try:
-        data = read_json(cfg['apd_dir'] + fn).items()
-    
-    except Exception as e:
-        logging.error(f"Could not load {fn}", exc_info=True)
-        global ent
-        ent['config_read_error'] = True
-        return out
-    
-    for k, v in data:
-        out[k] = v
-        if enforce_types and type(v) != type(base.get(k, v)):
-            out[k] = base[k]
-    
-    logging.info(f'Loaded {fn}')
-    
-    return out
-
-
 def get_cfg_resources(k):
     v = cfg.get(k)
     
