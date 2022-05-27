@@ -35,9 +35,12 @@ def create_menus():
             "icon": [9, 9]
             }
     
+    for m, c in list(ent['builtin'].items()):
+        if type(c) == builtin_menu:
+            del ent['builtin'][m]
+    
     for m in menus['pages']:
-        if m not in ent['builtin']:
-            ent['builtin'][m] = builtin_menu(which=m)
+        ent['builtin'][m] = builtin_menu(which=m)
     
     menus['all_pages_buttons'] = []
     rbcat = {}
@@ -225,10 +228,9 @@ if __name__ == '__main__':
         
         'apd_dir': 'data/',
         'res_dir': 'res/',# prepend resource files
-        'media_dirs': ['im/'],
         
-        'homepage_menu': 'menu',
-        'dropdown_menu': 'menu',
+        'homepage_menu': 'all_pages',
+        'dropdown_menu': 'all_pages',
 
         'static_cfg': False
         })
