@@ -35,9 +35,12 @@ def create_menus():
             "icon": [9, 9]
             }
     
+    for m, c in list(ent['builtin'].items()):
+        if type(c) == builtin_menu:
+            del ent['builtin'][m]
+    
     for m in menus['pages']:
-        if m not in ent['builtin']:
-            ent['builtin'][m] = builtin_menu(which=m)
+        ent['builtin'][m] = builtin_menu(which=m)
     
     menus['all_pages_buttons'] = []
     rbcat = {}
@@ -82,7 +85,7 @@ def create_menus():
 
 def filelist():
     dd = cfg['apd_dir']
-    files = apc_master().read(dd + 'filelist')
+    files = apc_read(dd + 'filelist')
     if files:
         return set(files.keys())
     
@@ -146,10 +149,9 @@ def big_action_list_time(reload=0):
     ent['building_entries'] = True
     
     read_config()
+    register_pages()
     create_menus()
     save_config()
-    
-    register_pages()
     
     ent['filelist'] = filelist()
     ent['idlist'] = set(x.split('.')[0] for x in ent['filelist'])
