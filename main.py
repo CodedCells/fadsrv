@@ -1927,9 +1927,9 @@ class eyde_user(eyde_base):
             h += f'<p><a href="{path}">{name}</a></p>\n'
         
         h += '<p>'
-        passed = dpref.get('passed', {})
-        if user in passed:
-            passdate = datetime.utcfromtimestamp(passed['user'] / 1000)
+        passed = dpref.get('passed', {}).get(user)
+        if passed:
+            passdate = datetime.utcfromtimestamp(passed / 1000)
             passdate = passdate.strftime('%b %d, %Y %H:%M')
             h += f'Passed: {passdate}<br>\n'
         
