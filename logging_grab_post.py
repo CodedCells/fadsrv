@@ -369,7 +369,7 @@ def has_data(post):
                 return 'added_unlist'
             
             else:
-                logging,info(f'COPYDATA {post} (from {k})')
+                logging.info(f'COPYDATA {post} (from {k})')
                 dst = data_path(post, 'data_store', main_data, fmt='{}_desc.html')
                 shutil.copyfile(src, dst)
                 return 'added'
