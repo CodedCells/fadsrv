@@ -211,7 +211,7 @@ def check_post(post, where):
     
     if hd == 'no':
         logging.info(f'get img {post}')
-        sg = sget('http:' + fp)
+        sg = sget('https:' + fp)
         request = True
         
         con = sg.content
@@ -263,7 +263,7 @@ def crawl_favourites_post(e):
 def crawl_favourites():
     global know, knows
     
-    url = 'http://www.furaffinity.net/favorites/{}/'
+    url = 'https://www.furaffinity.net/favorites/{}/'
     seqgal = 'class="gallery s-'
 
     page = 1
