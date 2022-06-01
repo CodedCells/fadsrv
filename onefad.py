@@ -270,10 +270,13 @@ def check_login(d, label):
     elif 'DDoS protection' in d:
         logging.warning('Cloudflare DDoS Protection')
     
+    elif '<title>FA is temporarily offline.</title>' in d:
+        logging.error('FA is temporarily offline.')
+    
     else:
         return True
     
-    logging.debug('Program must HALT!')
+    logging.info('Program must HALT!')
     return False
 
 def unicode_stripper(x):
