@@ -268,10 +268,9 @@ class builtin_run(builtin_logs):
             self.write(handle, f'<p>Could not find task script: {path[1]}</p>\n</div>')
         
         prog = path[1]
-        check_running_task_dir(prog)
-        
         data = ent['tasks'][prog]
         taskid = data.get('id', prog)
+        check_running_task_dir(taskid)
         #print(prog, taskid)
         
         running = self.tasklist(taskid, False)
@@ -515,7 +514,8 @@ def check_running_task_dir(pid):
     for n, d in enumerate(sorted(tasks.items(), reverse=True)):
         if not d[1]['old'] or n == 0:
             check_task(pid, d[0])
-    
+
+
 def check_running_tasks():
     
     for prog in ent['task_logs']:
