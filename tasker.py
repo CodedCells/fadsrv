@@ -263,13 +263,39 @@ class builtin_run(builtin_logs):
         super().__init__(title, icon)
         self.pagetype = 'builtin_tasker'
     
+    def do_it(self, data):
+        cmd = cfg['script_types'].get(data['ext'], {}).get('cmd')
+        if not cmd:
+            return 'Don\'t know how to execute.'
+        
+        prog = data['filename']
+        
+        cmd = cmd.format(cfg['task_dir'] + prog)
+        
+        if data.get('sudo', True):
+            cmd = 'sudo ' + cmd
+        
+        if not cfg.get('actually_run', True):
+            return
+        
+        logging.info(f'Attempting to run {prog}')
+        
+        try:
+            os.system(cmd)
+            return
+        
+        except Exception as e:
+            logging.error(f"Failed to run", exc_info=True)
+            return 'Exception!'
+    
     def taskpage(self, handle, path):
         if path[1] not in ent['tasks']:
             self.write(handle, f'<p>Could not find task script: {path[1]}</p>\n</div>')
         
         prog = path[1]
         data = ent['tasks'][prog]
-        taskid = data.get('id', prog)
+        filename = data['filename']
+        taskid = data.get('id', filename)
         check_running_task_dir(taskid)
         #print(prog, taskid)
         
@@ -285,13 +311,14 @@ class builtin_run(builtin_logs):
             self.write(handle, htmlout)
             return
         
-        logging.info(f'Attempting to run {prog}')
-        try:
-            if cfg.get('actually_run', True):
-                os.system(f'sudo bash {cfg["task_dir"]}{prog}')
+        self.write(handle, '<p>Starting task...</p>')
         
-        except Exception as e:
-            logging.error(f"Failed to run", exc_info=True)
+        state = self.do_it(data)
+        if state:
+            htmlout = '<p>A broblem occurred.</p>\n'
+            htmlout += f'<p>{state}</p>\n'
+            self.write(handle, htmlout)
+            return
         
         htmlout = f'<script>function taskRedir() {{window.location.href="/logs/{taskid}";;}}\n'
         htmlout += 'var x=setTimeout(taskRedir, 2500);</script>\n'
@@ -471,20 +498,29 @@ def find_avialble_tasks():
     group_flush('task')
     
     for fn in os.listdir(cfg['task_dir']):
-        if not fn.endswith('.sh') and not fn.endswith('.cfg'):continue
-        data = {'filename': fn}
+        for ext, data in cfg['script_types'].items():
+            if fn.lower().endswith(ext):
+                comment = data.get('comment', '//')
+                break
+        
+        else:
+            continue
+        
+        data = {'filename': fn, 'ext': ext}
         
         for line in readfile(cfg['task_dir'] + fn).split('\n'):
-            if not line.startswith('#'):break# no data
+            if not line.startswith(comment):break# no data
             
             line = line.split('\t')
             if len(line) != 3:continue
             data[line[1]] = json.loads(line[2])
         
-        ent['tasks'][fn] = data# store data
+        safe = fn.replace('.', '_')
+        
+        ent['tasks'][safe] = data# store data
         logging.debug(data)
         
-        group_manage('task', fn, data)
+        group_manage('task', safe, data)
     
     group_sort('task')
 
@@ -804,6 +840,10 @@ if __name__ == '__main__':
 
         'static_cfg': False,
         'allow_data': False,
+        
+        'script_types': {
+            '.sh': {'cmd': 'bash {}', 'comment': '#'}
+            }
         })
     
     load_global('menus', {
