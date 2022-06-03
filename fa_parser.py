@@ -277,6 +277,7 @@ class parse_gallery(parse_user_common):
                 'title': get_prop(' title="', line, o=2),
                 'rating': get_prop('class="r-', line),
                 'thumb': get_prop('src="', line),
+                'uploader': self.get('username')
                 }
         
         return posts
