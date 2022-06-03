@@ -5,7 +5,7 @@ from onefad_functions import *
 import requests
 import gc
 
-ent['version'] = '31#2022-05-25'
+ent['version'] = '31#2022-06-03'
 
 class builtin_base(builtin_base):
     
@@ -69,7 +69,6 @@ def get_posts(posts):
         except requests.exceptions.ConnectionError:
             logging.debug(f'Gave up on {srv}')
             continue
-            
     
     return local
 
