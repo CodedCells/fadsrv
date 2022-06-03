@@ -1287,7 +1287,8 @@ class eyde_base(builtin_base):
         self.path_parts = 3
         self.page_options = [
             list(self.modes),
-            ['cull', 'nocull']
+            ['cull', 'nocull', 'marked'],
+            ['showalt', 'hidealt', 'onlyalt']
             ]
         self.filters = {}
     
@@ -1327,6 +1328,16 @@ class eyde_base(builtin_base):
         
         return h + '</div>\n'
     
+    def cull_mode(self, compare, inc, exc):
+        if not (inc or exc):
+            return
+        
+        mode = inc or not exc
+        
+        self.f_items = [
+            i for i in self.f_items
+            if (i in compare) != mode]
+    
     def build_page(self, handle, pargs):
         
         self.f_items = self.items
@@ -1337,10 +1348,13 @@ class eyde_base(builtin_base):
             if len(pargs) > 2:
                 pf = str(pargs[-2]).split(' ')
         
-        if 'nocull' in pf:pass
-        elif 'cull' in pf or (cfg['docats'] and self.hide_empty):
-            self.f_items = [i for i in self.items
-                            if i not in ent['_marked']]
+        hide_default = cfg['docats'] and self.hide_empty
+        
+        if 'nocull' not in pf:
+            self.cull_mode(
+                ent['_marked'],
+                'cull' in pf or hide_default,
+                'marked' in pf)
         
         si = len(self.f_items)
         index_id = 1
@@ -1545,7 +1559,7 @@ class eyde_base(builtin_base):
             all_here=True)
         
         ret += '\n'
-        if cfg['all_marks_visible'] or not data.get('got', True):
+        if cfg['all_marks_visible'] or data.get('origin') or not data.get('got', True):
             ret += mark_for('posts_unav', post)
         
         ret += mark_for('posts', post)
