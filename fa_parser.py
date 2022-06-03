@@ -254,6 +254,34 @@ class parse_userpage(parse_user_common):
         return data
 
 
+class parse_gallery(parse_user_common):
+    # class for parsing user pages, /user/username
+    def __init__(self):
+        super().__init__()
+        self.funcs.update({
+            'gallery_posts': self.item_gallery_posts
+            })
+    
+    def item_gallery_posts(self, prop):
+        if 'id="gallery-gallery"' not in self.text:
+            return
+        
+        text = get_prop('id="gallery-gallery"', self.text, t='</section')
+        posts = {}
+        for line in text.split('\n'):
+            if '/view/' not in line:
+                continue
+            
+            sid = get_prop('/view/', line, t='/')
+            posts[sid] = {
+                'title': get_prop(' title="', line, o=2),
+                'rating': get_prop('class="r-', line),
+                'thumb': get_prop('src="', line),
+                }
+        
+        return posts
+
+
 class parse_postpage(parse_basic):
     # class for parsing post pages, /view/postid
     def __init__(self):
