@@ -270,7 +270,8 @@ class parse_postpage(parse_basic):
             'tags': self.item_tags,
             'folders': self.item_folders,
             'desc': self.item_desc,
-            'descwc': self.item_desc
+            'descwc': self.item_desc,
+            'see_more': self.item_see_more
             })
     
     def item_id(self, prop):
@@ -418,6 +419,24 @@ class parse_postpage(parse_basic):
         self.items['descwc'] = len(re.findall(r'\w+', desc))
         
         return self.items.get(prop)
+    
+    def item_see_more(self, prop):
+        if not '<h3>See more from <a href="' in self.text:
+            return
+        
+        uploader = self.items.get('uploader', self.item_uploader(None))
+        posts = {}
+        for post in get_prop('<h3>See more from <a href="',
+                             self.text, t='</section>').split(
+                                 '<a href="/view/')[1:]:
+            posts[post.split('/')[0]] = {
+                'title': get_prop('title="', post),
+                'thumb': get_prop('src="', post),
+                'uploader': uploader
+                }
+        
+        return posts
+
 
 if __name__ == '__main__':
     ## example
