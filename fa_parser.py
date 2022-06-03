@@ -141,26 +141,14 @@ class parse_basic(object):
         return state
 
 
-class parse_userpsge(parse_basic):
-    # class for parsing user pages, /user/username
+class parse_user_common(parse_basic):
     def __init__(self):
         super().__init__()
         self.funcs.update({
             'username': self.item_username,
             'user_status': self.item_username,
             'user_title': self.item_username,
-            'registered_date': self.item_username,
-            'submissions': self.item_stats,
-            'views': self.item_stats,
-            'favs': self.item_stats,
-            'comments_earned': self.item_stats,
-            'comments_made': self.item_stats,
-            'journals': self.item_stats,
-            'accepting_trades': self.item_trades,
-            'accepting_commissions': self.item_trades,
-            'featured_post': self.item_featured_post,
-            'recent_posts': self.item_posts,
-            'recent_faved_posts': self.item_posts,
+            'registered_date': self.item_username
             })
     
     def item_username(self, prop):
@@ -182,6 +170,25 @@ class parse_userpsge(parse_basic):
         self.items['registered_date'] = strdate(tmp).timestamp()
         
         return self.items.get(prop)
+
+
+class parse_userpage(parse_user_common):
+    # class for parsing user pages, /user/username
+    def __init__(self):
+        super().__init__()
+        self.funcs.update({
+            'submissions': self.item_stats,
+            'views': self.item_stats,
+            'favs': self.item_stats,
+            'comments_earned': self.item_stats,
+            'comments_made': self.item_stats,
+            'journals': self.item_stats,
+            'accepting_trades': self.item_trades,
+            'accepting_commissions': self.item_trades,
+            'featured_post': self.item_featured_post,
+            'recent_posts': self.item_posts,
+            'recent_faved_posts': self.item_posts,
+            })
     
     def item_stats(self, prop):
         for tmp in self.text.split('<span class="highlight">')[1:]:
@@ -247,7 +254,7 @@ class parse_userpsge(parse_basic):
         return data
 
 
-class parse_postpsge(parse_basic):
+class parse_postpage(parse_basic):
     # class for parsing post pages, /view/postid
     def __init__(self):
         super().__init__()
@@ -414,13 +421,13 @@ class parse_postpsge(parse_basic):
 
 if __name__ == '__main__':
     ## example
-    user = parse_userpsge()
+    user = parse_userpage()
     user.loadw('https://www.furaffinity.net/user/codedcells/')
     print('\nUser Parse:')
     for k, v in user.get_all().items():
         if type(v) == dict:continue
         print(k, v)
-
+    
     recent = user.items.get('recent_posts')
     if recent:
         print('\nIncluded Post:')
@@ -428,7 +435,7 @@ if __name__ == '__main__':
         print(recent[most_recent])
         
         print('\nPost Parse:')
-        post = parse_postpsge()
+        post = parse_postpage()
         post.loadw(f'https://www.furaffinity.net/view/{most_recent}/')
         for k, v in post.get_all().items():
             if k == 'desc':continue
