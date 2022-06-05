@@ -118,12 +118,15 @@ a[href^="https://www.furaffinity.net"]:visited {
 
 .desc {
 	text-align: initial;
-	width: 500px;
 	max-width: 80vw;
-	display: block;
+	display: inline-block;
 	margin: 0 auto;
 	margin-top: 7pt;
 	overflow-wrap: break-word;
+}
+
+.desc span, .desc div, .desc i {
+	color: inherit!important;
 }
 
 .desc a {
