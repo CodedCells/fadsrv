@@ -2,6 +2,9 @@ var gotNewLast = true;
 var wait = 1000;
 var mod = 0;
 
+var progress_score = 0;
+var progress_goal = 0;
+
 function reqListener() {
     console.log(this.responseText);
 }
@@ -52,7 +55,7 @@ function updateLog() {
 		"has": lines,
 		"level": level
 	}
-	console.log(meta);
+	//console.log(meta);
 	send_xhr("/logupdate", JSON.stringify(meta), updateListener)
 	if (gotNewLast)
 		wait = 1000;
@@ -68,6 +71,80 @@ function logDateParse(d) {
 
 function notDate(v) {
 	return (v == " " || isNaN(v))
+}
+
+function progressUpdate() {
+	var progressbar = document.getElementById("taskProgress");
+	
+	if (progressbar == null) {// new bar
+		cont = document.getElementById("fileinfo");
+		var perca = document.createElement("span");
+        perca.id = "taskProgressCount";
+		cont.appendChild(perca);
+		
+		var percb = document.createElement("progress");
+        percb.id = "taskProgress";
+        percb.style = "width:80%;";
+		cont.appendChild(percb);
+		
+		progressbar = document.getElementById("taskProgress");
+		progressbar.value = progress_score;
+	}
+	
+	progressco = document.getElementById("taskProgressCount")
+	progressco.innerHTML = " - " + progress_score + " of " + progress_goal;
+	
+	progressbar.max = progress_goal;
+	if (progress_score >= progress_goal)
+		progressbar.value = progress_score;
+}
+
+function isNum(val) {// js is bad
+	return !isNaN(val)
+}
+
+function progressMeasure(line) {
+	line = line.split("\t")[2];
+	if (line.startsWith("Adding ")) {
+		ld = line.split(" ")[1];
+		if (isNum(ld))
+			progress_goal += parseInt(ld) * 2;
+	}
+	else if (line.startsWith("TASKER-PERC ")) {
+		out = line.split(" ");
+		val = isNum(out[2]);
+		if (!val) return;// no val
+		
+		if (out[1] == "ADDGOAL")
+			progress_goal += val;
+		if (out[1] == "ADDSCORE")
+			progress_score += val;
+		
+		if (out[1] == "SETGOAL")
+			progress_goal = val;
+		else if (out[1] == "SETSCORE")
+			progress_score = val;
+	}
+	
+	if (progress_goal < 1) return;
+	
+	if (line.startsWith("get ") || line.startsWith("COPY")) {
+		progress_score += 1;
+	}
+	
+	progressUpdate()
+}
+
+function progressAnim() {
+	if (progress_score == 0) return
+	
+	var progressbar = document.getElementById("taskProgress");
+	
+	if (progressbar.value < progress_score)
+		progressbar.value += 0.1;
+	
+	if (progressbar.value+1 < progress_score)
+		progressbar.value += 0.3;
 }
 
 function drawLogLine(line, prev) {
@@ -88,6 +165,9 @@ function drawLogLine(line, prev) {
 	linel = line.split("\t")[1];
 	line = line.replace("\\t", "\t");
 	lo.innerHTML += '<code class="log' + linel + gap + '">' + line + '</code>';
+	
+	progressMeasure(line);
+	
 	return dline;
 }
 
@@ -103,3 +183,4 @@ function drawLogInit() {
 }
 
 var x = setTimeout(updateLog, 1000);
+var p = setInterval(progressAnim, 33);
