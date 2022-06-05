@@ -105,6 +105,7 @@ def datasort():
     global ent, users, users_has, users_marked, users_mod, kwd, kws
     
     mark = ent['_marked']
+    posthas = set(apdfa)
     partial = {}
     users_marked = {}
     start = time.perf_counter()
@@ -118,17 +119,13 @@ def datasort():
     
     want_users = len(users) == 0
     want_tags = len(kws) == 0
-    posts = apdfa
-    if want_users:
-        posts = sorted([int(x) for x in posts])
+    posts = sorted([(k, v) for k, v in {**altfa, **apdfa}.items()])
     
-    for post in posts:
-        post = str(post)
-        data = apdfa.get(post)
+    for post, data in posts:
         if not post or data.get('data') == 'deleted':continue
         
         if want_users:
-            user = data.get('uploader', '.badart').replace('_', '')
+            user = data.get('uploader', '.badart').lower().replace('_', '')
             
             if user not in users_has:
                 users[user] = []
@@ -141,7 +138,8 @@ def datasort():
             if isinstance(m, float) and users_mod.get(user, 0) < m:
                 users_mod[user] = m
             
-            partial[user] += str(post) not in mark
+            if post in posthas:
+                partial[user] += post not in mark
         
         if want_tags:
             if not data.get('tags'):
@@ -159,9 +157,9 @@ def datasort():
     
     for user, posts in users.items():
         marked = partial.get(user, 0)
+        posts = [post for post in posts if post in posthas]
         if not want_users:# not did above stuff
-            for post in posts:
-                marked += str(post) not in mark
+            marked = sum([post not in mark for post in posts])
         
         users_marked[user] = marked, marked / len(posts)
     
@@ -1535,8 +1533,8 @@ class eyde_base(builtin_base):
                 self.f_items,
                 all_here=True)
             
-            thisusers = [data.get('uploader', '.badart').replace('_', '')]
-            thisusersl = [x.replace('_', '')
+            thisusers = [data.get('uploader', '.badart').lower().replace('_', '')]
+            thisusersl = [x.lower().replace('_', '')
                           for x in xlink['descuser'].get(post, [])]
             thisusers += [x for x in thisusersl if x not in thisusers]
             
