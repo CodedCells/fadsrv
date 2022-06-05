@@ -1332,7 +1332,7 @@ class eyde_base(builtin_base):
         if not (inc or exc):
             return
         
-        mode = inc or not exc
+        mode = inc and not exc
         
         self.f_items = [
             i for i in self.f_items
@@ -1355,6 +1355,12 @@ class eyde_base(builtin_base):
                 ent['_marked'],
                 'cull' in pf or hide_default,
                 'marked' in pf)
+        
+        if 'showalt' not in pf:
+            self.cull_mode(
+                apdfa,
+                'onlyalt' in pf,
+                'hidealt' in pf or hide_default)
         
         si = len(self.f_items)
         index_id = 1
