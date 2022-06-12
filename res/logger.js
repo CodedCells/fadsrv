@@ -105,24 +105,25 @@ function isNum(val) {// js is bad
 
 function progressMeasure(line) {
 	line = line.split("\t")[2];
+	out = line.split(" ");
 	if (line.startsWith("Adding ")) {
 		ld = line.split(" ")[1];
 		if (isNum(ld))
-			progress_goal += parseInt(ld) * 2;
+			if (parseInt(ld) < 1000)
+				progress_goal += parseInt(ld) * 2;
 	}
-	else if (line.startsWith("TASKER-PERC ")) {
-		out = line.split(" ");
-		val = isNum(out[2]);
+	else if (["ADDGOAL", "ADDSCORE", "SETGOAL", "SETSCORE"].includes(out[0])) {
+		val = isNum(out[1]);
 		if (!val) return;// no val
 		
-		if (out[1] == "ADDGOAL")
+		if (out[0] == "ADDGOAL")
 			progress_goal += val;
-		if (out[1] == "ADDSCORE")
+		else if (out[0] == "ADDSCORE")
 			progress_score += val;
 		
-		if (out[1] == "SETGOAL")
+		else if (out[0] == "SETGOAL")
 			progress_goal = val;
-		else if (out[1] == "SETSCORE")
+		else if (out[0] == "SETSCORE")
 			progress_score = val;
 	}
 	
@@ -144,7 +145,13 @@ function progressAnim() {
 		progressbar.value += 0.1;
 	
 	if (progressbar.value+1 < progress_score)
-		progressbar.value += 0.3;
+		progressbar.value += 0.4;
+	
+	if (progressbar.value+10 < progress_score)
+		progressbar.value += .5;
+	
+	if (progressbar.value+20 < progress_score)
+		progressbar.value += 1;
 }
 
 function drawLogLine(line, prev) {

@@ -1,9 +1,10 @@
 #############################################################################
 # pep8 non-compliant :(
-
-from onefad_functions import *
 import requests
 import gc
+
+from onefad_functions import *
+from append_handler import appender
 
 ent['version'] = '31#2022-06-03'
 
@@ -23,10 +24,7 @@ def get_post_alt(path, rd):
     if not req or 'error' in req:
         return {}
     
-    for post, data in req.items():
-        altfa[post] = data
-    
-    apc_write(cfg['apd_dir'] + 'altfa', req, {}, 1)
+    altfa.write(req)
     return req
 
 
@@ -161,7 +159,7 @@ def datasort():
         if not want_users:# not did above stuff
             marked = sum([post not in mark for post in posts])
         
-        users_marked[user] = marked, marked / len(posts)
+        users_marked[user] = marked, marked / max(len(posts), 1)
     
     ent['force_datasort'] = False
     ent['usersort'] = sorted(users, key=lambda k: len(users[k]))
@@ -257,7 +255,8 @@ def apd_findnew():
         
         if 'rating' in add:
             if knowns is None:
-                knownf = apc_master().read(cfg['data_dir'] + 'known_faves')
+                knownf = appender()
+                knownf.read(cfg['data_dir'] + 'known_faves')
                 knownf = {x: y['rating'] for x, y in knownf.items()}
                 knowns = set(knownf)
             
@@ -471,15 +470,8 @@ def apd_findnew():
         logging.info(f'{c:>5,} posts done')
         
         logging.info('Writing Big APD')
-        apc_write(dd + 'apdfa', ch_apdfa, apdfa, 1, encoding='utf8')
-        apc_write(dd + 'apdfafol', ch_apdfafol, apdfafol, 1,  encoding='utf8')
-        if not cfg['desc_split']:
-            apc_write(dd + 'apdfadesc', ch_apdfadesc, apdfadesc, 1, encoding='utf8')
-            for post in ch_apdfadesc:
-                apdfadesc[post] = ch_apdfadesc[post]
-        
-        for post in ch_apdfa:
-            apdfa[post] = ch_apdfa[post]
+        apdfa.write(ch_apdfa)
+        apdfafol.write(ch_apdfafol)
         
         if cfg['desc_split']:
             ch_descblocks = {}
@@ -492,11 +484,12 @@ def apd_findnew():
             
             for block, data in ch_descblocks.items():
                 if not data:continue
-                apc_write(dd + f'descb/apdfadesc{block}b',
-                          data, {}, 1, encoding='utf8')
+                out = appender()
+                out.write(data, filename=dd + f'descb/apdfadesc{block}b')
         
-        for fol in ch_apdfafol:
-            apdfafol[fol] = ch_apdfafol[fol]
+        else:
+            out = appender()
+            out.write(ch_apdfadesc, filename=dd + 'apdfadesc')
         
         logging.info('Done writing and apply changes')
     
@@ -548,19 +541,11 @@ def apd_findnew():
     # todo copy pasta
     if ch_descpost:
         logging.info('Writing descpost')
-        apc_write(dd + 'apx_descpost',
-                  ch_descpost, xlink['descpost'], 1, volsize=None)
-        
-        for post in ch_descpost:
-            xlink['descpost'][post] = ch_descpost[post]
+        xlink['descpost'].write(ch_descpost)
     
     if ch_descuser:
         logging.info('Writing descuser')
-        apc_write(dd + 'apx_descuser',
-                  ch_descuser, xlink['descuser'], 1, volsize=None)
-        
-        for post in ch_descuser:
-            xlink['descuser'][post] = ch_descuser[post]
+        xlink['descuser'].write(ch_descuser)
     
     logging.info('Completed new desc links')
     
@@ -583,12 +568,16 @@ def load_text_attach():
     
     if 'textattach' not in ent['apdmark']:
         ent['apdmark'].append('textattach')
+
+    if '_attach' not in ent:
+        ent['_attach'] = appender()
     
+    attach = ent['_attach']
     apdm['textattach'] = {}
     tadir = cfg['image_dir'] + '_ta/'
     
     if os.path.isdir(tadir):
-        attach = apc_master().read(tadir + 'apdta')
+        attach.read(tadir + 'apdta')
         ch_attach = {}
         if not attach:
             logging.info('Preparing text attach info')
@@ -607,43 +596,47 @@ def load_text_attach():
         
         if ch_attach:
             logging.info('Adding', len(ch_attach), 'attach')
-            apc_write(tadir + 'apdta', ch_attach, attach, 1)
-            for postid, data in ch_attach.items():
-                attach[postid] = data
+            attach.write(ch_attach)
     
     else:
         logging.info('No text attach dir')
-        attach = {}
     
-    ent['_attach'] = attach
     apdm['textattach'] = {x: ['textattach', 0] for x in attach}
+
+
+def get_subs(user):
+    data = ustats.get(user, {})
+    return data.get('posts', .1)
 
 
 def load_userstats():
     global ent, ustats
+
+    if 'ustats' not in globals():
+        ustats = appender()
     
-    ent['ustats'] = {}
     ent['artup'] = {}
     ent['ustatus'] = {}
     
-    ustats = apc_master().read(cfg['apd_dir'] + 'apduserstats')
+    ustats.read(cfg['apd_dir'] + 'apduserstats')
     if not ustats:
         logging.info('User statistics unavilable')
     
-    for k in ustats:
-        if k.startswith('@'):continue
+    for k, d in ustats.items():
+        if k.startswith('@'):
+            continue
+        
         j = k.replace('_', '')
-        d = ustats.get(k, {})
         
-        if d.get('status', None) is None:
-            ent['artup'][j] = d.get('lastPostDate', '2000-01-01')
-            ent['ustats'][j] = d.get('posts', .1)
-        
-        else:
-            ent['ustats'][j] = -1
+        if d.get('status', None):
             ent['ustatus'][j] = d.get('status', None)
+        
+        ent['artup'][j] = d.get('lastPostDate', '1970-01-01')
     
-    ent['udatas'] = apc_master().read(cfg['apd_dir'] + 'apduserdata')
+    if 'udatas' not in ent:
+        ent['udatas'] = appender()
+    
+    ent['udatas'].read(cfg['apd_dir'] + 'apduserdata')
 
 
 def fpref_make():
@@ -763,8 +756,18 @@ def register_dynamic():
         menus['all_pages_buttons'] += [icn for m, icn in sorted(d)]
 
 
+def load_altfa():
+    global altfa
+    
+    if not 'altfa' in globals():
+        altfa = appender()
+    
+    altfa.read(cfg['apd_dir'] + 'altfa')
+
+
 def build_entries(reload=0):
-    global ent, altfa
+    global ent
+    
     if isinstance(reload, str):
         if reload.isdigit():reload = int(reload)
         else:reload = 0
@@ -789,8 +792,9 @@ def build_entries(reload=0):
         if reload > 2:
             init_apd()
             
-            altfa = apc_master().read(cfg['apd_dir'] + 'altfa')
+            load_altfa()
             load_bigapd()
+            
             if not cfg.get('skip_bigdata'):
                 ent['force_datasort'] = True
                 ent['added_content'] = apd_findnew()
@@ -1212,7 +1216,8 @@ class descman(object):
         self.ret = {}
     
     def get_block(self, block, posts):
-        data = apc_master().read(
+        data = appender()
+        data.read(
             cfg['apd_dir'] + f'descb/apdfadesc{block}b',
             parse=False)
         
@@ -1495,7 +1500,7 @@ class eyde_base(builtin_base):
         if data.get('origin') == 'alt':
             ret = f'<span class="altsrv">{ret}'
         
-        ret = f'<div id="{post}@post">\n' + ret
+        ret = f'<div class="post post-full" id="{post}@post">\n' + ret
         
         ret += self.get_file_link(post, data)
         
@@ -1519,7 +1524,7 @@ class eyde_base(builtin_base):
 <summary>Description ({desc_word_count:,} words)</summary>
 {desc}</details>\n<br>'''
             
-            ret += f'<div class="desc">{desc}</div>\n'
+            ret += f'<br>\n<div class="desc">{desc}</div>\n'
         
         if data.get('got', True):
             ret += post_things(
@@ -1690,7 +1695,7 @@ class get_icon_collection(builtin_base):
         if name is False:
             return self.icon
         
-        data = ent[f'collection_{self.colname}'][name]
+        data = apdm[self.colname][name]
         if 'icon' in data:
             return data['icon']
         
@@ -1735,7 +1740,7 @@ class eyde_collection(eyde_base, get_icon_collection):
     
     def process_filters(self, thing, filters):
         namesingle = apdmm.get(self.colname, {}).get('name', self.colname)
-        items = list(ent[f'collection_{self.colname}'])
+        items = list(apdm[self.colname])
         pos = 0
         if thing in items:
             pos = items.index(thing)
@@ -1756,7 +1761,7 @@ class eyde_collection(eyde_base, get_icon_collection):
         self.title = name
         self.markid = name
         self.name = f'{self.colname}:{name}'
-        data = ent[f'collection_{self.colname}'][name]
+        data = apdm[self.colname][name]
         self.data = data
         ent['visited_rebuild'].append([self.colname, name])
         self.items = data['items']
@@ -1840,7 +1845,7 @@ class eyde_dataurl(eyde_base):
             altfa[i] = d
         
         if new:
-            apc_write(cfg['apd_dir'] + 'altfa', new, {}, 1)
+            altfa.write(new)
         
         self.items = list(data)
         
@@ -1914,7 +1919,7 @@ class eyde_user(eyde_base):
         h = ''
         
         count = len(users.get(user, ''))
-        know = max(ent['ustats'].get(user, 1), count)
+        know = max(get_subs(user), count)
         perc = count / max(know, 1)
         
         h += '<div class="userinfo">\n<p>'
@@ -1955,8 +1960,8 @@ class eyde_user(eyde_base):
                 if user in wp[w]:
                     h += format_wp(w, user)
         
-        if user in ent['ustats']:
-            h += f'Got {count:,} of {ent["ustats"][user]:,} posts ({perc:.02%})</p>'
+        if user in ustats:
+            h += f'Got {count:,} of {get_subs(user):,} posts ({perc:.02%})</p>'
         
         if cfg['show_unparsed']:
                 h += very_pretty_json(f'user:{user}', aud)
@@ -2270,7 +2275,7 @@ class eyde_filter(eyde_base):
         if v is False:
             return set()
         
-        return set(ent[f'collection_{k}'][v]['items'])
+        return set(apdm[k][v]['items'])
     
     def filter_param_tag(self, k, v):
         return set(kwd.get(v, []))
@@ -2603,7 +2608,7 @@ def create_linktodathing(kind, thing, onpage=False, retmode='full', con=None, or
         if re.sub(r'\W+ ', '', thing.lower()) != thing.lower():
             linky = f'id.{find_collection(kind, thing, retid=True)}'
         
-        data = ent[f'collection_{kind}'][thing]
+        data = apdm[kind][thing]
         
         if compare_for(apdmm[kind], 'posts', sw=True):
             # show icon if read or unread
@@ -2634,7 +2639,7 @@ def create_linktodathing(kind, thing, onpage=False, retmode='full', con=None, or
     if kind == 'users':
         if thing in users:
             got = len(users[thing])
-            l8r = ent['ustats'].get(thing, '?')
+            l8r = get_subs(thing)
             v = wrapme(got, f=' {:,}') + wrapme(l8r, ' ({:,})')
             
             if cfg['docats']:
@@ -2868,7 +2873,7 @@ class mort_base(builtin_base):
                 
                 if pr == 11:# 11 = L for Length
                     items = [i for i in items
-                             if lt > ent['ustats'].get(i[0], .1) > gt]
+                             if lt > get_subs(i[0]) > gt]
                 
                 else:
                     items = [i for i in items if lt > i[pr] > gt]
@@ -2889,7 +2894,7 @@ class mort_base(builtin_base):
             if v is False:
                 continue
             
-            v = set(ent[f'collection_{m}'][v]['items'])
+            v = set(apdm[m][v]['items'])
             items = [i for i in items if (i[0] in v) == e]
         
         if cull:
@@ -2906,7 +2911,8 @@ class mort_base(builtin_base):
             items = self.item_sorter(um, items, mincount)
         
         elif 'ustats' in pf:
-            items = self.item_sorter(ent['ustats'], items, mincount)
+            um = {k: get_subs(k) for k in ustats}
+            items = self.item_sorter(um, items, mincount)
         
         else:
             # arbitray data yay
@@ -2995,7 +3001,7 @@ hide_empty: {self.hide_empty}\n-->'''
         labelt = [item, '-', wrapme(data)]
         
         if self.marktype == 'users':
-            labelt.append(wrapme(ent['ustats'].get(item, '?'), f='({:,})'))
+            labelt.append(wrapme(get_subs(item), f='({:,})'))
         
         for pos, inf in enumerate(self.iteminf):
             if inf is None or pos >= len(i):
@@ -3128,7 +3134,7 @@ class mort_collection_list(mort_base):
         
         for d, k, n in sort_collection(self.colname, rebuild=True):
             self.items.append((k, d, n))
-            self.datas[k] = ent['collection_' + self.colname][k]['items'].copy()
+            self.datas[k] = apdm[self.colname][k]['items'].copy()
             
             for i, u in enumerate(self.datas[k]):
                 t = choose_thumb(
@@ -3210,7 +3216,7 @@ class mort_collection(mort_base, get_icon_collection):
         
         self.title = name
         ent['visited_rebuild'].append([self.colname, name])
-        data = ent['collection_' + self.colname][name]
+        data = apdm[self.colname][name]
         self.data = data
         self.items = data['items']
         
@@ -3630,7 +3636,7 @@ class mort_scout(mort_base):
     def gimme_idc(self):
         self.datas = users
         self.items = {
-            x: ent['ustats'].get(x, .1) - len(y)
+            x: get_subs(x) - len(y)
             for x, y in self.datas.items()}
         
         self.items = sorted(self.items.items(), key=itemgetter(1))
@@ -3665,7 +3671,7 @@ class mort_percgot(mort_base):
         self.items = {}
         
         for user, posts in users.items():
-            al = ent['ustats'].get(user, .1)
+            al = get_subs(user)
             if user.startswith('@') or al == -1:
                 continue
             
@@ -3709,7 +3715,7 @@ def choose_thumb(marktype, thing, level=0, do_ext=True):
         return select_thumb(posts, do_ext=do_ext)
     
     if apdmm.get(marktype):
-        posts = ent.get('collection_' + marktype, {})
+        posts = apdm.get(marktype, {})
         posts = posts.get(thing, {}).get('items', [])
         
         marktype = apdmm[marktype].get('for', 'posts')
@@ -3898,7 +3904,7 @@ class builtin_stats(builtin_base):
                 posts = len(posts)
                 out[1][1] += posts
                 
-                k = ent['ustats'].get(user, 0)
+                k = get_subs(user)
                 out[0][1] += max(posts, k)
         
         elif dfor == 'folders':
@@ -3980,7 +3986,7 @@ class builtin_stats(builtin_base):
         for user, posts in users.items():
             posts = len(posts)
             
-            k = ent['ustats'].get(user, 0)
+            k = get_subs(user)
             k = max(posts, k)
             if k:
                 know += k
@@ -4645,8 +4651,8 @@ class post_search(post_base):
         elif mode == 'folders':
             ret = self.search_of(query, 'folders', apdfafol, useval='title')
         
-        elif 'collection_' + mode in ent:
-            ret = self.search_of(query, mode, ent[f'collection_{mode}'])
+        elif mode in apdm:
+            ret = self.search_of(query, mode, apdm[mode])
         
         else:
             ret = {'result': [f'Sorry, nothing.<br><br>How do i handle {mode}?']}
@@ -4658,13 +4664,14 @@ class post_search(post_base):
 class post_collections(post_base):
     
     def post_logic(self, handle, pargs, data):
+        global apdm
+        
         if cfg['static']:
             return {'status': 'Server set to Static'}
         
         mode = pargs[-1]
         query = data.get('query')
         con = data.get('con')
-        mem = f'collection_{con}'
         name = data.get('name')
         flag = data.get('flag')
         prop = data.get('prop')
@@ -4680,13 +4687,11 @@ class post_collections(post_base):
             ret['sets'] = get_collectioni(con, query)
         
         elif mode == 'new' and name != None:
-            if name not in ent[mem]:
-                ent[mem][name] = {'modified': data['time'], 'items': []}
+            if name not in apdm[con]:
+                apdm[con].write({name: {'modified': data['time'], 'items': []}})
+                ret['name'] = name
                 sort_collection(con, ret=False, rebuild=True)
                 ret['status'] = 'success'
-                
-                if apdmm[con].get('save', True):
-                    apc_write(md + 'ds_' + con, {name: ent[mem][name]}, {}, 1, volsize=None)
         
         elif mode == '_flag' and flag != None and 'file' in data:
             flag = html.unescape(flag)
@@ -4695,26 +4700,27 @@ class post_collections(post_base):
             if type(files) != list:
                 files = [files]
             
-            oldv = {**ent[mem][flag]}
-            locked = ent[mem][flag].get('lock', False)
+            existing = apdm[con][flag]
             
-            if not locked:
-                for file in files:
-                    ret['status'] = [flag, file not in ent[mem][flag]['items']]
-                    ret[file] = [con, True]
-                    if file in ent[mem][flag]['items']:
-                        ent[mem][flag]['items'].remove(file)
-                        ret[file][1] = get_collectioni(con, file, retcount=True) > 0
-                    else:
-                        ent[mem][flag]['items'].append(file)
-                
-                ent[mem][flag]['modified'] =  data['time']
-                if apdmm[con].get('save', True):
-                    apc_write(md + 'ds_' + con, {flag: ent[mem][flag]}, oldv, 1, volsize=None)
-            
-            if not ret:
+            if existing.get('lock', False):
                 ret['status'] = 'error'
                 ret['message'] = 'Locked: {}'
+                return ret
+            
+            for file in files:
+                ret['status'] = [flag, file not in existing['items']]
+                
+                ret[file] = [con, True]
+                
+                if file in existing['items']:
+                    existing['items'].remove(file)
+                    ret[file][1] = get_collectioni(con, file, retcount=True) > 0
+                
+                else:
+                    existing['items'].append(file)
+            
+            existing['modified'] =  data['time']
+            apdm[con].write({flag: existing})
         
         elif mode == 'prop' and 'name' in data and 'prop' in data:
             stripset = {re.sub(r'\W+', '', x.lower()): x for x in ent[mem]}
@@ -4723,32 +4729,30 @@ class post_collections(post_base):
             if name in stripset:
                 sname = stripset[name]
             
-            if sname in ent[mem]:
-                oldv = {**ent[mem][sname]}
-                ret[name] = [prop, not ent[mem][sname].get(prop, False)]
-                ent[mem][sname][prop] = ret[name][-1]
-                ent[mem][sname]['modified'] =  data['time']
-                
-                if prop == 'delete':
-                    ent[mem][sname]['delete'] = True
-                    sort_collection(mem, ret=False)
-                
-                elif prop == 'sortmepls':
-                    items = sorted([
-                        int(i)
-                        for i in ent[mem][sname]['items']
-                        if i.isdigit()
-                        ])
-                    ent[mem][sname]['items'] = [str(i) for i in items]
-                    sort_collection(mem, ret=False)
-                    del ent[mem][sname][prop]
-                
-                if apdmm[con].get('save', True):
-                    apc_write(md + 'ds_' + con, {sname: ent[mem].get(sname, {})}, oldv, 1, volsize=None)
-            
-            else:
+            if sname not in ent[mem]:
                 ret['status'] = 'error'
                 ret['message'] = f'WTF is {name}'
+                return ret
+            
+            existing = apdm[con][sname]
+            ret[name] = [prop, not ent[mem][sname].get(prop, False)]
+            existing[prop] = ret[name][-1]
+            existing['modified'] =  data['time']
+            
+            if prop == 'delete':
+                existing['delete'] = True
+            
+            elif prop == 'sortmepls':
+                items = sorted([
+                    int(i)
+                    for i in existing['items']
+                    if i.isdigit()
+                    ])
+                existing['items'] = [str(i) for i in items]
+                del ent[mem][sname][prop]
+            
+            sort_collection(con, ret=False)
+            apdm[con].write({flag: existing})
         
         return ret
 
@@ -4787,9 +4791,7 @@ class post_apref(post_base):
         
         if ch_apdm:
             logging.debug(json.dumps(ch_apdm))
-            apc_write(md + 'ds_' + flag, ch_apdm, {}, 1, volsize=None)
-            for k in ch_apdm:
-                apdm[flag][k] = ch_apdm[k]
+            apdm[flag].write(ch_apdm)
         
         return ret
 
@@ -5101,7 +5103,8 @@ def load_user_config():
 def load_wp(fn):
     global wp, wpm
     
-    data = apc_master().read(cfg['mark_dir'] + 'wp_' + fn)
+    data = wp.get(fn, appender())
+    data.read(cfg['mark_dir'] + 'wp_' + fn)
     if '//' in data:
         wpm[fn] = data['//']
         del data['//']
@@ -5113,11 +5116,11 @@ def load_apx(fn):
     global xlink
     
     apdfile = fn[4:]
-    data = apc_master().read(cfg['apd_dir'] + fn, do_time=True, encoding='iso-8859-1')
+    data = xlink.get(apdfile, appender())
+    data.read(cfg['apd_dir'] + fn, encoding='iso-8859-1')
     prop = {}
     if '//' in data:
         prop = data['//']
-        del data['//']
     
     xlink[apdfile] = data
     
@@ -5128,6 +5131,7 @@ def load_apx(fn):
     exists = set()
     
     for k, v in data.items():
+        if k == '//':continue
         for i in v:
             if i in exists:
                 back[i].append(k)
@@ -5141,46 +5145,90 @@ def load_apx(fn):
 
 def load_bigapd():
     global apdfa, apdfadesc, apdfafol, blockup
+
+    data_files = ['apdfa', 'apdfafol', 'blockup']
+    if not cfg['desc_split']:
+        data_files.append('apdfadesc')
     
-    apdfa = {}
-    apdfadesc = {}
-    apdfafol = {}
-    blockup = apc_master().read(cfg['apd_dir'] + 'blockup')
+    for k in data_files:
+        if k not in globals():
+            globals()[k] = appender()
     
     gc.collect()
     
     if cfg.get('skip_bigdata'):
         return
     
-    logging.info('Loading data files...')
-    
-    data_files = ['apdfa', 'apdfafol']
-    if not cfg['desc_split']:
-        data_files.append('apdfadesc')
+    logging.info('Reading Big APD files...')
     
     for k in data_files:
-        globals()[k] = apc_master().read(
+        globals()[k].read(
             cfg['apd_dir'] + k,
-            do_time=True, encoding='iso-8859-1')
+            encoding='iso-8859-1')
+
+
+def load_apdmfile(path, pre, fn):
+    global apdmm, apdm
+    
+    data = apdm.get(fn, appender())
+    data.read(path + pre + fn, encoding='iso-8859-1')
+    
+    prop = apdmm.get(fn)
+    if '//' in data:
+        prop = data['//']
+        del data['//']
+    
+    apdmm[fn] = apdmm.get(fn, {})
+    
+    for k, v in prop.items():
+        apdmm[fn][k] = v
+
+    if prop.get('type') == 'collection':
+        if 'name_plural' not in apdmm[fn]:
+            name = apdmm[fn].get('name', '')
+            if not name:
+                name = fn
+            else:
+                name += 's'
+            
+            apdmm[fn]['name_plural'] = name
+        
+        for k, d in list(data.items()):
+            if d.get('delete', False):
+                del data[k]
+    
+    elif prop.get('list', False) != False:
+        if compare_for(prop, 'users'):
+            data.setd({x.replace('_', '').lower(): 0 for x in data})
+    
+    else:
+        for k, v in list(data.items()):
+            if not v or list(v) == ['None']:
+                del data[k]
+            
+            elif len(v) > 1:
+                if v[0] != 'n/a':
+                    data[k] = v
+    
+    apdm[fn] = data
+    return prop.get('order', 1), fn
 
 
 def load_apd():
     global ent, apdmm, apdm, dpref, dprefm, xlink, wp, wpm
     
-    logging.info('Loading apd files')
+    logging.info('Reading Mark files')
     
-    wp = {}
-    wpm = {}
-    apdm = {}
-    dprefm = {}
-    dpref = {}
-    apdmm = {}
+    for k in ['wp', 'wpm', 'dprefm', 'dpref']:
+        if k not in globals():
+            globals()[k] = {}
 
     apdmark = {}
     apxlink = {}
     wpfile = {}
+    
     scandir = cfg['mark_dir']
-    if not scandir:scandir = '.'
+    
     for f in os.listdir(scandir):
         if '.' in f:continue
         if f.startswith('ds_'):
@@ -5191,70 +5239,21 @@ def load_apd():
             wpfile[f[3:]] = 0
     
     datas  = {}
-    for apdfile in apdmark:
-        data = apc_master().read(scandir + 'ds_' + apdfile, encoding='iso-8859-1')
-        prop = {}
-        if '//' in data:
-            prop = data['//']
-        
-        apdmark[apdfile] = prop.get('order', 0)
-        datas[apdfile] = data
-    
-    apdmark = sorted([(y, x) for x, y in apdmark.items()])
-    apdmark = [y for x, y in apdmark]
-    
-    ent['apdmark'] = apdmark
     ent['apxlink'] = apxlink
     
+    order = []
     for apdfile in apdmark:
-        data = datas[apdfile]
-        apdmm[apdfile] = {}
-        
-        prop = {}
-        if '//' in data:
-            prop = data['//']
-            del data['//']
-        
-        for k, v in prop.items():
-            apdmm[apdfile][k] = v
-        
-        if prop.get('type') == 'collection':
-            if 'name_plural' not in apdmm[apdfile]:
-                name = apdmm[apdfile].get('name', '')
-                if not name:name = apdfile
-                else:name += 's'
-                apdmm[apdfile]['name_plural'] = name
-            
-            for k, d in list(data.items()):
-                if d.get('delete', False):
-                    del data[k]
-            
-            ent[f'collection_{apdfile}'] = data
-        
-        elif prop.get('list', False) != False:
-            if compare_for(prop, 'users'):
-                data = {x.replace('_', '').lower(): 0 for x in data}
-            
-            apdm[apdfile] = data
-            dpref[apdfile] = data
-        
-        else:
-            for k, v in list(data.items()):
-                if not v or list(v) == ['None']:
-                    del data[k]
-                
-                elif len(v) > 1:
-                    if v[0] != 'n/a':
-                        data[k] = v
-            
-            apdm[apdfile] = data
+        order.append(
+            load_apdmfile(scandir, 'ds_', apdfile))
+    
+    ent['apdmark'] = [y for x, y in sorted(order)]
     
     ent['loaded_apd'] = True
     
     for apdfile in wpfile:
         load_wp(apdfile)
     
-    logging.info('Loading apx')
+    logging.info('Reading APX files')
     xlink = {}
     scandir = cfg['apd_dir']
     for f in os.listdir(scandir):
@@ -5268,7 +5267,7 @@ def apdm_divy():
     global ent, dprefm, dpref
     
     ent['mark_buttons'] = {
-        x: mark_button(x) for x in apdmm
+        x: mark_button(x) for x in ent['apdmark']
         }
     
     dprefm = {}
@@ -5279,7 +5278,7 @@ def apdm_divy():
             
             dprefm[apdfile] = {**apdmm[apdfile], 'apdm': apdfile}
             
-            data = ent[f'collection_{apdfile}']
+            data = apdm[apdfile]
             dpref[apdfile] = set()
             for d, k, n in sort_collection(apdfile, rebuild=True):
                 dpref[apdfile].update(set(data[k].get('items', [])))

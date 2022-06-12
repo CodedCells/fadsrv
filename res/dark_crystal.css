@@ -1,0 +1,45 @@
+@import "base.css";
+
+/* base */
+
+body {
+	color: #cfcfcf;
+	background-color: #121212;
+}
+
+a {
+	color: inherit;
+	text-decoration: none;
+}
+
+.head, .foot {
+	background-color: #272727;
+}
+
+/* common elements */
+
+.btn {
+	background: #424242;
+}
+
+.mbutton {
+	color: #cfcfcf;
+	background-color: #202020;
+	transition: background-color 0.2s;
+}
+
+.on {
+	background-color: #707090!important;
+}
+
+.disabled {
+	opacity: 0.5;
+}
+
+/* Pop-down menu layout */
+
+.popdown {
+	background-color: rgba(38, 38, 38, .6);
+	backdrop-filter: blur(3px);
+	border-bottom: 5px solid #272727;
+}

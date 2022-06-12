@@ -374,8 +374,9 @@ function aprefAllRead(a) {
 
 function folderToSetMakeBack() {
     var data = JSON.parse(this.responseText);
+	console.log("BACK!", data);
     if (data.status == "success") {
-        setMark(posts, defaultSetName);
+        setMark(posts, data.name);
     } else {
         folderToSet("Nah fam, give it a differeent name")
     }

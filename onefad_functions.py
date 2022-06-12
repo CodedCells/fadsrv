@@ -1,5 +1,8 @@
 from onefad_web import *
 
+apdmm = {}
+apdm = {}
+
 def isdocats():
     docats = cfg['docats']
     v = ['-', 'o'][docats]
@@ -103,7 +106,7 @@ def find_collection(col, name, retid=False):
                     else:return k
     
     k = 0
-    for n in ent.get(f'collection_{col}', {}):
+    for n in apdm.get(col, {}):
         if (n.lower() == name or
             re.sub(r'\W+', '', n.lower()) == name):
             if retid:return k
@@ -120,12 +123,10 @@ def get_collectioni(col, postid, retcount=False, onlyin=False):
     pin = []
     
     sc = sort_collection(col)
-    coln = f'collection_{col}'
-    colk = set(ent[coln])
     
     for d, k, n in sc:
-        if k not in colk:continue
-        i = ent[coln][k]
+        i = apdm[col].get(k)
+        if not i:continue
         r = (
             k,
             len(i['items']),
@@ -159,7 +160,7 @@ def sort_collection(col, ret=True, rebuild=False):
     if  not ent.get(colsort, 0) or rebuild:
         sort = []
         n = 0
-        for k, d in ent.get(f'collection_{col}', {}).items():
+        for k, d in apdm.get(col, {}).items():
             if k != '//' or k != '':
                 sort.append((d.get('modified', 0), k, n))
                 n += 1
