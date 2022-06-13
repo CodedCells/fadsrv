@@ -6,7 +6,7 @@ import gc
 from onefad_functions import *
 from append_handler import appender
 
-ent['version'] = '31#2022-06-03'
+ent['version'] = '31#2022-06-13'
 
 class builtin_base(builtin_base):
     
@@ -117,10 +117,10 @@ def datasort():
     
     want_users = len(users) == 0
     want_tags = len(kws) == 0
-    posts = sorted([(k, v) for k, v in {**altfa, **apdfa}.items()])
     
-    for post, data in posts:
-        if not post or data.get('data') == 'deleted':continue
+    for post, data in {**altfa, **apdfa}.items():
+        if not post or data.get('data') == 'deleted':
+            continue
         
         if want_users:
             user = data.get('uploader', '.badart').lower().replace('_', '')
@@ -154,6 +154,7 @@ def datasort():
         kws = sorted(kws, key=lambda k: len(kwd[k]))
     
     for user, posts in users.items():
+        users[user] = sorted(posts)
         marked = partial.get(user, 0)
         posts = [post for post in posts if post in posthas]
         if not want_users:# not did above stuff
@@ -164,7 +165,7 @@ def datasort():
     ent['force_datasort'] = False
     ent['usersort'] = sorted(users, key=lambda k: len(users[k]))
     
-    logging.info(f'Users and Tags in {time.perf_counter()-start}')
+    logging.info(f'Users and Tags in {time.perf_counter()-start:,.01f}s')
 
 
 def apd_findnew():
@@ -470,7 +471,7 @@ def apd_findnew():
         logging.info(f'{c:>5,} posts done')
         
         logging.info('Writing Big APD')
-        apdfa.write(ch_apdfa)
+        apdfa.write(ch_apdfa, volsize=100000)
         apdfafol.write(ch_apdfafol)
         
         if cfg['desc_split']:
@@ -489,7 +490,7 @@ def apd_findnew():
         
         else:
             out = appender()
-            out.write(ch_apdfadesc, filename=dd + 'apdfadesc')
+            out.write(ch_apdfadesc, volsize=100000, filename=dd + 'apdfadesc')
         
         logging.info('Done writing and apply changes')
     
@@ -541,11 +542,11 @@ def apd_findnew():
     # todo copy pasta
     if ch_descpost:
         logging.info('Writing descpost')
-        xlink['descpost'].write(ch_descpost)
+        xlink['descpost'].write(ch_descpost, volsize=100000)
     
     if ch_descuser:
         logging.info('Writing descuser')
-        xlink['descuser'].write(ch_descuser)
+        xlink['descuser'].write(ch_descuser, volsize=100000)
     
     logging.info('Completed new desc links')
     
@@ -786,16 +787,17 @@ def build_entries(reload=0):
     load_user_config()
     if reload > 0:
         
+        if reload > 2:
+            init_apd()
+        
         if reload > 1:
             load_apd()
         
         if reload > 2:
-            init_apd()
-            
             load_altfa()
             load_bigapd()
             
-            if not cfg.get('skip_bigdata'):
+            if not (cfg.get('skip_bigdata') or cfg.get('skip_findnew')):
                 ent['force_datasort'] = True
                 ent['added_content'] = apd_findnew()
         
@@ -808,9 +810,9 @@ def build_entries(reload=0):
     
     apdm_divy()
     markedposts()
+    logging.info(f'Processing took {time.perf_counter() - start:,.01f}s')
     datasort()
     register_dynamic()
-    logging.info(f'Processing took {time.perf_counter() - start}')
     
     logging.info(f"{len(ent['usersort']):,} users")
     ent['added_content'] = False
@@ -926,25 +928,12 @@ def mark_state(mark, thing):
     return ret
 
 
-def butt_maker(thing, mark, action, text, icon, state):
-    # format html buttons
-    if not (state or (state and state[-1])):
-        state = 'markbutton mbutton' + state
-    
-    if '{' in action:
-        logging.warning(f'old action {thing}@{mark}')
-        return '<button name="{0}@{1}" onclick="{action}" class="{3}">{2}</button>\n'.replace(
-        '{action}', action).format(thing, mark, icon, state)
-    
-    return f'''<button name="{thing}@{mark}" title="{text}" onclick="{action}" class="mar{state}">{icon}</button>\n'''
-
-
 class mark_button(object):
 
-    def __init__(self, mark, action=None):
+    def __init__(self, mark=None, action=None):
         
         self.mark = mark
-        self.data = apdmm[mark]
+        self.data = apdmm.get(mark, {})
         
         self.btype = self.data.get('type')
         self.action = action
@@ -993,13 +982,13 @@ class mark_button(object):
         if type(state) == list:# collections
             state, self.col = state[0], state[1]
         
-        pressed = 'on '
+        pressed = ' on'
         if state is None:
             state, pressed = '', ''
         
         cla = ''
         if self.disabled():
-            cla = 'disabled '
+            cla = ' disabled '
         
         build_input = {
         'text':         self.build_input_text,
@@ -1023,9 +1012,22 @@ class mark_button(object):
         
         return build_input()
     
+    def ez(self, thing, mark, action, text, icon, state):
+        
+        icon = self.icon_html(icon, 60)
+        
+        if '{' in action:
+            action = action.format(thing, mark, icon, state)
+        
+        return self.build_wrap([thing, mark], state, f' title="{text}" onclick="{action}"', icon)
+    
     def build_wrap(self, namep, cla, arg, inner):
         if namep[0] is None:return ''
-        return f'<div name="{"@".join(namep)}" class="markbutton mbutton {cla}"{arg}>{inner}</div>\n'
+        
+        if not cla or cla[0] == ' ':
+            cla = 'markbutton mbutton' + cla
+        
+        return f'<div name="{"@".join(namep)}" class="{cla}"{arg}>{inner}</div>\n'
     
     def build_input_text(self):
         #todo add icon
@@ -1561,7 +1563,7 @@ class eyde_base(builtin_base):
         
         ret += post_things(
             f'/filter/linkfrom:{post}/1">Linked From',
-            sorted(xlink['descpostback'].get(post, [])),
+            sorted(xlink.get('descpostback', {}).get(post, [])),
             'posts',
             post,
             self.f_items,
@@ -1708,10 +1710,11 @@ class get_icon_collection(builtin_base):
         if state:
             state = ['', ' on'][self.data.get(markact, False)]
         
-        return butt_maker(
-            escname, markact, 'propMagic(this)', text,
-            mark_button.icon_html(None, icon, 60),
-            state)
+        #thing, mark, action, text, icon, state
+        return mark_button().ez(
+            escname, markact,
+            'propMagic(this)',
+            text, icon, state)
     
     def propCluster(self, escname):
         h = '<div class="floatingmark abox options">Options:\n'
@@ -2047,7 +2050,8 @@ class eyde_folder(eyde_base):
         h += '\n];\n</script>\n'
 
         addto = ''
-        for m, d  in apdmm.items():
+        for m  in ent['mark_buttons']:
+            d = apdmm[m]
             if not compare_for(d, 'posts', sw=True):
                 continue
             
@@ -2055,10 +2059,11 @@ class eyde_folder(eyde_base):
                 continue
             
             name = d.get('name', m)
-            
-            addto += butt_maker(folid, 'create',
+
+            addto += mark_button().ez(
+                folid, 'create',
                 f"folderToSet('Name the new {name}', '{m}')",
-                name, name, 'ass')
+                name, name, 'item')
         
         if addto:
             h += f'<div class="linkthings centered">\nAdd all to: {addto}</div>'
@@ -2240,7 +2245,7 @@ class eyde_filter(eyde_base):
     
     def filter_param_user_data(self, k, v):
         if   k == 'user':    return users
-        elif k == 'userl':   return xlink['descuserback']
+        elif k == 'userl':   return xlink.get('descuserback', {})
         
         elif k == 'userdescpost':
             out = []
@@ -2253,8 +2258,8 @@ class eyde_filter(eyde_base):
             out = apdfafol.get(v, {}).get('items', [])
             return {v: out}
         
-        elif k == 'linkto':  return xlink['descpost']
-        elif k == 'linkfrom':return xlink['descpostback']
+        elif k == 'linkto':  return xlink.get('descpost', {})
+        elif k == 'linkfrom':return xlink.get('descpostback', {})
         return {}
     
     def filter_param_user(self, k, v):
@@ -2441,7 +2446,7 @@ class eyde_filter(eyde_base):
         if not l_or + l_and:# no positives
             if (('@', 'unavailable') in p_arg and
                 not ('@', 'descpost') in p_arg):
-                self.items = xlink['descpostback']
+                self.items = xlink.get('descpostback', {})
                 self.filter_items_by(ent['_posts'], False)
                 unav_skip = True
                 
@@ -3276,7 +3281,7 @@ class mort_unlinked(mort_base):
         super().__init__(marktype, title, link, icon)
     
     def get_items(self):
-        linked = set(xlink['descuserback'])
+        linked = set(xlink.get('descuserback', {}))
         return [x for x in ent['usersort']
                 if x not in linked]
     
@@ -3624,7 +3629,7 @@ class mort_linkeduser(mort_base):
         super().__init__(marktype, title, link, icon)
     
     def gimme_idc(self):
-        self.datas = xlink['descuserback']
+        self.datas = xlink.get('descuserback', {})
         self.items = list(self.datas)
 
 
@@ -3757,8 +3762,12 @@ class builtin_search(builtin_base):
         
         pagehtml += '</select>\n'
         pagehtml += strings['search_bar']
-        searchicon = mark_button.icon_html(None, ii(20), 60)
-        pagehtml += butt_maker('', '', 'search(true)', 'Search', searchicon, '')
+        
+        pagehtml += mark_button().ez(
+            '', '',
+            'search(true)',
+            'Search', ii(20), '')
+        
         pagehtml += '<div class="container list"></div>\n'
         pagehtml += f'<script>var page = 1;var listCount = {cfg["list_count"]};</script>'
         handle.wfile.write(bytes(pagehtml, cfg['encoding_serve']))
@@ -4723,19 +4732,19 @@ class post_collections(post_base):
             apdm[con].write({flag: existing})
         
         elif mode == 'prop' and 'name' in data and 'prop' in data:
-            stripset = {re.sub(r'\W+', '', x.lower()): x for x in ent[mem]}
+            stripset = {re.sub(r'\W+', '', x.lower()): x for x in apdm[con]}
             
             sname = name
             if name in stripset:
                 sname = stripset[name]
             
-            if sname not in ent[mem]:
+            if sname not in apdm[con]:
                 ret['status'] = 'error'
                 ret['message'] = f'WTF is {name}'
                 return ret
             
             existing = apdm[con][sname]
-            ret[name] = [prop, not ent[mem][sname].get(prop, False)]
+            ret[name] = [prop, not existing.get(prop, False)]
             existing[prop] = ret[name][-1]
             existing['modified'] =  data['time']
             
@@ -4752,7 +4761,7 @@ class post_collections(post_base):
                 del ent[mem][sname][prop]
             
             sort_collection(con, ret=False)
-            apdm[con].write({flag: existing})
+            apdm[con].write({sname: existing})
         
         return ret
 
@@ -5034,7 +5043,7 @@ class fa_req_handler(BaseHTTPRequestHandler):
             if path_split[-1] == 'user_stats':
                 level = 1
             
-            elif not cfg.get('skip_bigdata'):
+            elif not (cfg.get('skip_bigdata') or cfg.get('skip_findnew')):
                 ent['added_content'] = apd_findnew()
             
             build_entries(reload=level)
@@ -5112,17 +5121,17 @@ def load_wp(fn):
     wp[fn] = data
 
 
-def load_apx(fn):
+def load_apx(path, pre, fn):
     global xlink
     
-    apdfile = fn[4:]
-    data = xlink.get(apdfile, appender())
-    data.read(cfg['apd_dir'] + fn, encoding='iso-8859-1')
-    prop = {}
+    data = xlink.get(fn, appender())
+    data.read(path + pre + fn)
+    
+    prop = data.get('//', {})
     if '//' in data:
         prop = data['//']
     
-    xlink[apdfile] = data
+    xlink[fn] = data
     
     if not prop.get('linkback', True):
         return# skip doing reverse linking
@@ -5133,14 +5142,13 @@ def load_apx(fn):
     for k, v in data.items():
         if k == '//':continue
         for i in v:
-            if i in exists:
-                back[i].append(k)
-            
-            else:
-                back[i] = [k]
+            if i not in exists:
+                back[i] = []
                 exists.add(i)
+            
+            back[i].append(k)
     
-    xlink[apdfile + 'back'] = back
+    xlink[fn + 'back'] = back
 
 
 def load_bigapd():
@@ -5173,7 +5181,7 @@ def load_apdmfile(path, pre, fn):
     data = apdm.get(fn, appender())
     data.read(path + pre + fn, encoding='iso-8859-1')
     
-    prop = apdmm.get(fn)
+    prop = apdmm.get(fn, {})
     if '//' in data:
         prop = data['//']
         del data['//']
@@ -5219,7 +5227,7 @@ def load_apd():
     
     logging.info('Reading Mark files')
     
-    for k in ['wp', 'wpm', 'dprefm', 'dpref']:
+    for k in ['wp', 'wpm', 'dprefm', 'dpref', 'xlink']:
         if k not in globals():
             globals()[k] = {}
 
@@ -5230,11 +5238,13 @@ def load_apd():
     scandir = cfg['mark_dir']
     
     for f in os.listdir(scandir):
-        if '.' in f:continue
+        if '.' in f or f[-1].isdigit():
+            continue
+        
         if f.startswith('ds_'):
             apdmark[f[3:]] = 0
         elif f.startswith('apx_'):
-            apxlink[f] = 0
+            apxlink[f[4:]] = 0
         elif f.startswith('wp_'):
             wpfile[f[3:]] = 0
     
@@ -5254,11 +5264,8 @@ def load_apd():
         load_wp(apdfile)
     
     logging.info('Reading APX files')
-    xlink = {}
-    scandir = cfg['apd_dir']
-    for f in os.listdir(scandir):
-        if f.startswith('apx_'):
-            load_apx(f)
+    for apdfile in apxlink:
+        load_apx(scandir, 'apx_', apdfile)
     
     ent['loaded_apx'] = True
 
@@ -5267,7 +5274,7 @@ def apdm_divy():
     global ent, dprefm, dpref
     
     ent['mark_buttons'] = {
-        x: mark_button(x) for x in ent['apdmark']
+        x: mark_button(mark=x) for x in ent['apdmark']
         }
     
     dprefm = {}
@@ -5315,12 +5322,12 @@ def init_apd():
     make_apd('apx_descpost', {'//': {
         'type': 'xlink',
         'for': 'posts'
-        }}, origin=cfg['apd_dir'])
+    }})
 
     make_apd('apx_descuser', {'//': {
         'type': 'xlink',
         'for': 'users'
-        }}, origin=cfg['apd_dir'])
+    }})
     
     make_apd('ds_passed', {'//': {
         'icon':  ii(40),
@@ -5495,6 +5502,8 @@ if __name__ == '__main__':
         'encoding_write': 'utf8',
         'all_marks_visible': False,
         'show_visited_recently': True,
+        'skip_bigdata': False,
+        'skip_findnew': False,
         
         'homepage_menu': 'menu',
         'dropdown_menu': 'menu',

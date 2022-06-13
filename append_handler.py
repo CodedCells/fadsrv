@@ -156,9 +156,9 @@ class appender(dict):
         if self.block:
             filename += f'_{self.block:02d}'
         
+        self.prepare_file(filename)
         mod = os.stat(filename).st_mtime
         
-        self.prepare_file(filename)
         with open(filename, 'a', encoding=self.encoding) as fh:
             fh.write(out)
             fh.close()

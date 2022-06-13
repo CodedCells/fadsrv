@@ -118,10 +118,9 @@ a[href^="https://www.furaffinity.net"]:visited {
 
 .desc {
 	text-align: initial;
-	max-width: 80vw;
+	max-width: 600px;
 	display: inline-block;
-	margin: 0 auto;
-	margin-top: 7pt;
+	margin: 7pt auto;
 	overflow-wrap: break-word;
 }
 
@@ -325,7 +324,7 @@ a {
 	margin-bottom: 20px;
 }
 
-.linkthings a, .linkthings button {
+.linkthings a, .linkthings button, .linkthings .item {
 	display: flex;
 	gap: 5px;
 	background: #424242;
@@ -410,11 +409,9 @@ img, video, embed, .tags {
 #sets-list .mbutton, .ctrl .item {
 	display: inline-block;
 	text-align: left;
-	min-width: 50vw;
+	min-width: 400px;
 	min-height: 40px;
-	padding: 5px 10px;
-	margin-left: 30px;
-	margin-bottom: 10px;
+	margin: 5px 10px;
 	font-size: 14pt;
 	background: #424242;
 }

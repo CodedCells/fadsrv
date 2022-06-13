@@ -161,9 +161,11 @@ def sort_collection(col, ret=True, rebuild=False):
         sort = []
         n = 0
         for k, d in apdm.get(col, {}).items():
-            if k != '//' or k != '':
-                sort.append((d.get('modified', 0), k, n))
-                n += 1
+            if k == '//' or k == '':
+                continue
+            
+            sort.append((d.get('modified', 0), k, n))
+            n += 1
         
         ent[colsort] = sorted(sort)
     
