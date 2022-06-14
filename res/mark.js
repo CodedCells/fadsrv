@@ -352,20 +352,6 @@ function propMagic(a, provided) {
 	else setsProp(thing, mark);
 }
 
-function popdown(b) {
-	c = b.parentElement.children[1];
-	
-	if (c.classList.contains("down")) {
-		b.classList.remove("down");
-		c.classList.remove("down");
-		b.innerHTML = "&#9660;";
-	} else {
-		b.classList.add("down");
-		c.classList.add("down");
-		b.innerHTML = "&#9650;";
-	}
-}
-
 function aprefAllRead(a) {
 	for (var i = 0; i < posts.length; i++) {
 		aprefMagic(a, posts[i]);

@@ -8,7 +8,7 @@ load_global('strings',{# todo migrate more from code and clean up
 'menubtn-narrow-icons-flat': '<a href="{href}" alt="{alt}">\n<div class="menu-button">\n<span class="iconsheet" style="background-position:{x}% {y}%;"></span>\n<span class="menu-label">{label}</span>\n</div>\n</a>\n',
 'menubtn-wide-icons-flat': '<a href="{href}" alt="{alt}">\n<div class="menu-button menu-button-wide">\n<span class="iconsheet" style="background-position:{x}% {y}%;"></span>\n<span class="menu-label">{label}</span>\n</div>\n</a>\n',
 'nb': '<a class="btn{2}" href="{1}">{0}</a>\n',
-'popdown': '<div class="pdbox{}"><button class="mbutton" onclick="popdown(this);">&#9660;</button>\n<div id="popdown" class="popdown">',
+'popdown': '<div class="pdbox{}"><button class="mbutton">&#9660;</button>\n<div id="popdown" class="popdown">',
 'error': '<div class="errorpage">\n<div>\n<h2>{}</h2>{}</div><img src="/parrot.svg" alt="Got his fibre, on his way." /></span>\n<br>',
 
 'cfg.developer.name': 'Developer Mode',

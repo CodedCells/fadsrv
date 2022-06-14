@@ -520,7 +520,7 @@ a > i.teenyicon, .icons i.teenyicon {
 	transition: top 1.2s;
 }
 
-.popdown.down {
+.pdbox:focus-within .popdown{
 	top: 0vh;
 	transition: top .6s;
 }
@@ -547,10 +547,11 @@ a > i.teenyicon, .icons i.teenyicon {
 	top: 0;
 	left: 0;
 	z-index: 10000;
+	transition: top .6s;
 }
 
-.pdbox button.down {
-	position: fixed;
+.pdbox:focus-within button {
+	top: -100px;
 }
 
 .markurl {
