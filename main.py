@@ -2568,7 +2568,7 @@ def create_linktodathing(kind, thing, onpage=False, retmode='full', con=None, or
         pi.append(['visited', ii(68), '', ''])
     
     di = []
-    for m in apdmm:
+    for m in ent['mark_buttons']:
         btnd = apdmm[m]
         if not compare_for(btnd, kind, sw=True):
             continue
@@ -4315,8 +4315,8 @@ class builtin_markedit(builtin_base):
         body += f'value {n}: {i}<br>\n'
         
         if len(data.get('valueicon', [])) > n:
-            xy, ch = valueicon(i, data['valueicon'],
-                               data['icon'], data['values'])
+            xy, ch = valueicon(
+                i, data['valueicon'], data['icon'], data['values'])
             
             body += self.icobar(xy)
         
@@ -4347,17 +4347,8 @@ class builtin_markedit(builtin_base):
         handle.wfile.write(b'<div class="container list">\n')
         
         body = ''
-        value = []
-        for name, data in apdmm.items():
-            t = self.markinfo(name, data)
-            if 'values' in data:
-                value.append((len(data['values']), t))
-            
-            else:
-                body += t
-        
-        for n, t in sorted(value):
-            body += t
+        for name in ent['mark_buttons']:
+            body += self.markinfo(name, apdmm[name])
         
         handle.wfile.write(bytes(body, cfg['encoding_serve']))
         handle.wfile.write(b'</div>\n')
@@ -4622,6 +4613,128 @@ class builtin_textattach(builtin_reader):
                        mark_for('posts', name, wrap=True))
         
         super().page(handle, path)
+
+
+class builtin_config(builtin_config):
+    def __init__(self, title='Configure', icon=12):
+        super().__init__(title, icon)
+        self.subpages.update({
+            'test': [self.testsub, 'Test', 60],
+            'menus': [self.edit_menus, 'Menus', 59],
+            'marks': [self.edit_marks, 'Marks', 3],
+            'profiles': [self.edit_profiles, 'Profiles', 65],
+            })
+    
+    def testsub(self, handle, path):
+        self.write(handle, 'Success')
+    
+    def edit_menu(self, handle, menu):
+        self.write(handle, f'<h2>{menu}</h2>\n')
+    
+    def edit_menus(self, handle, path):
+        pages = menus.get('pages', {})
+        if len(path) > 2 and path[2] in pages:
+            return self.edit_menu(handle, path[2])
+        
+        eles = [{
+            'label': v.get('name', k),
+            'icon': v.get('icon', 99),
+            'href': f'/config/menus/{k}'}
+            for k, v in pages.items()
+            ]
+        
+        self.ez_menu(
+            handle, path, 'Edit Menus', self.icon, eles)
+        
+        doc = '<button onclick="">Create New</button>'
+        self.write(handle, doc)
+    
+    def edit_mark(self, handle, mark):
+        doc = '<div class="container list">\n'
+
+        inlineicn = '<i class="iconsheet teenyicon" {} vertical-align: middle;"></i> {}'
+        data = apdmm[mark]
+        doc += f'\n<h1>ds_{mark}</h1>\n'
+        
+        data['for'] = data.get('for', 'posts')
+        data['icon'] = data.get('icon', [-1, -1])
+        
+        for k, v in data.items():
+            if k == 'icon':
+                v = inlineicn.format(markicon(v[0], v[1], -24), v)
+                doc += f'<p>{k}: {v}</p>\n'
+                continue
+            
+            elif k == 'values' or k == 'valueicon':
+                continue
+            
+            doc += self.configure_item('apdmm', k, v)
+            
+        
+        self.write(handle, doc)
+        doc = ''
+        
+        values = data.get('values', [])
+        if values:
+            doc += '<h2>Values</h2>\n'
+        
+        for n, i in enumerate(values):
+            line = f'{i}'
+            
+            if len(data.get('valueicon', [])) > n:
+                xy, ch = valueicon(
+                    i, data['valueicon'], data['icon'], data['values'])
+                
+                line += ': '
+                line += inlineicn.format(markicon(xy[0], xy[1], -24), xy)
+            
+            doc += f'<p>{line}</p>\n'
+        
+        doc += '</div>'
+        self.write(handle, doc)
+    
+    def edit_marks(self, handle, path):
+        marks = {k: apdmm[k] for k in ent['mark_buttons']}
+        if len(path) > 2 and path[2] in marks:
+            return self.edit_mark(handle, path[2])
+        
+        eles = [{
+            'label': v.get('name', k),
+            'icon': v.get('icon', 99),
+            'href': f'/config/marks/{k}'}
+            for k, v in marks.items()
+            ]
+        
+        self.ez_menu(
+            handle, path, 'Edit Marks', self.icon, eles)
+        
+        doc = '<button onclick="">Create New</button>'
+        self.write(handle, doc)
+    
+    def edit_profiles(self, handle, path):
+        h = '<p>Menus:</p>'
+        s = '\n<script>\nvar menuPages = {'
+        butt = {}
+        for k, d in menus['pages'].items():
+            h += '\n<div class="btn" onclick="editMenuDisplay(\'{}\')">{}</div>'.format(k , d.get('title', k))
+            s += '\n\t"{}": {},'.format(k, json.dumps(d))
+            n = d.get('buttons')
+            if n in menus:
+                butt[n] = menus[n]
+        
+        s = s[:-1] + '\n};\n'
+        s += '\nvar menuButtons = {'
+        for k, d in butt.items():
+            s += '\n\t"{}": {},'.format(k, json.dumps(d))
+        
+        s = s[:-1] + '\n};\n</script>'
+        h += '\n<br>\n'
+        handle.wfile.write(bytes(s + h, 'utf8'))
+        
+        h = '<input class="niceinp" name="title">\n'
+        h += '<input class="niceinp" name="item-style">\n'
+        h += '<div id="items"></div>'
+        handle.wfile.write(bytes(h, 'utf8'))
 
 
 class post_search(post_base):
@@ -5015,8 +5128,8 @@ class fa_req_handler(BaseHTTPRequestHandler):
         
         except:
             ripdata  = {}
-
-        logging.debug(json.dumps(ripdata))
+        
+        #logging.debug(json.dumps(ripdata))
         
         if path_split[0] in ent['builtin_post']:
             ent['builtin_post'][path_split[0]].serve_post(self, path_split, ripdata)
@@ -5384,7 +5497,6 @@ if __name__ == '__main__':
 'menubtn-list': '<a class="btn wide" style="font-size:initial;" href="{href}" alt="{alt}">{label}</a>\n',
 'menubtn-narrow-icons-flat': '<a href="{href}" alt="{alt}">\n<div class="menu-button">\n<span class="iconsheet" style="background-position:{x}% {y}%;"></span>\n<span class="menu-label">{label}</span>\n</div>\n</a>\n',
 'nb': '<a class="btn{2}" href="{1}">{0}</a>\n',
-'popdown': '<div class="pdbox{}"><button class="mbutton" onclick="popdown(this);">&#9660;</button>\n<div id="popdown" class="popdown">',
 'setlogic': '<div id="sets-man" class="hidden">\n<div class="ctrl">\n<input class="niceinp" id="setsName" oninput="setSearch()">\n<button class="mbutton" onclick="setsNew()">+</button>\n<button class="mbutton" onclick="setsClose()">X</button>\n</div>\n<div class="list" id="sets-list">\n</div>\n</div>\n',
 'menubtn-wide-icons-flat': '<a href="{href}" alt="{alt}">\n<div class="menu-button menu-button-wide">\n<span class="iconsheet" style="background-position:{x}% {y}%;"></span>\n<span class="menu-label">{label}</span>\n</div>\n</a>\n',
 

@@ -606,71 +606,101 @@ class builtin_menu(builtin_base):
         self.build_menu(handle, self.which, minfo, eles)
 
 
-class builtin_config(builtin_base):
-
-    def __init__(self, title='Configure', icon=12, name='cfg'):
-        super().__init__(title, icon)
-        self.name = name
-        if self.name != 'cfg' and self.title == 'Configure':
-            self.title += f': {self.name}'
+class builtin_config(builtin_menu):
     
-    def page(self, handle, path):
+    def __init__(self, title='Configure', icon=12):
+        which = 'dummy'
+        super().__init__('/'+which, icon, which)
+        
+        self.menu_style = 'narrow-icons-flat'
+        self.subpages = {
+            'cfg': [self.configure_dict, 'Config', 12],
+            'ent': [self.configure_dict, 'Memory', 99]
+            }
+    
+    @staticmethod
+    def configure_item(mode, k, v):
+        name = strings.get(mode + f'.{k}.name', k)
+        label = strings.get(mode + f'.{k}.label', '').replace('\n', '<br>')
+        inner = f'<div class="info">\n<h2>{name}</h2>\n<p>{label}</p>\n</div>'
+        
+        inptype = 'unknown'
+        if isinstance(v, bool):
+            inptype = 'checkbox'
+            if v:
+                v = '" checked nul="'
+        
+        elif isinstance(v, int):
+            inptype = 'number'
+        
+        elif isinstance(v, str):
+            inptype = 'text'
+        
+        elif not label:
+            inptype = type(v)
+            inner += f'<div>\n<p>Unrepresentable type: {inptype.__name__}'
+            if inptype in [dict, list, set]:
+                inner += f'<br>Contains {len(v):,} items'
+            if cfg.get('allow_data'):
+                inner += f'<br><a href=/data/{mode}/{k}>View as data</a>'
+            inner += '</p>\n</div>'
+            return inner
+        
+        scr = f"cfg('{k}', '{mode}')"
+        inner += f'''<div>
+<input class="niceinp" id="{k}" type="{inptype}" value="{v}">
+<button class="mbutton" onclick="{scr}">Apply</button>\n</div>'''
+        
+        return inner
+    
+    def configure_dict(self, handle, path):
+        name = path[1]
+        title = self.subpages.get(
+            path[1], [None, f'Config {name}'])[1]
         
         handle.wfile.write(b'<div class="head">')
-        nav = template_nav(self.title, 1, 1)
+        nav = template_nav(title, 1, 1)
         handle.wfile.write(nav + b'</div>\n')
         
         handle.wfile.write(b'<div class="container">\n')
         
-        self.mode = globals().get(self.name, {})
-        cfgsub = 'cfg.'
-        if self.name != 'cfg':
-            cfgsub += f'{self.name}.'
+        mode = globals().get(name, {})
         
         body = ''
-        for k, v in self.mode.items():
-            name = strings.get(cfgsub + f'{k}.name', k)
-            label = strings.get(cfgsub + f'{k}.label', '').replace('\n', '<br>')
-            inner = f'<div class="info">\n<h2>{name}</h2>\n<p>{label}</p>\n</div>'
-            
-            inptype = 'unknown'
-            if isinstance(v, bool):
-                inptype = 'checkbox'
-                if self.mode.get(k, False):
-                    v = '" checked nul="'
-                
-            elif isinstance(v, int):
-                inptype = 'number'
-            
-            elif isinstance(v, str):
-                inptype = 'text'
-            
-            if inptype == 'unknown':
-                if not label:
-                    inptype = type(v)
-                    inner += f'<div>\n<p>Unrepresentable type: {inptype.__name__}'
-                    if inptype in [dict, list, set]:
-                        inner += f'<br>Contains {len(v):,} items'
-                    if cfg.get('allow_data'):
-                        inner += f'<br><a href=/data/{self.name}/{k}>View as data</a>'
-                    inner += '</p>\n</div>'
-            
-            else:
-                scr = f"cfg('{k}', '{self.name}')"
-                inner += f'''<div>
-<input class="niceinp" id="{k}" type="{inptype}" value="{v}">
-<button class="mbutton" onclick="{scr}">Apply</button>\n</div>'''
-                    
-            
-            body += f'\n<div class="setting">{inner}\n</div>'
+        for k, v in mode.items():
+            body += f'\n<div class="setting">{self.configure_item(name, k, v)}\n</div>'
         
-        handle.wfile.write(bytes(body, 'utf-8'))
-        handle.wfile.write(b'</div>\n')
+        body += '</div>\n'
+        self.write(handle, body)
+    
+    def ez_menu(self, handle, path, name, icon, eles):
+        minfo = {
+            'title': name,
+            'mode': self.menu_style,
+            'icon': icon
+        }
+        
+        if 'reversed' in path[1:]:
+            eles = self.reverse(eles)
+        
+        self.build_menu(handle, self.which, minfo, eles)
+    
+    def config_pagemenu(self, handle, path):
+        eles = [{
+            'label': v[1],
+            'icon': v[2],
+            'href': f'/config/{k}'}
+            for k, v in self.subpages.items()
+            ]
+        
+        self.ez_menu(
+            handle, path, 'Config Pages', self.icon, eles)
+    
+    def page(self, handle, path):
+        if len(path) > 1 and path[1] in self.subpages:
+            return self.subpages[path[1]][0](handle, path)
 
-
-class builtin_entpoke(builtin_config):
-    def __init__(self, title='Ent Poke', icon=12, name='ent'):
-        super().__init__(title, icon, name)
+        self.config_pagemenu(handle, path)
 
 
 class post_base(builtin_base):
@@ -754,7 +784,7 @@ class post__flag(post_base):
     
     def __init__(self, title='', icon=99):
         super().__init__(title, icon)
-        
+    
     def post_logic(self, handle, pargs, data):
         global cfg, ent
         if cfg.get('static_cfg'):
@@ -764,27 +794,21 @@ class post__flag(post_base):
         ret = {}
         
         flag = pargs[1]
+        is_global = flag in globals()
         pref = {}
         logging.debug(f'Legacy flag: {flag} {json.dumps(data)}')
         
-        if flag == 'cfg':
-            pref['cfg'] = cfg
-        
-        if flag == 'ent':
-            pref['ent'] = ent
+        if is_global:
+            pref[flag] = globals()[flag]
         
         for file in data:
             if data[file] is None:continue
             ret[file] = [flag, file not in pref[flag]]
             pref[flag][file] = data[file]
         
-        if flag == 'cfg':
-            cfg = pref['cfg']
-            save_config()
-            del pref['cfg']
-        
-        if flag == 'ent':
-            ent = pref['ent']
-            del pref['ent']
+        if is_global:
+            globals()[flag] = pref[flag]
+            if flag != 'ent':
+                save_config()
         
         return ret
