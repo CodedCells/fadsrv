@@ -1,5 +1,11 @@
 from onefad import *
 
+load_global('cfg', {
+    'developer': False,
+    'server_addr': '127.0.0.1',
+    'server_port': 80,
+    'server_name': 'Onefad Base',
+})
 load_global('strings',{# todo migrate more from code and clean up
 'responsive': '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n',
 'menubtn-narrow-icons': '<span class="menubtn"><a href="{href}" alt="{alt}"><span class="iconsheet" style="background-position:{x}px {y}px;"></span>{label}</a></span>\n',

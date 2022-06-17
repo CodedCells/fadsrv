@@ -5492,18 +5492,11 @@ if __name__ == '__main__':
     load_global('strings',{# todo migrate more from code and clean up
 'responsive': '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n',
 'thumb': '<span class="thumb{2}"><a class="thumba" href="{0}"><span>{1}</span></a></span>\n',
-'menubtn-narrow-icons': '<span class="menubtn"><a href="{href}" alt="{alt}"><span class="iconsheet" style="background-position:{x}px {y}px;"></span>{label}</a></span>\n',
-'menubtn-wide-icons': '<span class="menubtn wide"><a href="{href}" alt="{alt}"><span class="iconsheet" style="background-position:{x}px {y}px;"></span> {label}</a></span>\n',
-'menubtn-list': '<a class="btn wide" style="font-size:initial;" href="{href}" alt="{alt}">{label}</a>\n',
-'menubtn-narrow-icons-flat': '<a href="{href}" alt="{alt}">\n<div class="menu-button">\n<span class="iconsheet" style="background-position:{x}% {y}%;"></span>\n<span class="menu-label">{label}</span>\n</div>\n</a>\n',
 'nb': '<a class="btn{2}" href="{1}">{0}</a>\n',
 'setlogic': '<div id="sets-man" class="hidden">\n<div class="ctrl">\n<input class="niceinp" id="setsName" oninput="setSearch()">\n<button class="mbutton" onclick="setsNew()">+</button>\n<button class="mbutton" onclick="setsClose()">X</button>\n</div>\n<div class="list" id="sets-list">\n</div>\n</div>\n',
-'menubtn-wide-icons-flat': '<a href="{href}" alt="{alt}">\n<div class="menu-button menu-button-wide">\n<span class="iconsheet" style="background-position:{x}% {y}%;"></span>\n<span class="menu-label">{label}</span>\n</div>\n</a>\n',
 
 'cfg.docats.name': 'Do Categories ^-.-^',
 'cfg.docats.label': 'Hide posts you\'ve already marked from user pages.',
-'cfg.developer.name': 'Developer Mode',
-'cfg.developer.label': 'Enables some debugging features, including reloading resources.',
 'cfg.image_dir.name': 'Post Image Directory',
 'cfg.image_dir.label': 'Where the server should look for the images',
 'cfg.data_dir.name': 'Post Data Directory',
@@ -5581,7 +5574,6 @@ if __name__ == '__main__':
     })
     
     load_global('cfg', {
-        'developer': False,
         'docats': False,# only includes in cats rather than keeping order
         
         'list_count': 15,# users/kewords per page
@@ -5606,7 +5598,6 @@ if __name__ == '__main__':
         'desc_split': False,
         'image_dir': 'im/',
         'data_dir': 'pm/',
-        'server_addr': '127.0.0.1',
         'server_port': 6970,
         'server_name': 'FADSRV',
         'remote_images': '',
