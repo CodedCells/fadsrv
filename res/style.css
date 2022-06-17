@@ -1,11 +1,17 @@
 body {
-	font-family: sans-serif;
-	color: #cfcfcf;
-	text-align: center;
+	font-family: Roboto, sans-serif;
 	margin: 0;
 	min-width: fit-content;
 	max-width: 100vw;
+	
+	color: #cfcfcf;
+	font-weight: 300;
 	background-color: #121212;
+	text-align: center;
+}
+
+h1, h2, h3, h4, h5 {
+	font-weight: 200;
 }
 
 a.btn, .mbutton {
@@ -56,7 +62,7 @@ a.btn, .mbutton {
 	flex-flow: wrap;
 	justify-content: center;
 	align-items: center;
-	gap: 10px;
+	gap: 11px;
 	margin-bottom: 10px;
 }
 
@@ -173,11 +179,14 @@ a {
 .head, .foot {
 	display: block;
 	min-height: 76px;
-	background-color: #272727;
+	text-align: center;
+}
+
+.head {
+	border-bottom: 5px solid #272727;
 }
 
 .foot {
-	padding-bottom: 5px;
 }
 
 .head h2, .foot h2 {
@@ -185,6 +194,8 @@ a {
 	margin: 0 30px;
 	display: inline-block;
 	padding: 25px 0;
+	text-decoration: none;
+	font-weight: 300;
 }
 
 .head h2.btn, {
@@ -193,7 +204,6 @@ a {
 
 .pageinner {
 	min-width: 100%;
-	min-height: 60vh;
 }
 
 .container {
@@ -203,6 +213,12 @@ a {
 
 .container.list {
 	max-width: 800px;
+}
+
+@media screen and (min-width: 800px) {
+	.container.list {
+		max-width: 1100px;
+	}
 }
 
 .thumbw {
@@ -217,8 +233,8 @@ a {
 .thumba {
 	display: inline-block;
 	vertical-align: top;
-	width: 250px;
-	height: 280px;
+	width: 200px;
+	height: 220px;
 	padding-bottom: 10px;
 	margin-bottom: 20px;
 	background: #424242;
@@ -231,8 +247,8 @@ a {
 .thumba img {
 	width: initial;
 	display: inline-block;
-	max-width: 250px;
-	max-height: 250px;
+	max-width: 200px;
+	max-height: 190px;
 }
 
 .passed a[href^="/"], .setread a[href^="/"] {
@@ -248,14 +264,15 @@ a {
 }
 
 .mbutton {
-	min-width: 30px;
-	min-height: 40px;
+	min-height: 28px;
+	min-height: 28px;
 	position: relative;
 	z-index: 5;
 	display: inline-block;
 	border: none;
 	color: inherit;
 	background-color: #202020;
+	border-radius: 4px;
 	transition: background-color .2s;
 	padding: 10px;
 	margin: 0 2px 15px 2px;
@@ -429,24 +446,58 @@ img, video, embed, .tags {
 }
 
 .errorpage {
+	text-align: initial;
+	height: 80vh;
+	min-height: 600px;
+	margin: 0 auto;
 	min-height: 60vh;
-	padding: 15px;	
-}
-
-.errorpage div {
-	display: inline-block;
-}
-
-.errorpage img {
-	min-height: 210px;
-	max-height: 50vh;
-	vertical-align: middle;
+	max-width: 300px;
+	padding-top: 1em;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
 
 .tbox {
 	display: inline-block;
-	max-width: 250px;
+	min-width: 200px;
 	vertical-align: top;
+	max-width: 30vw;
+	margin-bottom: 20px;
+}
+
+@media screen and (max-width: 400px) {
+	.tbox {
+		display: block;
+		max-width: initial;
+	}
+}
+
+@media screen and (min-width: 1080px) {
+	.tbox {
+		max-width: 270px;
+	}
+}
+
+.tbox .thumba {
+	background: none;
+	width: auto;
+	height: auto;
+	padding: 0;
+}
+
+.tbox .thumba .title {
+	font-weight: 200;
+	display: block;
+}
+
+.tbox .thumba a {
+	display: inline-block;
+}
+
+.tbox img {
+    max-width: 100%;
+    max-height: 300px;
 }
 
 .iconsheet {
@@ -481,7 +532,7 @@ i.ico-60 {
 	display: inline-block;
 	width: 60px;
 	height: 60px;
-	margin: -10px -12px;
+	margin: -15px -15px;
 	vertical-align: middle;
 }
 
@@ -612,21 +663,26 @@ label input, label .mbutton, label select {
 	text-decoration: underline!important;
 }
 
+.container.menu {
+	display: grid;
+	gap: 20px 10px;
+	margin: max(10px, 7vh) auto;
+	grid-template-columns: repeat(3, 1fr);
+}
+
+.container.menu h2 {
+	grid-column: span 6;
+}
+
+@media screen and (min-width: 400px) {
+	.container.menu {
+		grid-template-columns: repeat(6, 1fr);
+	}
+}
+
 div.menu-button {
 	text-align: center;
 	display: inline-block;
-	min-width: 110px;
-	padding: 5px 0;
-	margin: 5px 5px;
-	font-weight: normal;
-	vertical-align: top;
-}
-
-div.menu-button-wide {
-	min-width: 180px;
-	
-	background-color: #1a1a1a;
-	border-bottom: 2px solid #0c0c0c;
 }
 
 .menu-button .iconsheet {
@@ -640,6 +696,12 @@ div.menu-button-wide {
 	display: block;
 	margin-top: 5px;
 	vertical-align: middle;
+}
+
+div.menu-button-wide {
+	min-width: 180px;
+	background-color: #1a1a1a;
+	border-bottom: 2px solid #0c0c0c;
 }
 
 .menu-button-wide .menu-label {
@@ -864,36 +926,43 @@ div.menu-button-wide {
 	}
 }
 .parrot-ring {
-	width: 300px;
-	height: 300px;
+	margin: 0 auto;
+	display: block;
+	width: 200px;
+	height: 200px;
 }
+
 .parrot-ring div {
-	width: 300px;
-	height: 300px;
-	border: 15px solid #cfcfcf;
-	
+	width: 200px;
+	height: 200px;
+	border: 2px solid transparent;
+	border-style: groove;
 	border-radius: 50%;
 	animation: lds-ring 5s cubic-bezier(0.5, 0, 0.5, 1) infinite;
-	border-color: #cfcfcf transparent transparent transparent;
+	border-top-color: #cfcfcf;
 }
+
 .parrot-ring div:nth-child(1) {
 	animation-delay: -0.5s;
 }
+
 .parrot-ring div:nth-child(2) {
 	animation-delay: -0.75s;
 }
+
 .parrot-ring div:nth-child(3) {
 	animation-delay: -1s;
 }
+
 .parrot-ring div:nth-child(4) {
-	border: none;
-	border-radius: 0;
-	width: 240px;
-	height: 240px;
-	margin: 30px;
+	border-top-color: transparent;
+	width: 180px;
+	height: 170px;
+	margin: 10px;
 	background-image: url("icons.svg");
-	background-size: 2400px 2400px;
-	background-position: -1440px 0;
+	background-size: 1800px 1800px;
+	background-position: -1080px 0;
+	animation: none;
 	animation-direction: reverse;
 }
 

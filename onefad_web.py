@@ -11,10 +11,10 @@ load_global('strings',{# todo migrate more from code and clean up
 'menubtn-narrow-icons': '<span class="menubtn"><a href="{href}" alt="{alt}"><span class="iconsheet" style="background-position:{x}px {y}px;"></span>{label}</a></span>\n',
 'menubtn-wide-icons': '<span class="menubtn wide"><a href="{href}" alt="{alt}"><span class="iconsheet" style="background-position:{x}px {y}px;"></span> {label}</a></span>\n',
 'menubtn-list': '<a class="btn wide" style="font-size:initial;" href="{href}" alt="{alt}">{label}</a>\n',
-'menubtn-narrow-icons-flat': '<a href="{href}" alt="{alt}">\n<div class="menu-button">\n<span class="iconsheet" style="background-position:{x}% {y}%;"></span>\n<span class="menu-label">{label}</span>\n</div>\n</a>\n',
-'menubtn-wide-icons-flat': '<a href="{href}" alt="{alt}">\n<div class="menu-button menu-button-wide">\n<span class="iconsheet" style="background-position:{x}% {y}%;"></span>\n<span class="menu-label">{label}</span>\n</div>\n</a>\n',
+'menubtn-narrow-icons-flat': '<div class="menu-button"><a href="{href}" alt="{alt}">\n\n<span class="iconsheet" style="background-position:{x}% {y}%;"></span>\n<span class="menu-label">{label}</span>\n</a>\n</div>\n',
+'menubtn-wide-icons-flat': '<div class="menu-button menu-button-wide">\n<a href="{href}" alt="{alt}">\n<span class="iconsheet" style="background-position:{x}% {y}%;"></span>\n<span class="menu-label">{label}</span>\n</a>\n</div>\n',
 'nb': '<a class="btn{2}" href="{1}">{0}</a>\n',
-'popdown': '<div class="pdbox{}"><button class="mbutton">&#9660;</button>\n<div id="popdown" class="popdown">',
+'popdown': '<div class="pdbox{}"><button class="mbutton">{}</button>\n<div class="popdown">',
 'error': '<div class="errorpage">\n<div>\n<h2>{}</h2>{}</div><img src="/parrot.svg" alt="Got his fibre, on his way." /></span>\n<br>',
 
 'cfg.developer.name': 'Developer Mode',
@@ -432,7 +432,7 @@ var t = setTimeout(function(){window.location.reload(1);}, 5000);
                     if not outopt[-1]:
                         outopt[-1] = i
         
-        h = strings['popdown'].format(' pageopt')
+        h = strings['popdown'].format(' pageopt', 'O')
         h += '<div class="page-toptions">\n'
         h += '<h3>Page Parameters</h3>\n'
         for n, v in enumerate(outopt):
@@ -452,7 +452,7 @@ var t = setTimeout(function(){window.location.reload(1);}, 5000);
         if drop is None:
             return False
         
-        h = strings['popdown'].format('')
+        h = strings['popdown'].format('', 'M')
         self.write(handle, h)
         drop.page(handle, [])
         handle.wfile.write(b'</div></div>')
@@ -535,7 +535,7 @@ class builtin_menu(builtin_base):
     def build_menu(self, handle, which, minfo, eles):
         title = minfo.get('title', f'Undefined: {which}')
         htmlout = f'<div class="head"><h2 class="pagetitle"><a href="/{which}">{title}</a></h2></div>\n'
-        htmlout += '<div class="container list">\n'
+        htmlout += '<div class="container list menu">\n'
         
         mode = minfo.get('mode', 'list')
         btn = strings.get(f'menubtn-{mode}', None)
@@ -618,6 +618,7 @@ class builtin_config(builtin_menu):
     def __init__(self, title='Configure', icon=12):
         which = 'dummy'
         super().__init__('/'+which, icon, which)
+        self.pagetype = 'builtin'
         
         self.menu_style = 'narrow-icons-flat'
         self.subpages = {
