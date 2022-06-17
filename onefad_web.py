@@ -34,7 +34,7 @@ load_global('strings',{# todo migrate more from code and clean up
     })
 
 
-def serve_resource(handle, resource, code=200):
+def serve_resource(handle, resource, code=200, forever=True):
     global ent
     handle.send_response(code)
     handle.send_header('Content-type', ext_content(resource))
@@ -47,7 +47,8 @@ def serve_resource(handle, resource, code=200):
         logging.debug(f'loading resource {resource} from {fn}')
         ent[rf] = readfile(fn, mode='rb')
     
-    else:
+    should_load = f'_{resource}' in ent and not cfg.get('developer')
+    if should_load and forever:
         handle.send_header('Cache-Control', 'max-age=3600, must-revalidate')
     
     handle.end_headers()

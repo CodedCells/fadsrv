@@ -4545,7 +4545,7 @@ def serve_image(handle, path, head=True):
     
     else:
         logging.warning(f'File missing: {path}')
-        serve_resource(handle, 'parrot.svg', code=404)
+        serve_resource(handle, 'parrot.svg', code=404, forever=False)
 
 
 class builtin_reader(builtin_base):
