@@ -486,7 +486,7 @@ def apd_findnew():
             for block, data in ch_descblocks.items():
                 if not data:continue
                 out = appender()
-                out.write(data, filename=dd + f'descb/apdfadesc{block}b')
+                out.write(data, filename=dd + f'descb/apdfadesc{block:02d}b')
         
         else:
             out = appender()
@@ -1220,7 +1220,7 @@ class descman(object):
     def get_block(self, block, posts):
         data = appender()
         data.read(
-            cfg['apd_dir'] + f'descb/apdfadesc{block}b',
+            cfg['apd_dir'] + f'descb/apdfadesc{block:02d}b',
             parse=False)
         
         for post in posts:

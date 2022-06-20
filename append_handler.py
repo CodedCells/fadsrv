@@ -149,11 +149,10 @@ class appender(dict):
             logging.error(line)
     
     def write_block(self, line, out):
-        if self.volsize and line >= self.volsize:
-            self.block = (line - 1) // self.volsize
+        self.block = line // self.volsize
         
         filename = self.filename
-        if self.block:
+        if self.volsize and self.block:
             filename += f'_{self.block:02d}'
         
         self.prepare_file(filename)
@@ -185,7 +184,7 @@ class appender(dict):
             self.depth = depth
         
         if self.filename and not self:
-            self.read()
+            self.read(force=True)
         
         line = len(self)
         out = ''
