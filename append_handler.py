@@ -198,3 +198,25 @@ class appender(dict):
         
         if out:
             self.write_block(line, out)
+    
+    def write_all(self,
+                  filename,
+                  volsize=25000):
+        
+        self.volsize = volsize
+        self.filename = filename
+        
+        line = 0
+        lineold = 0
+        out = ''
+        for k, v in self.items():
+            line += 1
+            out += self.write_line(k, v)
+            
+            if line % volsize == 0 and out:
+                self.write_block(lineold, out)
+                out = ''
+                lineold, line = int(line)
+        
+        if out:
+            self.write_block(lineold, out)
