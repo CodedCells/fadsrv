@@ -4519,7 +4519,7 @@ def post_path(fp):
         fid = fp.split('.')[0].zfill(2)
         
         if fid.isdigit():
-            fp = f'{int(fid[-2:])}/{fp}'
+            fp = f'{int(fid[-2:]):02d}/{fp}'
     
     return cfg['image_dir'] + fp
 
