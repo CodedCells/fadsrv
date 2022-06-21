@@ -21,6 +21,8 @@ class appender(dict):
             ]
         
         self.depth = 1
+        self.encoding = 'utf8'
+        self.volsize = 25000
     
     def setd(i):
         self = i
@@ -87,10 +89,14 @@ class appender(dict):
         logging.warning(f'unsupported depth: {self.depth}')
         depth_error
     
-    def read_next_block(self):
-        filename = self.filename
+    def true_filename(self):
         if self.block > 0:
-            filename += f'_{self.block:02d}'
+            return self.filename + f'_{self.block:02d}'
+        
+        return self.filename
+    
+    def read_next_block(self):
+        filename = self.true_filename()
         
         if not os.path.isfile(filename):
             return
@@ -166,15 +172,45 @@ class appender(dict):
             info = os.stat(filename)
             self.modified_date[filename] = info.st_mtime
     
+    def get_lines_fn(self, fn):
+        with open(fn, encoding=self.encoding) as f:
+            for i, _ in enumerate(f):
+                pass
+        
+        return i
+    
+    def get_lines(self,
+                  filename=None):# quick memory light
+        if filename:
+            self.filename = filename
+        
+        self.block = 0
+        
+        while os.path.isfile(self.true_filename()):
+            self.block += 1
+        
+        self.block = max(0, self.block - 1)
+        
+        lines = self.get_lines_fn(self.true_filename())
+        
+        if self.block > 0:
+            lines += self.get_lines_fn(self.filename) * self.block
+        
+        return lines
+    
     def write(self,
               newdata,
               depth=None,
               filename=None,
-              encoding='utf8',
-              volsize=25000):
+              encoding=None,
+              volsize=None):
+
+        if encoding:
+            self.encoding = encoding
         
-        self.encoding = encoding
-        self.volsize = volsize
+        if volsize:
+            self.volsize = volsize
+        
         self.block = 0
         
         if filename:
@@ -183,16 +219,22 @@ class appender(dict):
         if depth:
             self.depth = depth
         
-        if self.filename and not self:
-            self.read(force=True)
+        if self:
+            line = len(self)
         
-        line = len(self)
+        elif self.filename and not self:
+            line = self.get_lines()
+        
+        else:
+            logging.error('FIlename not set when trying to write')
+            line = 0
+        
         out = ''
         for k, v in newdata.items():
             line += 1
             out += self.write_line(k, v)
             
-            if line % volsize == 0 and out:
+            if line % self.volsize == 0 and out:
                 self.write_block(line, out)
                 out = ''
         
@@ -201,9 +243,11 @@ class appender(dict):
     
     def write_all(self,
                   filename,
-                  volsize=25000):
+                  volsize=None):
         
-        self.volsize = volsize
+        if volsize:
+            self.volsize = volsize
+        
         self.filename = filename
         
         line = 0
@@ -213,7 +257,7 @@ class appender(dict):
             line += 1
             out += self.write_line(k, v)
             
-            if line % volsize == 0 and out:
+            if line % self.volsize == 0 and out:
                 self.write_block(lineold, out)
                 out = ''
                 lineold, line = int(line)
