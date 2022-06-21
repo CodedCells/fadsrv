@@ -486,7 +486,7 @@ def apd_findnew():
             for block, data in ch_descblocks.items():
                 if not data:continue
                 out = appender()
-                out.write(data, filename=dd + f'descb/apdfadesc{block:02d}b')
+                out.write(data, filename=dd + f'descb/apdfadesc{block}b')
         
         else:
             out = appender()
@@ -1220,7 +1220,7 @@ class descman(object):
     def get_block(self, block, posts):
         data = appender()
         data.read(
-            cfg['apd_dir'] + f'descb/apdfadesc{block:02d}b',
+            cfg['apd_dir'] + f'descb/apdfadesc{block}b',
             parse=False)
         
         for post in posts:
@@ -4519,7 +4519,7 @@ def post_path(fp):
         fid = fp.split('.')[0].zfill(2)
         
         if fid.isdigit():
-            fp = f'{int(fid[-2:]):02d}/{fp}'
+            fp = f'{int(fid[-2:])}/{fp}'
     
     return cfg['image_dir'] + fp
 
