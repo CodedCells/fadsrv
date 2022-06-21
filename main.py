@@ -488,9 +488,8 @@ def apd_findnew():
                 out = appender()
                 out.write(data, filename=dd + f'descb/apdfadesc{block}b')
         
-        else:
-            out = appender()
-            out.write(ch_apdfadesc, volsize=100000, filename=dd + 'apdfadesc')
+        out = appender()
+        out.write(ch_apdfadesc, volsize=100000, filename=dd + 'apdfadesc')
         
         logging.info('Done writing and apply changes')
     
