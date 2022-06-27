@@ -101,7 +101,8 @@ a.btn, .mbutton {
 img, video, embed {max-width: 90vw;}
 
 .overicn {
-	height: 24px;
+	max-width: 200px;
+	line-height: 12pt;
 	position: absolute;
 	z-index: 20;
 	background-color: rgba(48, 48, 48, .8);
@@ -246,6 +247,7 @@ a {
 
 .thumba img {
 	width: initial;
+	min-height: 24px;
 	display: inline-block;
 	max-width: 200px;
 	max-height: 190px;
