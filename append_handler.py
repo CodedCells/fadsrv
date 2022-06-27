@@ -172,6 +172,9 @@ class appender(dict):
             self.modified_date[filename] = info.st_mtime
     
     def get_lines_fn(self, fn):
+        if not os.path.isfile(fn):
+            return 0
+        
         with open(fn, encoding=self.encoding) as f:
             for i, _ in enumerate(f):
                 pass
