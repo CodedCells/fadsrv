@@ -1,8 +1,10 @@
 from onefad_web import *
 from uuid import uuid4
 
-ent['version'] = 8
+ent['version'] = 9
 ent['internal_name'] = 'tasker'
+
+loggerlevels = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRIITCAL']
 
 def register_page(k, kind):
     global ent
@@ -21,7 +23,7 @@ def register_page(k, kind):
 class log_filter(object):
     
     def __init__(self, level=None):
-        self.levels = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CIRITCAL']
+        self.levels = loggerlevels
         self.level = 0
         self.set_level(level)
     
@@ -50,26 +52,30 @@ class log_filter(object):
         # don't update if invalid
     
     def filter_line(self, line):
-        for l in self.levels[:self.level]:
+        for n, l in enumerate(self.levels):
             if f'\t{l}\t' in line:
-                return False
+                return n
         
-        return True
+        return -1
     
     def filter_all(self, lines):
-        if self.level == 0:return lines# no work needed
+        #if self.level == 0:return lines# no work needed
         
         trunc = []
+        count = [0 for x in self.levels]
         add = True
         for line in lines:
             if len(line) > 0 and line[0].isdigit():
                 # only modify if line starts with date
                 add = self.filter_line(line)
+
+            if add > -1:
+                count[add] += 1
             
-            if add:
+            if add >= self.level:
                 trunc.append(line)
         
-        return trunc
+        return trunc, count
 
 
 class builtin_logs(builtin_base):
@@ -103,25 +109,38 @@ class builtin_logs(builtin_base):
         if data.get('old'):
             htmlout += ' - <span id="isOld">Old</span>'
         
-        htmlout += '</p>\n<div id="logOutput"></div>\n'
+        htmlout += '</p>\n'
+        
         self.write(handle, htmlout)
         
         lines = readfile(fn).split('\n')
-        logf = log_filter(ldata.get('level'))
         
+        logf = log_filter(ldata.get('level'))
         if len(path) >= 4:
             logf.set_level(path[3])
+            
+        trunc, counts = logf.filter_all(lines)
         
-        trunc = logf.filter_all(lines)
+        htmlout = '<div id="levelCount" class="linkthings centered">'
+        for n, i in enumerate(loggerlevels):
+            htmlout += f'<a class="log{i}" href="{i[0]}"><span>{counts[n]}</span> {i.title()}</a>'
+        
+        htmlout += '\n</div>\n'
+        
+        htmlout += '<div id="logOutput"></div>\n'
+        self.write(handle, htmlout)
+        
         actual = len(trunc)
         dl = cfg['display_lines']
-        trunc = trunc[-dl:] # probably too many anyways
+        if dl > 0:
+            trunc = trunc[-dl:]
         
         htmlout = '<script>\n'
         htmlout += f'var lines = {len(lines)};\n'
         htmlout += f'var level = {logf.level};\n'
+        htmlout += f'var counts = {json.dumps(counts)};\n'
         htmlout += 'var logOutput = '
-        self.write(handle, htmlout + json.dumps(trunc) + ';\n')
+        self.write(handle, htmlout + json.dumps(trunc, indent='\t') + ';\n')
         
         htmlout = 'drawLogInit()</script>\n'
         if actual >= dl:
@@ -163,7 +182,7 @@ class builtin_logs(builtin_base):
         name = t.split('.')[0]
         mod = f'Modified {self.ago(int(m))}'
         
-        return f'<p><a href="/logs/{pid}/{t}">{name}<br>{mod}</a></p>\n'
+        return f'<p><a href="/logs/{pid}/{t}/">{name}<br>{mod}</a></p>\n'
     
     def tasklist(self, pid, showold):
         now = datetime.now()
@@ -699,7 +718,8 @@ class post_logupdate(post_base):
             lines = readfile(ldata['path'] + task).split('\n')
             ret['lines'] = len(lines)
             
-            ret['output'] = logf.filter_all(lines[has:])
+            ret['output'], ret['counts'] = logf.filter_all(lines[has:])
+            
         
         return ret
 

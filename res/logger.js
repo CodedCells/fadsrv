@@ -30,15 +30,23 @@ function updateListener() {
 	mod = data.mod;
 	lines = data.lines;
 	
-	if (data.output.length > 0) {
-		gotNewLast = true;
-		prev = "2000-01-01";// the past, hacky
-		for (var l = 0; l < data.output.length; l++) {
-			logOutput.push(data.output[l]);
-			prev = drawLogLine(data.output[l], prev);
-		}
-	} else {
+	if (data.output.length == 0) {
 		gotNewLast = false;
+		return
+	}
+	
+	var levelCounters = document.getElementById("levelCount").children;
+	for (var i = 0; i < data.counts.length; i++) {
+		counts[i] += data.counts[i];
+		if (data.counts[i] > 0)
+			levelCounters[i].children[0].innerHTML = counts[i].toLocaleString();
+	}
+	
+	gotNewLast = true;
+	prev = "2000-01-01";// the past, hacky
+	for (var l = 0; l < data.output.length; l++) {
+		logOutput.push(data.output[l]);
+		prev = drawLogLine(data.output[l], prev);
 	}
 }
 

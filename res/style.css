@@ -1031,6 +1031,19 @@ code.logCRIITCAL {
 	color: #ff0000;
 }
 
+.linkthings .logDEBUG {
+	background-color: #777;
+}
+.linkthings .logWARNING {
+	background-color: #5d5028;
+}
+.linkthings .logERROR {
+	background-color: #5d2828;
+}
+.linkthings .logCRIITCAL {
+	background-color: #ae0909;
+}
+
 .taskloglist {
 	display: flex;
 	flex-wrap: wrap;
