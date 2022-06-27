@@ -5056,7 +5056,7 @@ class fa_req_handler(BaseHTTPRequestHandler):
         
         elif (path_long.startswith('i/') or
               path_long.startswith('t/')):
-            serve_image(self, path_long[2:])
+            serve_image(self, urllib.parse.unquote(self.path[3:]))
             return
         
         b = builtin_base()
