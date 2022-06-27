@@ -2986,7 +2986,7 @@ hide_empty: {self.hide_empty}\n-->'''
         else:
             mdata = data
         
-        f = choose_thumb(self.marktype, item, do_ext=False)
+        f = choose_thumb(self.marktype, item)
         
         l = f'/t/{f}'
         if cfg['remote_images'] != '':
@@ -3142,7 +3142,7 @@ class mort_collection_list(mort_base):
             for i, u in enumerate(self.datas[k]):
                 t = choose_thumb(
                     self.meta.get('for', 'posts'),
-                    u, do_ext=False)
+                    u)
                 
                 if t != 'parrot.svg':
                     self.datas[k][i] = t
@@ -3696,8 +3696,12 @@ def select_thumb(posts, do_ext=True):
     
     d = apdfa.get(i, {'ext': 'error'})
     if file_category(d.get('ext', '')) == 'image':
-        if do_ext:i += '.' + d['ext']
+        if do_ext:
+            i += '.' + d['ext']
+        
         return i
+    
+    return 'parrot.svg'
 
 
 def choose_thumb(marktype, thing, level=0, do_ext=True):
