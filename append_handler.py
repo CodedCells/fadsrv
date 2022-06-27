@@ -152,7 +152,6 @@ class appender(dict):
         except Exception as e:
             logging.error("SERIUS DATA PARSE ERROR", exc_info=True)
             logging.error(f'While reading {filename}')
-            logging.error(line)
     
     def write_block(self, line, out):
         self.block = line // self.volsize
