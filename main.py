@@ -4,7 +4,6 @@ import requests
 import gc
 
 from onefad_functions import *
-from append_handler import appender
 
 ent['version'] = '31#2022-06-13'
 

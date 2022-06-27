@@ -1,4 +1,5 @@
 from onefad_web import *
+from append_handler import appender
 
 apdmm = {}
 apdm = {}
@@ -77,7 +78,8 @@ def make_apd(fn, data, origin=None):
     dfn = origin + fn
     if not os.path.isfile(dfn):
         logging.info(f'Creating {dfn}')
-        apc_write(dfn, data, None, 2)
+        outf = appender()
+        outf.write(data, filename=dfn, depth=2)
 
 
 def data_path(post, s='.', d='data'):
