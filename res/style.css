@@ -1027,6 +1027,9 @@ code.logWARNING {
 code.logERROR {
 	color: #f88;
 }
+code.logCRIITCAL {
+	color: #ff0000;
+}
 
 .taskloglist {
 	display: flex;
