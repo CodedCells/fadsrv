@@ -5753,6 +5753,7 @@ if __name__ == '__main__':
     
     build_entries(reload=3)
     
+    logging.info(f'Starting serivce on {cfg["server_addr"]}:{cfg["server_port"]}')
     httpd = ThreadedHTTPServer(
         (cfg['server_addr'], cfg['server_port']),
         fa_req_handler)
