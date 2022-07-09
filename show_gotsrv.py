@@ -246,7 +246,7 @@ class post_mgot(post_base):
             return cfg['ask_servers'][n].get('icon', 99)
         
         if post in sideposts:
-            return 1
+            return 10
         
         return 0
     
