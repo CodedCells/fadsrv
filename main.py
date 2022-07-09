@@ -195,8 +195,6 @@ def apd_findnew():
             
             if fi in apdfa:
                 del apdfa[fi]
-            if fi in apdfadesc:
-                del apdfadesc[fi]
     
     c = 0
     
