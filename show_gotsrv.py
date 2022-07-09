@@ -245,6 +245,9 @@ class post_mgot(post_base):
             
             return cfg['ask_servers'][n].get('icon', 99)
         
+        if post in sideposts:
+            return 1
+        
         return 0
     
     def post_logic(self, handle, pargs, data):
@@ -254,21 +257,65 @@ class post_mgot(post_base):
 
 class post_mgot_parse(post_mgot):
     
+    def get_posts(self, path, raw):
+        if not path or not raw:
+            return {}
+        
+        if path.startswith('/gallery/') or path.startswith('/scraps/'):
+            par = parse_gallery()
+            par.loads(raw)
+            return par.get('posts')
+        
+        elif path.startswith('/view/'):
+            par = parse_postpage()
+            par.loads(raw)
+            par = par.get_all()
+            
+            if not 'id' in par:
+                return {}
+            
+            posts = par.get('see_more', {})
+            
+            posts[par['id']] = {
+                x: par[x] for x in [
+                    'title', 'full', 'uploader', 'rating', 'tags']
+                if par.get(x) != None
+                }
+            
+            return posts
+        
+        elif path.startswith('/user/'):
+            par = parse_userpage()
+            par.loads(raw)
+            par = par.get_all()
+            return {
+                **par.get('featured_post', {}),
+                **par.get('recent_posts', {}),
+                **par.get('recent_faved_posts', {})
+                }
+        
+        else:
+            par = parse_gallery()
+            par.loads(raw)
+            return par.get('posts')
+        
+        return {}
+    
     def post_logic(self, handle, pargs, data):
         global sideposts
         
-        gal = parse_gallery()
-        gal.loads(data['raw'])
-        gal = gal.get_all()
-        posts = gal.get('gallery_posts', {})
+        posts = self.get_posts(
+            data.get('path'), data.get('raw'))
         
-        new = {post: info
-               for post, info in posts.items()
-               if post not in sideposts}
+        logging.debug(f'data give {len(posts)} {data.get("path", None)}')
+        if posts:
+            new = {post: info
+                   for post, info in posts.items()
+                   if post not in sideposts}
+            
+            sideposts.write(new, volsize=100000)
         
-        apc_write(cfg['apd_dir'] + 'sideposts', new, sideposts, 1)
-        for post, info in new.items():
-            sideposts[post] = info
+        posts = set(data.get('posts', []) + list(posts))
         
         return {post: self.per_post(post)
                 for post in posts}
