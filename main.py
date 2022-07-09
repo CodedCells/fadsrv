@@ -2281,11 +2281,23 @@ class eyde_filter(eyde_base):
     def filter_param_tag(self, k, v):
         return set(kwd.get(v, []))
     
+    def filter_post_key(self, k, v):
+        out = []
+        for i in self.items:
+            d = apdfa.get(i, {}).get(k, 'unset')
+            if d == v:
+                out.append(i)
+
+        return set(out)
+    
     def filter_param_get(self, k, v):
         f = None
         if k in ['user', 'userl', 'userdescpost', 'linkto', 'linkfrom', 'folder']:
             f = self.filter_param_user
-        
+
+        elif k == 'rating':
+            f = self.filter_post_key
+            
         elif k == '@' and v in self.dprefs:
             f = self.filter_param_dpref
         
