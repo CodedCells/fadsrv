@@ -139,6 +139,40 @@ class parse_basic(object):
             state = 'not_found'
         
         return state
+    
+    def item_post_single(self, postid, data):
+        info = {}
+        if f'id="sid-{postid}"' in self.text:
+            thumb = get_prop(f'id="sid-{postid}"', self.text, t='data-width')
+            info['thumb'] = get_prop('src="', thumb)
+            info['rating'] = get_prop('class="r-', thumb, t=' ')
+        
+        if 'title' in data:
+            info['title'] = html.unescape(data['title'])
+        
+        if 'lower' in data:
+            info['uploader'] = data['lower']
+        
+        if 'rating' in data:
+            info['rating'] = data['icon_rating']
+        
+        if 'html_date' in data:
+            info['upload_date'] = strdate(fa_datebox(data['html_date'])).timestamp()
+        
+        return info
+    
+    def item_posts(self, prop):
+        if f'var {prop} = ' not in self.text:
+            return {}
+        
+        js = get_prop(f'var {prop} = ', self.text, t=';\n')
+        js = dict(json.loads(js))
+        
+        out = {}
+        for postid, data in js.items():
+            out[postid] = self.item_post_single(postid, data)
+        
+        return out
 
 
 class parse_user_common(parse_basic):
@@ -186,8 +220,8 @@ class parse_userpage(parse_user_common):
             'accepting_trades': self.item_trades,
             'accepting_commissions': self.item_trades,
             'featured_post': self.item_featured_post,
-            'recent_posts': self.item_posts,
-            'recent_faved_posts': self.item_posts,
+            'recent_posts': self.item_userposts,
+            'recent_faved_posts': self.item_userposts,
             })
     
     def item_stats(self, prop):
@@ -215,28 +249,19 @@ class parse_userpage(parse_user_common):
         
         return self.items.get(prop)
     
-    def item_posts(self, prop):
-        js = get_prop('var submission_data = ', self.text, t=';\n')
-        js = dict(json.loads(js))
+    def item_userposts(self, prop):
+        isuser = {}
+        other = {}
+        for postid, data in self.item_posts('submission_data').items():
+            if self.get('username') == data['username']:
+                isuser[postid] = data
+            else:
+                other[postid] = data
         
-        out = {}
-        for postid, data in js.items():
-            if (self.get('username') == data['username']) != (prop == 'recent_posts'):
-                continue
-            
-            upload = fa_datebox(data['html_date'])
-            thumb = get_prop(f'id="sid-{postid}"', self.text, t='data-width')
-            out[postid] = {
-                'title': html.unescape(data['title']),
-                'upload_date': strdate(upload).timestamp(),
-                'rating': data['icon_rating'],
-                'thumb': get_prop('src="', thumb)
-                }
-            if prop != 'recent_posts':
-                out[postid]['uploader'] = data['lower']
+        self.items['recent_posts'] = isuser
+        self.items['recent_faved_posts'] = other
         
-        if out:
-            return out
+        return self.items.get(prop)
     
     def item_featured_post(self, prop):
         fs = '<h2>Featured Submission</h2>'
@@ -249,38 +274,22 @@ class parse_userpage(parse_user_common):
             'title': get_prop('/">', text, t='</a>', o=2),
             'rating': get_prop('<a class="r-', text),
             'thumb': get_prop('src="', text),
+            'uploader': self.get('username')
             }
         
         return data
 
 
 class parse_gallery(parse_user_common):
-    # class for parsing user pages, /user/username
+    # class for parsing user pages, /gallery/username
     def __init__(self):
         super().__init__()
         self.funcs.update({
-            'gallery_posts': self.item_gallery_posts
+            'posts': self.item_gallery_posts
             })
     
     def item_gallery_posts(self, prop):
-        if 'id="gallery-gallery"' not in self.text:
-            return
-        
-        text = get_prop('id="gallery-gallery"', self.text, t='</section')
-        posts = {}
-        for line in text.split('\n'):
-            if '/view/' not in line:
-                continue
-            
-            sid = get_prop('/view/', line, t='/')
-            posts[sid] = {
-                'title': get_prop(' title="', line, o=2),
-                'rating': get_prop('class="r-', line),
-                'thumb': get_prop('src="', line),
-                'uploader': self.get('username')
-                }
-        
-        return posts
+        return self.item_posts("descriptions")
 
 
 class parse_postpage(parse_basic):
