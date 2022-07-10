@@ -2657,8 +2657,7 @@ def create_linktodathing(kind, thing, onpage=False, retmode='full', con=None, or
     if kind == 'users':
         if thing in users:
             got = len(users[thing])
-            l8r = get_subs(thing)
-            v = wrapme(got, f=' {:,}') + wrapme(l8r, ' ({:,})')
+            v = wrapme(got, f=' {:,}')
             
             if cfg['docats']:
                 uns, perc = users_marked.get(thing, (0, 0))
@@ -2666,10 +2665,13 @@ def create_linktodathing(kind, thing, onpage=False, retmode='full', con=None, or
                     pi.append(['seen', ii(32), '', ''])
                 
                 elif uns < got:
-                    v = wrapme(uns, f=' {:,} ') + wrapme(got) + wrapme(l8r, ' ({:,})')
+                    v = wrapme(uns, f=' {:,} ') + wrapme(got)
                     pi.append(['partial', ii(1), '', ''])
             
             linkdes += v
+            if cfg.get('use_old_stats'):
+                l8r = get_subs(thing)
+                linkdes += wrapme(l8r, ' ({:,})')
         
         else:
             pi.append(['notgot', ii(34), '', ''])
@@ -3018,7 +3020,7 @@ hide_empty: {self.hide_empty}\n-->'''
         
         labelt = [item, '-', wrapme(data)]
         
-        if self.marktype == 'users':
+        if self.marktype == 'users' and cfg.get('use_old_stats'):
             labelt.append(wrapme(get_subs(item), f='({:,})'))
         
         for pos, inf in enumerate(self.iteminf):
