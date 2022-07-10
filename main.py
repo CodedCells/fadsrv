@@ -1378,7 +1378,7 @@ class eyde_base(builtin_base):
         h += self.build_page_mode(list_mode, lse)
         
         if index_id == last_page and sa < si:
-            h += f"<br>\nThat's all I've got on record. {si:,} item{plu(si)}."
+            h += f'\n<p>Reached of list, shown {si:,} item{plu(si)}</p>'
         
         h += f'\n</div><div class="foot">{nav}\n<br>'
         try:
