@@ -608,12 +608,18 @@ def get_subs(user):
 
 def load_userstats():
     global ent, ustats
-
+    
     if 'ustats' not in globals():
         ustats = appender()
     
+    if 'udatas' not in ent:
+        ent['udatas'] = appender()
+    
     ent['artup'] = {}
     ent['ustatus'] = {}
+    
+    if not cfg.get('use_old_stats'):
+        return
     
     ustats.read(cfg['apd_dir'] + 'apduserstats')
     if not ustats:
@@ -629,9 +635,6 @@ def load_userstats():
             ent['ustatus'][j] = d.get('status', None)
         
         ent['artup'][j] = d.get('lastPostDate', '1970-01-01')
-    
-    if 'udatas' not in ent:
-        ent['udatas'] = appender()
     
     ent['udatas'].read(cfg['apd_dir'] + 'apduserdata')
 
