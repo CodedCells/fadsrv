@@ -1961,6 +1961,8 @@ class eyde_user(eyde_base):
         
         if user in ustats:
             h += f'Got {count:,} of {get_subs(user):,} posts ({perc:.02%})</p>'
+        else:
+            h += f'Got {count:,} of their posts</p>'
         
         if cfg['show_unparsed']:
                 h += very_pretty_json(f'user:{user}', aud)
