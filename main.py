@@ -106,17 +106,19 @@ def datasort():
     global ent, users, users_has, users_marked, users_mod, kwd, kws
     
     mark = ent['_marked']
-    posthas = set(apdfa)
+    posthas = ent.get('_posts', set())
     partial = {}
     users_marked = {}
     start = time.perf_counter()
     
     if ent['added_content'] or ent['force_datasort']:
         users = {}
+        ent['usersort'] = []
         users_has = set()
         users_mod = {}
         kwd = {}
         kws = set()
+    
     
     want_users = len(users) == 0
     want_tags = len(kws) == 0
@@ -136,6 +138,7 @@ def datasort():
             posti = post
             if post.isdigit():
                 posti = int(post)
+            
             users[user].append(posti)
             
             m = data.get('filedate', -1)
