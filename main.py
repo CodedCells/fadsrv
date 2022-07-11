@@ -129,7 +129,10 @@ def datasort():
                 partial[user] = 0
                 users_has.add(user)
             
-            users[user].append(post)
+            posti = post
+            if post.isdigit():
+                posti = int(post)
+            users[user].append(posti)
             
             m = data.get('filedate', -1)
             if isinstance(m, float) and users_mod.get(user, 0) < m:
@@ -153,7 +156,7 @@ def datasort():
         kws = sorted(kws, key=lambda k: len(kwd[k]))
     
     for user, posts in users.items():
-        users[user] = sorted(posts)
+        users[user] = [str(x) for x in sorted(posts)]
         marked = partial.get(user, 0)
         posts = [post for post in posts if post in posthas]
         if not want_users:# not did above stuff
@@ -2114,7 +2117,7 @@ class post_sort_id(object):
         if postid.isdigit():
             return int(postid)
         
-        return random()
+        return postid
 
 
 class post_sort_linked(object):
