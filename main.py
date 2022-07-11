@@ -775,6 +775,28 @@ def load_altfa():
     altfa.read(cfg['apd_dir'] + 'altfa')
 
 
+def build_heavy(reload=0):
+    if reload > 2:
+        init_apd()
+    
+    if reload > 1:
+        load_apd()
+    
+    if reload > 2:
+        willload = reload > 4
+        load_altfa()
+        load_bigapd(willload)
+        
+        if not (willload or cfg.get('skip_bigdata') or cfg.get('skip_findnew')):
+            ent['force_datasort'] = True
+            ent['added_content'] = apd_findnew()
+    
+    load_text_attach()
+    fpref_make()
+    load_userstats()
+    loadpages()
+
+
 def build_entries(reload=0):
     global ent
     
@@ -794,26 +816,8 @@ def build_entries(reload=0):
     
     start = time.perf_counter()
     load_user_config()
-    if reload > 0:
-        
-        if reload > 2:
-            init_apd()
-        
-        if reload > 1:
-            load_apd()
-        
-        if reload > 2:
-            load_altfa()
-            load_bigapd()
-            
-            if not (cfg.get('skip_bigdata') or cfg.get('skip_findnew')):
-                ent['force_datasort'] = True
-                ent['added_content'] = apd_findnew()
-        
-        load_text_attach()
-        fpref_make()
-        load_userstats()
-        loadpages()
+    if reload:
+        build_heavy(reload)
     
     save_config()
     
@@ -5292,7 +5296,7 @@ def load_apx(path, pre, fn):
     xlink[fn + 'back'] = back
 
 
-def load_bigapd():
+def load_bigapd(load=True):
     global apdfa, apdfadesc, apdfafol, blockup
 
     data_files = ['apdfa', 'apdfafol', 'blockup']
@@ -5305,7 +5309,7 @@ def load_bigapd():
     
     gc.collect()
     
-    if cfg.get('skip_bigdata'):
+    if cfg.get('skip_bigdata') or not load:
         return
     
     logging.info('Reading Big APD files...')
@@ -5313,7 +5317,7 @@ def load_bigapd():
     for k in data_files:
         globals()[k].read(
             cfg['apd_dir'] + k,
-            encoding='iso-8859-1')
+            encoding='iso-8859-1', dotime=True)
 
 
 def load_apdmfile(path, pre, fn):
