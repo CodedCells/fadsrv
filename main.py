@@ -5791,4 +5791,8 @@ if __name__ == '__main__':
     httpd = ThreadedHTTPServer(
         (cfg['server_addr'], cfg['server_port']),
         fa_req_handler)
+    
+    x = threading.Thread(target=build_entries, args=(9,))
+    x.start()
+    
     httpd.serve_forever()
