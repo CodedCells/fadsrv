@@ -5,7 +5,7 @@ import gc
 
 from onefad_functions import *
 
-ent['version'] = '31#2022-06-13'
+ent['version'] = '31#2022-07-11'
 
 class builtin_base(builtin_base):
     
@@ -72,6 +72,7 @@ def get_posts(posts):
 
 def markedposts():
     global ent
+    
     ent['built_markedposts'] = False
     mark = set()
     
