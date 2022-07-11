@@ -88,14 +88,17 @@ def markedposts():
         
         items = set()
         for k, d in item:
-            if d[0] == 'n/a': continue
+            if d[0] == 'n/a':
+                continue
             items.add(k)
         
         mark.update(items)
 
     ent['_marked'] = mark
     ent['_posts'] = set(apdfa)
+    
     ent['built_markedposts'] = True
+    
     return mark
 
 
