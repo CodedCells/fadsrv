@@ -5418,12 +5418,15 @@ def load_apd():
 def apdm_divy():
     global ent, dprefm, dpref
     
-    ent['mark_buttons'] = {
-        x: mark_button(mark=x) for x in ent['apdmark']
-        }
-    
     dprefm = {}
     dpref = {}
+    
+    ent['mark_buttons'] = {
+        x: mark_button(mark=x) for x in ent.get('apdmark', [])
+        }
+    
+    if not ent['mark_buttons']:
+        return
     
     for apdfile in ent['apdmark']:
         if apdmm[apdfile].get('type') == 'collection':
