@@ -23,6 +23,7 @@ class appender(dict):
         self.depth = 1
         self.encoding = 'utf8'
         self.volsize = 25000
+        self.do_time = False
     
     def setd(i):
         self = i
@@ -128,7 +129,8 @@ class appender(dict):
              filename=None,
              encoding='utf8',
              parse=True,
-             force=False):
+             force=False,
+             dotime=None):
 
         if force:
             self = {}
@@ -140,7 +142,9 @@ class appender(dict):
         self.parse = parse
         self.force = force
         
-        self.do_time = False
+        if dotime != None:
+            self.do_time = dotime
+        
         self.block = 0
         
         self.rets = set(self)
