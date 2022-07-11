@@ -5738,7 +5738,7 @@ if __name__ == '__main__':
         'reentry_buttons': [
             (' rebuild', 'rebuild', 'Rebuild'),
             ('', 'findnew', 'F'),
-            ('', 'rebuild/3', 'D')
+            ('', 'rebuild/99', 'D')
             ],
         
         'link_to': {
