@@ -826,7 +826,6 @@ def build_entries(reload=0):
     logging.info(f"{len(ent['usersort']):,} users")
     ent['added_content'] = False
     ent['building_entries'] = False
-    ent['built_state'] = 2
     logging.info('Ready.')
     return
 
@@ -5590,8 +5589,6 @@ if __name__ == '__main__':
 'cfg.show_visited_recently.label': 'Adds a temporary mark to things you visited since the last rebuild',
 'cfg.ent.building_entries.name': 'Building Entries',
 'cfg.ent.building_entries.label': 'Set while the server is busy, prevents some pages loading during that time.',
-'cfg.ent.built_state.name': 'Built State',
-'cfg.ent.built_state.label': '0 = Uninitialised, 1 = Loaded APD, 2 = Ready',
 'cfg.ent.butt_state.name': 'Butt State',
 'cfg.ent.butt_state.label': 'Joke option, set to your preference I guess',
 
@@ -5704,7 +5701,6 @@ if __name__ == '__main__':
         })
     
     load_global('ent', {
-    	'built_state': 0,
         'building_entries': False,
         
         'built_markedposts': False,
