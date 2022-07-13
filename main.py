@@ -1243,7 +1243,7 @@ class descman(object):
     def get_apc(self, posts):
         out = {}
         for post in posts:
-            desc = apdfadesc.get(post)
+            desc = apdfadesc.get(str(post))
             if desc:
                 out[post] = desc
         
