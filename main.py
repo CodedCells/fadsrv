@@ -785,9 +785,9 @@ def build_heavy(reload=0):
     if reload > 2:
         willload = reload > 4
         load_altfa()
-        load_bigapd(willload)
+        willload = load_bigapd(willload)
         
-        if not (willload or cfg.get('skip_bigdata') or cfg.get('skip_findnew')):
+        if willload and not cfg.get('skip_findnew'):
             ent['force_datasort'] = True
             ent['added_content'] = apd_findnew()
     
@@ -5312,7 +5312,7 @@ def load_bigapd(load=True):
     gc.collect()
     
     if cfg.get('skip_bigdata') or not load:
-        return
+        return False
     
     logging.info('Reading Big APD files...')
     
@@ -5320,6 +5320,8 @@ def load_bigapd(load=True):
         globals()[k].read(
             cfg['apd_dir'] + k,
             encoding='iso-8859-1', dotime=True)
+    
+    return True
 
 
 def load_apdmfile(path, pre, fn):
