@@ -2787,7 +2787,9 @@ class mort_base(builtin_base):
     
     @staticmethod
     def item_sorter_ez(i, d):
-        if type(d) != int:d = len(d)# int int make int
+        if type(d) != int and type(d) != float:
+            d = len(d)# int int make int
+        
         return [d] + list(i)
     
     def item_sorter(self, data, items, mincount):
