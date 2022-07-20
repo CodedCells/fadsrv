@@ -252,8 +252,10 @@ class parse_userpage(parse_user_common):
     def item_userposts(self, prop):
         isuser = {}
         other = {}
+        
+        username = self.get('username').lower()
         for postid, data in self.item_posts('submission_data').items():
-            if self.get('username') == data['username']:
+            if username == data['uploader']:
                 isuser[postid] = data
             else:
                 other[postid] = data
