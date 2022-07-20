@@ -3,6 +3,7 @@ import requests
 import html
 import re
 import json
+import re
 from datetime import datetime
 
 ## scroll to bottom for example
@@ -145,7 +146,9 @@ class parse_basic(object):
         if f'id="sid-{postid}"' in self.text:
             thumb = get_prop(f'id="sid-{postid}"', self.text, t='data-width')
             info['thumb'] = get_prop('src="', thumb)
-            info['rating'] = get_prop('class="r-', thumb, t=' ')
+            rating = get_prop('class="r-', thumb, t=' ')
+            rating = re.split('[^a-zA-Z]', rating)[0]
+            info['rating'] = rating
         
         if 'title' in data:
             info['title'] = html.unescape(data['title'])
