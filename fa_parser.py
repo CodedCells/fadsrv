@@ -130,13 +130,12 @@ class parse_basic(object):
             
             elif 'enable the Mature or Adult content' in self.text:
                 state = 'rated_content'
+            
+            elif  'has voluntarily disabled access to their account' in self.text:
+                state = 'disabled_access'
         
-        elif ('">Click here to go back' in self.text or
-            '">Continue &raquo;</a>' in self.text):
-            state = 'dactive'
-        
-        elif ('<title>System Error</title>' in self.text and
-              'This user cannot be found.' in selx.text):
+        elif ('<title>System Error</title>' in self.text
+              and 'This user cannot be found.' in self.text):
             state = 'not_found'
         
         return state
@@ -189,6 +188,9 @@ class parse_user_common(parse_basic):
             })
     
     def item_username(self, prop):
+        if 'userpage-flex-item username">' not in self.text:
+            return
+        
         tmp = get_prop('userpage-flex-item username">', self.text, t='</div')
         
         username = tmp.split('</')[0].split('>')[-1].strip()
@@ -255,6 +257,8 @@ class parse_userpage(parse_user_common):
     def item_userposts(self, prop):
         isuser = {}
         other = {}
+        if not self.get('username'):
+            return
         
         username = self.get('username').lower()
         for postid, data in self.item_posts('submission_data').items():
