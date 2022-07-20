@@ -23,6 +23,7 @@ class appender(dict):
         self.depth = 1
         self.encoding = 'utf8'
         self.volsize = 25000
+        self.lines = -1
         self.do_time = False
     
     def setd(i):
@@ -156,6 +157,8 @@ class appender(dict):
         except Exception as e:
             logging.error("SERIUS DATA PARSE ERROR", exc_info=True)
             logging.error(f'While reading {filename}')
+        
+        self.lines = len(self)
     
     def write_block(self, line, out):
         self.block = line // self.volsize
@@ -202,6 +205,7 @@ class appender(dict):
         if self.block > 0:
             lines += self.get_lines_fn(self.filename) * self.block
         
+        self.lines = lines
         return lines
     
     def write(self,
@@ -228,6 +232,9 @@ class appender(dict):
         if self:
             line = len(self)
         
+        elif self.lines > -1:
+            line = self.lines
+        
         elif self.filename and not self:
             line = self.get_lines()
         
@@ -238,6 +245,7 @@ class appender(dict):
         out = ''
         for k, v in newdata.items():
             line += 1
+            self.lines += 1
             out += self.write_line(k, v)
             
             if line % self.volsize == 0 and out:
