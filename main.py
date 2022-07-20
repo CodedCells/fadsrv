@@ -612,41 +612,17 @@ def load_text_attach():
 
 
 def get_subs(user):
-    data = ustats.get(user, {})
+    data = ustat.get(user, {})
     return data.get('posts', .1)
 
 
-def load_userstats():
-    global ent, ustats
+def new_userstat():
+    global ent, ustat
     
-    if 'ustats' not in globals():
-        ustats = appender()
+    if 'ustat' not in globals():
+        ustat = appender()
     
-    if 'udatas' not in ent:
-        ent['udatas'] = appender()
-    
-    ent['artup'] = {}
-    ent['ustatus'] = {}
-    
-    if not cfg.get('use_old_stats'):
-        return
-    
-    ustats.read(cfg['apd_dir'] + 'apduserstats')
-    if not ustats:
-        logging.info('User statistics unavilable')
-    
-    for k, d in ustats.items():
-        if k.startswith('@'):
-            continue
-        
-        j = k.replace('_', '')
-        
-        if d.get('status', None):
-            ent['ustatus'][j] = d.get('status', None)
-        
-        ent['artup'][j] = d.get('lastPostDate', '1970-01-01')
-    
-    ent['udatas'].read(cfg['apd_dir'] + 'apduserdata')
+    ustat.read(cfg['apd_dir'] + 'userstats')
 
 
 def fpref_make():
@@ -793,7 +769,7 @@ def build_heavy(reload=0):
     
     load_text_attach()
     fpref_make()
-    load_userstats()
+    new_userstat()
     loadpages()
 
 
@@ -1903,6 +1879,11 @@ def format_wp(file, thing):
     return ret
 
 
+def timestamp_disp(t):
+    t = datetime.utcfromtimestamp(t)
+    return t.strftime('%b %d, %Y %H:%M')
+
+
 class eyde_user(eyde_base):
 
     def __init__(self, items=[], marktype='users'):
@@ -1937,51 +1918,49 @@ class eyde_user(eyde_base):
         know = max(get_subs(user), count)
         perc = count / max(know, 1)
         
-        h += '<div class="userinfo">\n<p>'
-        aud = ent['udatas'].get(user, {})
+        h += '<div class="userinfo">\n'
         
-        if 'registered' in aud:
-            registered = datetime.utcfromtimestamp(aud["registered"])
-            registered = registered.strftime('%b %d, %Y')
-            h += f'Registered: {registered}</br>\n'
+        info = ustat.get(user)
         
-        udat = ustats.get(user)
-        if udat:
-            for k, v in [('lastChk', 'Checked'),
-                         ('status', 'Account status'),
-                         ('lastPostDate', 'Last posted')]:
-                if k in udat:
-                    k = udat[k]
-                    if k[0].isdigit():
-                        k = datetime.fromisoformat(k).strftime('%b %d, %Y')
-                    
-                    h += f'{v}: {k}<br>\n'
+        if info:
+            h += '<p>'
+            for i, l, t in [
+                ('title', '', 'text'),
+                ('registered', 'Registered', 'date'),
+                ('_meta', 'Checked', 'date'),
+                ('status', 'Account status', 'text'),
+                ('error', 'Profile status', 'text'),
+                ('new_post', 'Last posted', 'date')]:
+                i = info.get(i)
+                if not i:continue
+                
+                if t == 'date':
+                    i = timestamp_disp(i)
+                
+                if l:
+                    l += ': '
+                
+                h += f'{l}{i}<br>\n'
+            
+            h += '</p>'
         
-        h += '</p>\n'
+        passed = dpref.get('passed', {}).get(user)
+        if passed:
+            h += f'<p>Passed: {timestamp_disp(passed / 1000)}</p>\n'
         
         for path, name in cfg['altlinks'].get('users', []):
             path = path.format(user)
             h += f'<p><a href="{path}">{name}</a></p>\n'
-        
-        h += '<p>'
-        passed = dpref.get('passed', {}).get(user)
-        if passed:
-            passdate = datetime.utcfromtimestamp(passed / 1000)
-            passdate = passdate.strftime('%b %d, %Y %H:%M')
-            h += f'Passed: {passdate}<br>\n'
         
         for w, d in wpm.items():
             if compare_for(d, self.marktype, sw=True):
                 if user in wp[w]:
                     h += format_wp(w, user)
         
-        if user in ustats:
-            h += f'Got {count:,} of {get_subs(user):,} posts ({perc:.02%})</p>'
-        else:
-            h += f'Got {count:,} of their posts</p>'
+        h += f'<p>Got {count:,} of {get_subs(user):,} posts ({perc:.02%})</p>'
         
         if cfg['show_unparsed']:
-                h += very_pretty_json(f'user:{user}', aud)
+            h += very_pretty_json(f'user:{user}', info)
         
         h += '\n</div>'
         self.headtext[1] = h
@@ -2681,10 +2660,8 @@ def create_linktodathing(kind, thing, onpage=False, retmode='full', con=None, or
                     v = wrapme(uns, f=' {:,} ') + wrapme(got)
                     pi.append(['partial', ii(1), '', ''])
             
-            linkdes += v
-            if cfg.get('use_old_stats'):
-                l8r = get_subs(thing)
-                linkdes += wrapme(l8r, ' ({:,})')
+            l8r = get_subs(thing)
+            linkdes += v + wrapme(l8r, ' ({:,})')
         
         else:
             pi.append(['notgot', ii(34), '', ''])
@@ -2946,7 +2923,7 @@ class mort_base(builtin_base):
             items = self.item_sorter(um, items, mincount)
         
         elif 'ustats' in pf:
-            um = {k: get_subs(k) for k in ustats}
+            um = {k: get_subs(k) for k in ustat}
             items = self.item_sorter(um, items, mincount)
         
         else:
@@ -3035,7 +3012,7 @@ hide_empty: {self.hide_empty}\n-->'''
         
         labelt = [item, '-', wrapme(data)]
         
-        if self.marktype == 'users' and cfg.get('use_old_stats'):
+        if self.marktype == 'users':
             labelt.append(wrapme(get_subs(item), f='({:,})'))
         
         for pos, inf in enumerate(self.iteminf):
@@ -3539,7 +3516,7 @@ class mort_gone(mort_base):
         super().__init__(marktype, title, link, icon)
     
     def get_items(self):
-        return [x for x, d in ustats.items() if d.get('status')]
+        return [x for x, d in ustat.items() if d.get('error')]
     
     def gimme_idc(self):
         self.datas = users
@@ -3554,7 +3531,11 @@ class mort_activity(mort_base):
     
     def gimme(self, pargs):
         self.datas = users
-        tusers = [(d, a) for a, d in ent['artup'].items() if d != '2000-01-01']
+        tusers = [
+            (d.get('new_post'), a)
+            for a, d in ustat.items()
+            if d.get('new_post')]
+        
         self.items = [(a, d) for d, a in sorted(tusers)]
         
         try:# try and grab a date
@@ -3592,10 +3573,12 @@ class mort_review(mort_base):
             self.items = {}
             passed = dpref.get('passed', {})
             for user, date in passed.items():
-                pd = jsdate(date)
-                up = datetime.fromisoformat(ent['artup'].get(user, '2000-01-01'))
-                if up > pd:
-                    self.items[user] = (up-pd).days
+                up = usat.get(user, {}).get('new_post')
+                if up:
+                    pd = jsdate(date)
+                    up = datetime.utcfromtimestamp(up)
+                    if up > pd:
+                        self.items[user] = (up - pd).days
             
             self.items = sorted(self.items.items(), key=itemgetter(1), reverse=True)
         
@@ -3682,9 +3665,9 @@ class mort_favey(mort_base):
         super().__init__(marktype, title, link, icon)
     
     def uget(self, user):
-        g = ent['udatas'].get(user, {})
-        if 'submissions' in g and 'favs' in g:
-            return g['favs'] / max(g['submissions'], 1)
+        g = ustat.get(user, {})
+        if 'posts' in g and 'faves' in g:
+            return g['faves'] / max(g['posts'], 1)
         
         return -1
     
