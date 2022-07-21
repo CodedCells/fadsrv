@@ -182,7 +182,7 @@ class builtin_logs(builtin_base):
         name = t.split('.')[0]
         mod = f'Modified {self.ago(int(m))}'
         
-        return f'<p><a href="/logs/{pid}/{t}/">{name}<br>{mod}</a></p>\n'
+        return f'<a class="logitem" href="/logs/{pid}/{t}/"><span class="time">{name}</span><span class="mod">{mod}</span</a>\n'
     
     def tasklist(self, pid, showold):
         now = datetime.now()

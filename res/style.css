@@ -1058,7 +1058,23 @@ code.logCRIITCAL {
 }
 
 .tasklogbox .title {
-	font-weight: bold;
+	font-size: 160%;
+	font-weight: 100;
+}
+
+.logitem {
+	display: block;
+	margin-top: 12pt;
+}
+
+.logitem .time {
+	font-size: 120%;
+	font-weight: 100;
+}
+
+.logitem .mod{
+	display: block;
+	color: #888;
 }
 
 .iconusername {
