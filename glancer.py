@@ -17,6 +17,8 @@ class builtin_info(builtin_base):
 
     def __init__(self, title='Info', link='/info', icon=51):
         super().__init__(title, icon)
+        self.do_foot = False
+        self.do_menu = False
     
     def page(self, handle, path):
         doc = '<div id="content">\n<div id="masthead-container">'
