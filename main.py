@@ -3428,11 +3428,13 @@ class mort_postamark(mort_amark):
             datas[user].append(file)
         
         items = [(k, i) for i, k in sorted([(len(i), k) for k, i in datas.items()])]
-        return items, datas
+        self.datas = datas
+        
+        return items
         
     def gimme(self, pargs):
         if not self.items or not self.datas:
-            self.items, self.datas = self.get_items()
+            self.items = self.get_items()
         
         self.link = f'/filter/@{self.val} user:{{}}/1'
         if 'user' in pargs:
