@@ -3690,7 +3690,7 @@ class mort_percgot(mort_base):
         
         for user, posts in users.items():
             al = get_subs(user)
-            if user.startswith('@') or al == -1:
+            if user.startswith('@') or al == .1:
                 continue
             
             self.items[user] = len(posts) / max(al, .1)
