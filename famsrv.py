@@ -1,4 +1,5 @@
 from onefad_web import *
+from append_handler import appender
 
 ent['version'] = 1
 ent['internal_name'] = 'fam'
@@ -83,14 +84,18 @@ def create_menus():
         menus['all_pages_buttons'] += [icn for m, icn in sorted(d)]
 
 
-def filelist():
-    dd = cfg['apd_dir']
-    files = apc_read(dd + 'filelist')
-    if files:
-        return set(files.keys())
+def get_filelist():
+    global filelist
     
-    logging.info('Building file list')
-    files = None
+    if 'filelist' not in globals():
+        dd = cfg['apd_dir']
+        filelist = appender()
+        filelist.read(dd + 'filelist')
+    
+    if filelist:
+        return
+    
+    logging.info('Building filelist')
     
     for i in range(100):
         i = cfg['media_dir'] + f'{i:02d}/'
@@ -98,15 +103,9 @@ def filelist():
         
         if os.path.isdir(i):
             new = {x: 0 for x in os.listdir(i)}
-            apc_write(dd + 'filelist', new, files, 1)
-            if not files:
-                files = {}
-            files.update(new)
+            filelist.write(new)
     
-    if files:
-        return files
-    
-    return {}
+    logging.info('Finished lsting files')
 
 
 def find_new_files():
@@ -128,17 +127,11 @@ def find_new_files():
         shutil.move(src + f, d + f)
     
     if not add:
-        logging.debug('No files to add')
+        logging.info('No files to add')
         return
     
     logging.info(f'Adding {len(add):,} files')
-    apc_write(cfg['apd_dir'] + 'filelist',
-              {k: 0 for k in add},
-              {k: 0 for k in ent['filelist']},
-              1)
-    
-    ent['filelist'].update(set(add))
-    ent['idlist'].update(set(x.split('.')[0] for x in add))
+    filelist.write({k: 0 for k in add})
 
 
 def big_action_list_time(reload=0):
@@ -153,9 +146,9 @@ def big_action_list_time(reload=0):
     create_menus()
     save_config()
     
-    ent['filelist'] = filelist()
-    ent['idlist'] = set(x.split('.')[0] for x in ent['filelist'])
+    get_filelist()
     find_new_files()
+    ent['idlist'] = set(x.split('.')[0] for x in filelist)
     
     logging.info(f'Done in {time.perf_counter() - start}')
     ent['building_entries'] = False
@@ -193,6 +186,13 @@ def serve_image(handle, path, head=True):
         serve_resource(handle, 'parrot.svg', code=404, forever=False)
 
 
+def timestamp_disp(t):
+    if type(t) != datetime:
+        t = datetime.utcfromtimestamp(t)
+    
+    return t.strftime('%b %d, %Y %H:%M')
+
+
 class builtin_info(builtin_base):
 
     def __init__(self, title='Info', icon=51):
@@ -201,16 +201,20 @@ class builtin_info(builtin_base):
     def stat(self, handle, label, value):
         if type(value) == int:
             value = f'{value:,}'
+        
         self.write(handle, f'<p>{label}: {value}</p>\n')
     
     def page(self, handle, path):
         now  = datetime.now()
-        out = '<div class="errorpage">\n<h1>System Information</h1>\n'
-        self.write(handle, out)
-        self.stat(handle, 'Posts', len(ent['idlist']))
-        self.stat(handle, 'Files', len(ent['filelist']))
+        doc = '<div class="head"><h2 class="pagetitle">Info</h2></div>\n'
+        doc += '<div class="container list">\n'
+        self.write(handle, doc)
+        
         self.stat(handle, 'Server Time Now', now.isoformat()[:19])
         self.stat(handle, 'Last Rebuilt:', ent['built_at'].isoformat()[:19])
+        
+        self.stat(handle, 'Posts', len(ent['idlist']))
+        self.stat(handle, 'Files', len(filelist))
 
 
 class builtin_reader(builtin_base):
@@ -365,13 +369,13 @@ class fa_req_handler(BaseHTTPRequestHandler):
 class post_hasfiles(post_base):
     
     def hasfile(self, f):
-        if f in ent['filelist']:
+        if f in filelist:
             return [True, f.split('.')[-1]]
         
         f = f.split('.')[0]
         if i in ent['idlist']:
             for e in ctl:
-                if f'{f}.{e}' in ent['filelist']:
+                if f'{f}.{e}' in filelist:
                     return [True, e]
         
         return [False, None]
