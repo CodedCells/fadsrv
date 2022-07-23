@@ -746,7 +746,7 @@ class fa_req_handler(BaseHTTPRequestHandler):
             home = ent['builtin'].get(cfg['homepage_menu'])
             
             if home is None:
-                home = ent['builtin']['users']
+                home = ent['builtin']['all_pages']
             
             home.serve(self, path_split)
             return
