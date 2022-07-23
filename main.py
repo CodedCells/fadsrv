@@ -1920,7 +1920,7 @@ class eyde_user(eyde_base):
         
         h += '<div class="userinfo">\n'
         
-        info = ustat.get(user)
+        info = ustat.get(user, {})
         
         if info:
             h += '<p>'
