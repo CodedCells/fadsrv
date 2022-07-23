@@ -37,8 +37,12 @@ class builtin_info(builtin_base):
             doc += f'<span>{server}</span>\n</a>\n'
         
         self.write(handle, doc + '</div>')
-        doc = '<embed type="text/html" src="http://192.168.0.66:6979" width="100%" height="100%>>'
-        self.write(handle, doc)
+        
+        target = ent['builtin'].get('wares')
+        if target:
+            target.page(handle, '')
+        else:
+            self.write(handle, '<p>Wares page does not exist.</p>')
 
 
 def register_page(k, kind):
