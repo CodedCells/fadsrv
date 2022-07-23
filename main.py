@@ -3642,6 +3642,65 @@ class mort_folders(mort_base):
             self.folsort = []
 
 
+class mort_filetypes(mort_base):
+    
+    def __init__(self, marktype='filetypes', title='Filetypes', link='/filetype/{}/1', icon=ii(81)):
+        super().__init__(marktype, title, link, icon)
+    
+    def gimme_idc(self):
+        items = {}
+        for k, d in apdfa.items():
+            i = d.get('ext')
+            if not i:
+                i = 'error'
+            
+            if i not in items:
+                items[i] = []
+            
+            items[i].append(k)
+        
+        self.items = []
+        self.datas = {}
+        for k, d in items.items():
+            self.items.append((k, len(d)))
+            self.datas[k] = d
+
+
+class eyde_filetype(eyde_base):
+    def __init__(self, items=[], marktype='filetypes'):
+        super().__init__(items, marktype)
+        self.datas = {}
+    
+    def itemget(self):
+        items = {}
+        for k, d in apdfa.items():
+            i = d.get('ext')
+            if not i:
+                i = 'error'
+            
+            if i not in items:
+                items[i] = []
+            
+            items[i].append(k)
+        
+        self.datas = items
+    
+    def gimme(self, pargs):
+        ext = str(pargs[1])
+        self.markid = ext
+
+        if not self.datas:
+            self.itemget()
+        
+        items = self.datas.get(ext, {})
+        if not items:
+            self.purge(0)
+            return
+        
+        self.title = f'{ext} files'
+        self.items = items
+
+
 class mort_linkeduser(mort_base):
     def __init__(self, marktype='users', title='Linked Users', link='/filter/userl:{}/1', icon=ii(25)):
         super().__init__(marktype, title, link, icon)
