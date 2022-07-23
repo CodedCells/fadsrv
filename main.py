@@ -630,8 +630,11 @@ def fpref_make():
     fpref = {}
     
     for name, page in ent['builtin'].items():
-        if not page.pagetype.startswith('remort'):continue
-        if not (hasattr(page, 'marktype') and page.marktype):continue
+        if not page.pagetype.startswith('remort'):
+            continue
+        
+        if not (hasattr(page, 'marktype') and page.marktype):
+            continue
         
         fpref[name] = {'icon': page.icon, 'for': page.marktype}
 
