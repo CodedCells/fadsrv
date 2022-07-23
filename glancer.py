@@ -246,8 +246,10 @@ class fa_req_handler(BaseHTTPRequestHandler):
 
 def stop():
     logging.info('Stopping server')
+    ent['running'] = False
     time.sleep(2)
     httpd.shutdown()
+    exit()
 
 
 def server_path(data):
@@ -286,7 +288,7 @@ def checksys_now():
 
 
 def checksys_loop():
-    while threading.main_thread().is_alive():
+    while ent['running']:
         time.sleep(120)
         checksys_now()
 
@@ -321,6 +323,7 @@ if __name__ == '__main__':
         })
     
     load_global('ent', {
+        'running': True,
         'resources': [
             'style.css',
             'parrot.svg',
