@@ -86,6 +86,75 @@ def create_menus():
         menus['all_pages_buttons'] += [icn for m, icn in sorted(d)]
 
 
+def timestamp_disp(t):
+    if type(t) != datetime:
+        t = datetime.utcfromtimestamp(t)
+    
+    return t.strftime('%b %d, %Y %H:%M')
+
+'''
+class builtin_test(builtin_base):
+    
+    def __init__(self, title='Test', icon=99):
+        super().__init__(title, icon)
+        self.pages = True
+    
+    def create_thumb(self, sid):
+        data = sideposts.get(sid, {})
+        return f'<img src="{data.get("thumb", "")}" loading="lazy" />'
+    
+    def page(self, handle, path):
+        print(path)
+        if type(path[-1]) != int:
+            path.append(1)
+        
+        idx = path[-1]
+        items = list(sideposts)
+        nav = template_nav('Test', idx, int(len(items) / 25), enc=False)
+        self.write(handle, nav)
+        
+        for sid in items[(idx-1)*25:idx*25]:
+            self.write(handle, self.create_thumb(sid))
+'''
+
+class builtin_info(builtin_base):
+
+    def __init__(self, title='Info', icon=51):
+        super().__init__(title, icon)
+    
+    def stat(self, handle, label, value):
+        if type(value) == int:
+            value = f'{value:,}'
+        
+        self.write(handle, f'<p>{label}: {value}</p>\n')
+    
+    def page(self, handle, path):
+        now  = datetime.now()
+        doc = '<div class="head"><h2 class="pagetitle">Info</h2></div>\n'
+        doc += '<div class="container list">\n'
+        self.write(handle, doc)
+        
+        self.stat(handle, 'Server Time Now', timestamp_disp(now))
+        self.stat(handle, 'Last Rebuilt:', timestamp_disp(ent['built_at']))
+        self.stat(handle, 'Posts', len(sideposts))
+
+        doc = '<table class="stripy">\n<tr>\n<td>Origin</td>\n<td>Count</td></tr>\n'
+        c = 0
+        cla = [' class="odd"', '']
+        for no, ask in enumerate(cfg['ask_servers']):
+            name = ask.get("name")
+            if not name:
+                name = f'{ask["ip"]}:{ask.get("port", 6970)}'
+            
+            doc += f'<tr{cla[c%2]}>\n\t'
+            doc += f'<td>{name}</td>\n\t'
+            doc += f'<td>{len(has[no]):,}</td>\n\t'
+            c += 1
+        
+        doc += '</table></div>\n'
+        self.write(handle, doc)
+
+
 def big_action_list_time(reload=0):
     global has, sideposts
     if isinstance(reload, str):
