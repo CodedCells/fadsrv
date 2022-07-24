@@ -1,7 +1,6 @@
-#from fad_utils import *
 from onefad_functions import *
 
-ent['version'] = '23'
+ent['version'] = '25'
 
 end_of_time = datetime.fromisoformat('9999-01-01')
 
@@ -10,81 +9,79 @@ def fromiso(d):
     return datetime.strptime(d, f)
 
 
+def load_apdmfile(path, pre, fn):
+    global apdmm, apdm
+    
+    data = apdm.get(fn, appender())
+    data.read(path + pre + fn, encoding='iso-8859-1')
+    
+    prop = apdmm.get(fn, {})
+    if '//' in data:
+        prop = data['//']
+        del data['//']
+    
+    apdmm[fn] = apdmm.get(fn, {})
+    
+    for k, v in prop.items():
+        apdmm[fn][k] = v
+
+    if prop.get('type') == 'collection':
+        if 'name_plural' not in apdmm[fn]:
+            name = apdmm[fn].get('name', '')
+            if not name:
+                name = fn
+            else:
+                name += 's'
+            
+            apdmm[fn]['name_plural'] = name
+        
+        for k, d in list(data.items()):
+            if d.get('delete', False):
+                del data[k]
+    
+    elif prop.get('list', False) != False:
+        if compare_for(prop, 'users'):
+            data.setd({x.replace('_', '').lower(): 0 for x in data})
+    
+    else:
+        for k, v in list(data.items()):
+            if not v or list(v) == ['None']:
+                del data[k]
+            
+            elif len(v) > 1:
+                if v[0] != 'n/a':
+                    data[k] = v
+    
+    apdm[fn] = data
+    return prop.get('order', 1), fn
+
+
 def load_apd():
     global ent, apdmm, apdm, dpref, dprefm
     
-    logging.info('Loading apd files')
+    logging.info('Reading Mark files')
     
-    apdm = {}
-    dprefm = {}
-    dpref = {}
-    apdmm = {}
-    
+    for k in ['dprefm', 'dpref']:
+        if k not in globals():
+            globals()[k] = {}
+
     apdmark = {}
-    scandir = cfg['mark_dir']
-    if scandir == '':scandir = '.'
+    
+    scandir = cfg['apd_dir']
+    
     for f in os.listdir(scandir):
-        if '.' in f:continue
+        if '.' in f or f[-1].isdigit():
+            continue
+        
         if f.startswith('ds_'):
             apdmark[f[3:]] = 0
     
-    datas  = {}
+    order = []
     for apdfile in apdmark:
-        data = apc_master().read(scandir + 'ds_' + apdfile, encoding='utf8')
-        prop = {}
-        if '//' in data:
-            prop = data['//']
-        
-        apdmark[apdfile] = prop.get('order', 0)
-        datas[apdfile] = data
+        order.append(
+            load_apdmfile(scandir, 'ds_', apdfile))
     
-    apdmark = sorted([(y, x) for x, y in apdmark.items()])
-    apdmark = [y for x, y in apdmark]
-    
-    ent['apdmark'] = apdmark
-    
-    for apdfile in apdmark:
-        data = datas[apdfile]
-        apdmm[apdfile] = {}
-        
-        prop = {}
-        if '//' in data:
-            prop = data['//']
-            del data['//']
-        
-        for k, v in prop.items():
-            apdmm[apdfile][k] = v
-        
-        if prop.get('type') == 'collection':
-            if 'name_plural' not in apdmm[apdfile]:
-                name = apdmm[apdfile].get('name', '')
-                if name == '':name = apdfile
-                else:name += 's'
-                apdmm[apdfile]['name_plural'] = name
-            
-            for k, d in list(data.items()):
-                if d.get('delete', False):
-                    del data[k]
-            
-            ent['collection_' + apdfile] = data
-        
-        elif prop.get('list', False) != False:
-            if prop.get('for', 'posts') == 'users':
-                data = {x.replace('_', '').lower(): 0 for x in data}
-            
-            apdm[apdfile] = data
-            dpref[apdfile] = data
-        
-        else:
-            for k, v in list(data.items()):
-                if len(v) > 1:
-                    if v[0] != 'n/a':
-                        data[k] = v
-                
-                elif list(v.keys()) == ['None']:
-                    del data[k]
-            
-            apdm[apdfile] = data
+    ent['apdmark'] = [y for x, y in sorted(order)]
     
     ent['loaded_apd'] = True
 
@@ -106,13 +103,14 @@ def register_dynamic():
                     ent['builtin'][name.lower()] = mort_collection(m)
             
             name_list = d.get('name_plural', name + 's')
-            ent['_collections'][name_list.lower()] = m
+            name_listl = name_list.lower()
+            ent['_collections'][name_listl] = m
             
             if m not in ent['link_to']:
                 ent['link_to'][m] = f'/{name}/{{}}/1'
             
-            if name_list.lower() not in ent['builtin']:
-                ent['builtin'][name_list.lower()] = mort_collection_list(m, name_list)
+            if name_listl not in ent['builtin']:
+                ent['builtin'][name_listl] = mort_collection_list(m, name_list)
         
         if compare_for(d, 'posts', sw=True):
             #print(m, d, 'postmark')
@@ -140,8 +138,15 @@ def register_dynamic():
         if m not in ent['builtin']:
             ent['builtin'][m] = builtin_menu(which=m)
     
+    if 'all_pages' not in menus['pages']:
+        menus['pages']['all_pages'] = {
+            "title": "All Pages",
+            "mode": "wide-icons-flat",
+            "buttons": "all_pages_buttons",
+            "icon": [9, 9]
+            }
     
-    menus['remort_buttons'] = []
+    menus['all_pages_buttons'] = []
     rbcat = {
         'builtin': [],
         'builtin menu': [],
@@ -187,26 +192,29 @@ def register_dynamic():
         rbcat[c].append((m, icn))
     
     for c, d in rbcat.items():
-        menus['remort_buttons'].append({'type': 'section', 'label': c})
-        menus['remort_buttons'] += [icn for m, icn in sorted(d)]
+        menus['all_pages_buttons'].append({'type': 'section', 'label': c})
+        menus['all_pages_buttons'] += [icn for m, icn in sorted(d)]
 
 
 def apdm_divy():
     global ent, dprefm, dpref
     
-    ent['mark_buttons'] = {
-        x: mark_button(x) for x in apdmm
-        }
-    
     dprefm = {}
     dpref = {}
+    
+    ent['mark_buttons'] = {
+        x: mark_button(mark=x) for x in ent.get('apdmark', [])
+        }
+    
+    if not ent['mark_buttons']:
+        return
     
     for apdfile in ent['apdmark']:
         if apdmm[apdfile].get('type') == 'collection':
             
             dprefm[apdfile] = {**apdmm[apdfile], 'apdm': apdfile}
             
-            data = ent[f'collection_{apdfile}']
+            data = apdm[apdfile]
             dpref[apdfile] = set()
             for d, k, n in sort_collection(apdfile, rebuild=True):
                 dpref[apdfile].update(set(data[k].get('items', [])))
@@ -229,11 +237,11 @@ def apdm_divy():
 def build_entries(reload=0):
     global ent
     
-    if ent['building']:
+    if ent['building_entries']:
         logging.warning('Am building')
         return
     
-    ent['building'] = True
+    ent['building_entries'] = True
     ent['generated'] = datetime.now()
     logging.info('Building')
     read_config()
@@ -250,30 +258,20 @@ def build_entries(reload=0):
         x: mark_button(x) for x in apdmm
         }
     
-    group_tags()
+    group_tags(force=True)
     register_dynamic()
     save_config()
     
-    ent['building'] = False
+    ent['building_entries'] = False
     logging.info('Ready.')
 
 
 def sort_records():
     global ent, cfg
-    '''
-    ent['tagmulti'] = {}
-    for i, v in apc_master().read(cfg['apd_dir'] + 'tagmulti').items():
-        if type(v) == str:
-            v = list(v)
-        
-        for t in v:
-            ent['tagmulti'][t] = i
-    '''
-    cfg['targetorder'] = ['Total'] + list(apc_master().read(cfg['apd_dir'] + 'targetorder'))
-    
-    ent['postgroup_lu'] = {
-        re.sub(r'\W+', '', x.lower()): x
-        for x in ent.get('collection_postgroup', [])}
+
+    order = appender()
+    order.read(cfg['apd_dir'] + 'targetorder')
+    cfg['targetorder'] = ['Total'] + list(order)
     
     ent['targets'] = {x.lower(): x for x in cfg['targetorder']}
     ent['apd'] = {
@@ -302,7 +300,9 @@ def sort_records():
             if user not in ent['targets']:
                 ent['targets'][user] = user
         
-        ent['apd'][user][part] = apc_master().read(cfg['data_dir'] + fn, do_time=True)
+        data = appender()
+        data.read(cfg['data_dir'] + fn, dotime=True)
+        ent['apd'][user][part] = data
         
         if part == 'posts':
             for t, p in ent['apd'][user]['posts'].items():
@@ -343,6 +343,7 @@ def sort_records():
 
 def group_tags(ret=[], force=False):
     global ent
+    
     if force or ent.get('tags') == None:
         ent['tags'] = {}
         tagi = set()# gotta go fast
@@ -376,29 +377,31 @@ def group_tags(ret=[], force=False):
     return out
 
 
+def timestamp_disp(t):
+    if type(t) != datetime:
+        t = datetime.utcfromtimestamp(t)
+    
+    return t.strftime('%b %d, %Y %H:%M')
+
 class builtin_info(builtin_base):
     
     def __init__(self, title='Info', icon=[3, 3]):
         super().__init__(title, icon)
     
+    def stat(self, handle, label, value):
+        if type(value) == int:
+            value = f'{value:,}'
+        
+        self.write(handle, f'<p>{label}: {value}</p>\n')
+    
     def page(self, handle, path):
-        
         now  = datetime.now()
+        doc = '<div class="head"><h2 class="pagetitle">Info</h2></div>\n'
+        doc += '<div class="container list">\n'
+        self.write(handle, doc)
         
-        page = f'''<div class="errorpage">
-<div>
-<h1>StatSrv v{ent["version"]}</h1>
-<br>
-Last rebuilt at:<br>
-{ent['generated'].isoformat()}<br>
-<br>
-Server time now:<br>
-{now.isoformat()}<br>
-<br>
-</div>
-<br>'''
-        
-        self.write(handle, page)
+        self.stat(handle, 'Server Time Now', timestamp_disp(now))
+        self.stat(handle, 'Last Rebuilt:', timestamp_disp(ent['generated']))
 
 
 def matchmode(v, m):
@@ -653,7 +656,7 @@ class mort_base(builtin_base):
             if v is False:
                 continue
             
-            v = set(ent[f'collection_{m}'][v]['items'])
+            v = set(apdm[m][v]['items'])
             items = [i for i in items if (i[0] in v) == e]
         
         if cull:
@@ -820,7 +823,7 @@ class get_icon_collection(builtin_base):
         if name is False:
             return self.icon
         
-        data = ent[f'collection_{self.colname}'][name]
+        data = apdm[self.colname][name]
         if 'icon' in data:
             return data['icon']
         
@@ -881,7 +884,7 @@ class mort_collection_list(mort_base):
         
         for d, k, n in sort_collection(self.colname, rebuild=True):
             self.items.append((k, d, n))
-            self.datas[k] = ent['collection_' + self.colname][k]['items'].copy()
+            self.datas[k] = apdm[self.colname][k]['items'].copy()
             
             for i, u in enumerate(self.datas[k]):
                 t = pick_thumb(users.get(u, []), do_ext=False)
@@ -985,7 +988,7 @@ class mort_collection(mort_base, get_icon_collection):
             return
         
         self.title = name
-        data = ent['collection_' + self.colname][name]
+        data = apdm[self.colname][name]
         self.data = data
         self.items = data['items']
         
@@ -1090,6 +1093,48 @@ def trtd(things):
     return ret + '\n</tr>\n'
 
 
+class builtin_pie(builtin_base):
+    
+    def __init__(self, title='Pie', icon=None):
+        super().__init__(title, icon)
+    
+    def page(self, handle, path):
+        handle.wfile.write(b'<script src="chart.js"></script>\n')
+
+        data = {}
+        for d in cfg['targetorder'][1:]:
+            data[d] = len(ent['apd'][d.lower()]['posts'])
+        
+        page = '<canvas id="piePosts" style="display: inline-block; width:100%;"></canvas>\n'
+        page += '<script>'
+        page += '''data = {
+    datasets: [{
+        data: ''' + json.dumps(list(data.values())) + ''',
+    
+    backgroundColor: ''' + json.dumps(cfg.get('usercolor', '#ffffff')) + ''',
+    rotation: 0.5,
+    borderWidth: 6,
+    borderColor: "#121212"
+    }],
+    // These labels appear in the legend and in the tooltips when hovering different arcs
+    labels: ''' + json.dumps(list(data)) + '''
+};
+'''
+        page += '''new Chart("piePosts", {
+type: 'pie',
+data: data,
+options: {
+    title: {
+                display: true,
+                text: "Posts by Account"
+    }}
+});
+'''
+        page += '</script>'
+        
+        self.write(handle, page)
+
+
 class builtin_chart(builtin_base):
     
     def __init__(self, title, icon):
@@ -1132,7 +1177,7 @@ type: "line",
         doc += '''\n}]
   },
   options: {
-    legend: {display: false},
+    legend: {display: true},
             title: {
                 display: true,
                 text: "''' + d.get('title', k) + '"'
@@ -1152,7 +1197,7 @@ type: "line",
         return v
 
 
-class abuiltin_period(builtin_chart):
+class builtin_period(builtin_chart):
 
     def __init__(self, title='Period', icon=[0, 2]):
         super().__init__(title, icon)
@@ -1403,14 +1448,14 @@ class abuiltin_period(builtin_chart):
         
         start, end = self.top_stuff(handle, path, pickmode + picktarget)
         
-        seq = self.sift_data(mode, target, start, end)
+        seq = self.sift_data(mode, target, start, end, [])
         
         self.serve_table(handle, seq, self.title)
         
         self.write(handle, '\n</div>\n<div class="foot">')
 
 
-class builtin_posts(abuiltin_period):
+class builtin_posts(builtin_period):
     
     def __init__(self, title='Posts', icon=[3, 1]):
         super().__init__(title, icon)
@@ -1807,7 +1852,7 @@ class builtin_collection(builtin_posts):
             return 'total', {}
         
         data = ent['apd']['total']['posts']
-        col = ent[f'collection_{self.colname}'][self.name]
+        col = apdm[self.colname][self.name]
         posts = [(x, data.get(x, {})) for x in col.get('items', [])]
         
         return 'total', posts
@@ -1906,7 +1951,7 @@ def create_linktodathing(kind, thing, onpage=False, retmode='full', con=None):
         if re.sub(r'\W+ ', '', thing.lower()) != thing.lower():
             linky = f'id.{find_collection(kind, thing, retid=True)}'
         
-        data = ent[f'collection_{kind}'][thing]
+        data = apdm[kind][thing]
         
         if compare_for(apdmm[kind], 'posts', sw=True):
             # show icon if read or unread
@@ -2237,7 +2282,7 @@ class mort_collection_list(mort_base):
         
         for d, k, n in sort_collection(self.colname, rebuild=True):
             self.items.append((k, d, n))
-            self.datas[k] = ent['collection_' + self.colname][k]['items'].copy()
+            self.datas[k] = apdm[self.colname][k]['items'].copy()
             
             i, t = self.pick_collection_thumb(self.datas[k])
             self.datas[k][i] = t
@@ -2366,33 +2411,34 @@ class post_apref(post_base):
 class post_collections(post_base):
     
     def post_logic(self, handle, pargs, data):
+        global apdm
+        
+        if cfg['static']:
+            return {'status': 'Server set to Static'}
         
         mode = pargs[-1]
         query = data.get('query')
         con = data.get('con')
-        mem = 'collection_' + con
         name = data.get('name')
         flag = data.get('flag')
         prop = data.get('prop')
         date = data.get('date')
         
-        if con == None:
+        if con is None:
             return {'status': 'no con specified'}
         
-        dd = cfg['mark_dir']
+        md = cfg['mark_dir']
         ret = {}
         
         if mode == 'for' and query != None:
             ret['sets'] = get_collectioni(con, query)
         
         elif mode == 'new' and name != None:
-            if name not in ent[mem]:
-                ent[mem][name] = {'modified': data['time'], 'items': []}
+            if name not in apdm[con]:
+                apdm[con].write({name: {'modified': data['time'], 'items': []}})
+                ret['name'] = name
                 sort_collection(con, ret=False, rebuild=True)
                 ret['status'] = 'success'
-                
-                if apdmm[con].get('save', True):
-                    apc_write(dd + 'ds_' + con, {name: ent[mem][name]}, {}, 1, volsize=None)
         
         elif mode == '_flag' and flag != None and 'file' in data:
             flag = html.unescape(flag)
@@ -2401,59 +2447,59 @@ class post_collections(post_base):
             if type(files) != list:
                 files = [files]
             
-            oldv = {**ent[mem][flag]}
-            locked = ent[mem][flag].get('lock', False)
+            existing = apdm[con][flag]
             
-            if not locked:
-                for file in files:
-                    ret['status'] = [flag, file not in ent[mem][flag]['items']]
-                    ret[file] = [con, True]
-                    if file in ent[mem][flag]['items']:
-                        ent[mem][flag]['items'].remove(file)
-                        ret[file][1] = get_collectioni(con, file, retcount=True) > 0
-                    else:
-                        ent[mem][flag]['items'].append(file)
-                
-                ent[mem][flag]['modified'] =  data['time']
-                if apdmm[con].get('save', True):
-                    apc_write(dd + 'ds_' + con, {flag: ent[mem][flag]}, oldv, 1, volsize=None)
-            
-            if len(ret) == 0:
+            if existing.get('lock', False):
                 ret['status'] = 'error'
                 ret['message'] = 'Locked: {}'
+                return ret
+            
+            for file in files:
+                ret['status'] = [flag, file not in existing['items']]
+                
+                ret[file] = [con, True]
+                
+                if file in existing['items']:
+                    existing['items'].remove(file)
+                    ret[file][1] = get_collectioni(con, file, retcount=True) > 0
+                
+                else:
+                    existing['items'].append(file)
+            
+            existing['modified'] =  data['time']
+            apdm[con].write({flag: existing})
         
         elif mode == 'prop' and 'name' in data and 'prop' in data:
-            stripset = {re.sub(r'\W+', '', x.lower()): x for x in ent[mem]}
+            stripset = {re.sub(r'\W+', '', x.lower()): x for x in apdm[con]}
             
             sname = name
             if name in stripset:
                 sname = stripset[name]
             
-            if sname in ent[mem]:
-                oldv = {**ent[mem][sname]}
-                ret[name] = [prop, not ent[mem][sname].get(prop, False)]
-                ent[mem][sname][prop] = ret[name][-1]
-                ent[mem][sname]['modified'] =  data['time']
-                
-                if prop == 'delete':
-                    del ent[mem][sname]
-                    sort_collection(mem, ret=False)
-                
-                elif prop == 'sortmepls':
-                    items = sorted([
-                        int(i)
-                        for i in ent[mem][sname]['items']
-                        if i.isdigit()
-                        ])
-                    ent[mem][sname]['items'] = [str(i) for i in items]
-                    sort_collection(mem, ret=False)
-                
-                if apdmm[con].get('save', True):
-                    apc_write(dd + 'ds_' + con, {sname: ent[mem].get(sname, {})}, oldv, 1, volsize=None)
-            
-            else:
+            if sname not in apdm[con]:
                 ret['status'] = 'error'
                 ret['message'] = f'WTF is {name}'
+                return ret
+            
+            existing = apdm[con][sname]
+            ret[name] = [prop, not existing.get(prop, False)]
+            existing[prop] = ret[name][-1]
+            existing['modified'] =  data['time']
+            
+            if prop == 'delete':
+                existing['delete'] = True
+            
+            elif prop == 'sortmepls':
+                items = sorted([
+                    int(i)
+                    for i in existing['items']
+                    if i.isdigit()
+                    ])
+                existing['items'] = [str(i) for i in items]
+                del ent[mem][sname][prop]
+            
+            sort_collection(con, ret=False)
+            apdm[con].write({sname: existing})
         
         return ret
 
@@ -2462,21 +2508,35 @@ class request_handler(BaseHTTPRequestHandler):
     
     def do_GET(self):
         path_long = self.path[1:].lower()
-        path_split = urllib.parse.unquote(self.path)[1:].lower().split('/')
-        #if cfg['developer']:print(path_split)
-        if '' in path_split and len(path_split) > 1:
-            path_split.remove('')
+        path_nice = urllib.parse.unquote(self.path)[1:]
+        path_split = path_nice.lower().split('/')
         
         if path_split[-1] in ent['resources']:
             serve_resource(self, path_split[-1])
             return
         
-        elif path_split[0] == 'i' or path_split[0] == 't':
-            serve_image(self, path_split)
+        b = builtin_base()
+        target = ent['builtin'].get(path_split[0], b)
+        
+        if path_split[0] in ent['builtin'] and target.pages is False:
+            target.serve(self, path_split)
             return
         
-        elif path_split[0] in ent['builtin']:
-            ent['builtin'][path_split[0]].serve(self, path_split)
+        elif path_split == ['']:
+            home = ent['builtin'].get(cfg['homepage_menu'])
+            
+            if home is None:
+                home = ent['builtin'].get('all_pages', b)
+            
+            home.serve(self, path_split)
+            return
+        
+        elif path_split[0] == 'unstuck':
+            ent['building_entries'] = False
+            self.send_response(307)
+            self.send_header('Location', '/')
+            self.end_headers()
+            return
         
         elif path_split[0] == 'stop':
             b.do_head = True
@@ -2486,6 +2546,31 @@ class request_handler(BaseHTTPRequestHandler):
             stop()
             return
         
+        if path_split[-1].isdigit():
+            path_split[-1] = int(path_split[-1])
+        
+        else:
+            self.send_response(307)
+            p = self.path
+            if not p.endswith('/'):p += '/'
+            self.send_header('Location', p + '1')
+            self.end_headers()
+            return
+        
+        if ent['building_entries']:
+            b.do_head = True
+            b.do_foot = True
+            b.building_entries(self)
+            return
+        
+        elif path_split[0] in ent['builtin']:
+            target.serve(self, path_split)
+            return
+
+        b.do_head = True
+        b.do_foot = True
+        b.title = f'/{path_nice} not found'
+        b.error(self, b.title, 'I don\'t know what do')
         return
     
     def do_POST(self):
@@ -2557,15 +2642,13 @@ if __name__ == '__main__':
         # these settings are not saved outside this file
         'developer': True,
         'server_name': 'StatSrv',
-        'server_address': '127.0.0.1',
-        'server_port': 6700,
         'list_count': 15,# users/kewords per page
         'post_count': 25,# posts per page
         'over': 5,# how many posts over the limit a page may extend
-        'apd_dir': 'testing/upd/data/',
-        'data_dir': 'testing/upd/data_period/',
+        'apd_dir': 'data/',
+        'data_dir': 'data_period/',
         'res_dir': 'res/',
-        'mark_dir': 'testing/upd/data/',
+        'mark_dir': 'data/',
         'remote_images': '',
         'homepage_menu': 'nav',
         'dropdown_menu': 'nav',
@@ -2596,12 +2679,6 @@ if __name__ == '__main__':
             {"href": "info"}
             ]
         })
-    
-    if ':' not in code_path:
-        os.chdir('/home/pi/fastat/')
-        cfg['developer'] = False
-        cfg['server_address'] = '192.168.0.66'
-        cfg['apd_dir'] = 'data/'
     
     load_global('strings', {# todo migrate more from code and clean up
 'b.utf8': b'<meta charset="UTF-8">\n\n',
@@ -2640,7 +2717,7 @@ if __name__ == '__main__':
     })
     
     load_global('ent', {
-        'building': False,
+        'building_entries': False,
         
         'config_file': 'statoptions.json',
         'menu_file': 'statmenus.json',
@@ -2686,5 +2763,5 @@ if __name__ == '__main__':
                     logging.error(f"class {k}", exc_info=True)
     
     build_entries(reload=9)
-    httpd = ThreadedHTTPServer((cfg['server_address'], cfg['server_port']), request_handler)
+    httpd = ThreadedHTTPServer((cfg['server_addr'], cfg['server_port']), request_handler)
     httpd.serve_forever()
