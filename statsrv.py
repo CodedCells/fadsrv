@@ -1072,14 +1072,17 @@ class mort_tags(mort_base):
         self.datas = ent['tags']
 
 
+def get_ext(i):
+    return apdm.get('extovr', {}).get(i, ['png'])[0]
+
 def pick_thumb(posts, do_ext=True):
     if isinstance(posts, int):
         posts = []#hack
     
     for i in posts[::-1]:
-        d = {'ext': 'png'}
-        if file_category(d.get('ext', '')) == 'image':
-            if do_ext:i += '.' + d['ext']
+        d = get_ext(i)
+        if file_category(d) == 'image':
+            if do_ext:i += '.' + d
             return i
     
     return 'parrot.svg'
@@ -1505,7 +1508,7 @@ class builtin_posts(builtin_period):
         doc = ''
         remote = cfg.get('remote_images')
         if remote:# do remote link
-            ext = info.get('ext', 'png')
+            ext = get_ext(postid)
             fill = f'<img src="{remote.format(postid)}.{ext}" loading="lazy">'
             doc += line_item.format('', fill)
         
@@ -1581,7 +1584,7 @@ class builtin_posts(builtin_period):
         
         remote = cfg.get('remote_images')
         if remote:# do remote link
-            ext = info.get('ext', 'png')
+            ext = get_ext(postid)
             doc += f'<img src="{remote.format(postid)}.{ext}" loading="lazy">'
         
         desc = info.get('description', '')
@@ -1600,6 +1603,8 @@ class builtin_posts(builtin_period):
             fill += f'\n<a href="/tag/{tag}">{tag}</a>'
         
         doc += fill + '</div>'
+        
+        doc += mark_for('posts', postid)
         
         return doc + '</div>\n'
     
@@ -1665,7 +1670,7 @@ class builtin_posts(builtin_period):
         
         remote = cfg.get('remote_images')
         if remote:# do remote link
-            ext = info.get('ext', 'png')
+            ext = get_ext(postid)
             ret += f'<img src="{remote.format(postid)}.{ext}" loading="lazy">'
         
         title = info.get('title', f'Unavailable: {postid}')
