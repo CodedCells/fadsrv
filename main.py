@@ -3262,7 +3262,7 @@ class mort_tags(mort_base):
         super().__init__(marktype, title, link, icon)
     
     def get_items(self):
-        return kws
+        return list(kws)
     
     def gimme_idc(self):
         self.items = self.get_items()
