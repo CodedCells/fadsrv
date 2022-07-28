@@ -160,7 +160,7 @@ def datasort():
                 kwd[kw].append(post)
     
     if want_tags:
-        kws = sorted(kws, key=lambda k: len(kwd[k]))
+        kws = set(sorted(kws, key=lambda k: len(kwd[k])))
     
     for user, posts in users.items():
         users[user] = [str(x) for x in sorted(posts)]
