@@ -182,6 +182,7 @@ class appender(dict):
         if not os.path.isfile(fn):
             return 0
         
+        i = 0
         with open(fn, encoding=self.encoding) as f:
             for i, _ in enumerate(f):
                 pass
