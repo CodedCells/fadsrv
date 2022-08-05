@@ -160,10 +160,12 @@ def datasort():
                 kwd[kw].append(post)
     
     if want_tags:
-        kws = set(sorted(kws, key=lambda k: len(kwd[k])))
+        kws = sorted(kws, key=lambda k: len(kwd[k]))
     
     for user, posts in users.items():
-        users[user] = [str(x) for x in sorted(posts)]
+        if want_users:
+            users[user] = [str(x) for x in sorted(posts)]
+        
         marked = partial.get(user, 0)
         posts = [post for post in posts if post in posthas]
         if not want_users:# not did above stuff
@@ -1445,7 +1447,7 @@ class eyde_base(builtin_base):
     def build_page_full(self, sa, ea):
         out = ''
         
-        items = self.f_items[sa:ea]
+        items = [str(item) for item in self.f_items[sa:ea]]
         local = get_posts(items)
         descs = descman().get_for(items)
         
@@ -1576,7 +1578,7 @@ class eyde_base(builtin_base):
     def build_page_thumb(self, sa, ea):
         out = ''
         
-        items = self.f_items[sa:ea]
+        items = [str(item) for item in self.f_items[sa:ea]]
         local = get_posts(items)
         
         for item in items:
@@ -1639,7 +1641,7 @@ class eyde_base(builtin_base):
         
         out += '\n</select>\n</div><br>\n'
         
-        items = self.f_items[sa:ea]
+        items = [str(item) for item in self.f_items[sa:ea]]
         local = get_posts(items)
         
         for item in items:
@@ -3262,7 +3264,7 @@ class mort_tags(mort_base):
         super().__init__(marktype, title, link, icon)
     
     def get_items(self):
-        return list(kws)
+        return kws
     
     def gimme_idc(self):
         self.items = self.get_items()
@@ -4209,7 +4211,7 @@ class stats_base(builtin_base):
         
         elif mode == 'week':
             d = self.fromiso(d).isocalendar()
-            return f'{d[0]} w{d[1]}'
+            return f'{d[0]} w{d[1]:02d}'
     
     def path_pick(self, path, options, default):
         
