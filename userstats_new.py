@@ -40,7 +40,7 @@ def get_user(user):
     logging.info(f'get user {user}')
     page = session.get(f'http://www.furaffinity.net/user/{user}/')
     
-    with open(f'dump/user/{user}.html', 'wb') as fh:
+    with open(f'userstats/user/{user}.html', 'wb') as fh:
         fh.write(page.content)
         fh.close()
     
@@ -74,17 +74,17 @@ def main():
     global session
     init_logger('userstat', disp=True)
     
-    cookies = read_secret('../data/secret.json')
+    cookies = read_secret('data/secret.json')
     if not cookies:
         exit()
     
     userstats = appender()
-    userstats.read('userstats')
+    userstats.read('data/userstats')
     
     session = requests.Session()
     session.cookies.update(cookies)
     
-    users = requests.get('http://copi:6970/data/users').json().keys()
+    users = requests.get('http://192.168.0.66:6970/data/users').json().keys()
 
     newusers = []
     
