@@ -1,5 +1,5 @@
 from onefad_web import *
-from append_handler import appender
+from append_handler import *
 
 apdmm = {}
 apdm = {}

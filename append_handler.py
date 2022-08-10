@@ -279,3 +279,79 @@ class appender(dict):
         
         if out:
             self.write_block(lineold, out)
+
+class appender_sharedkeys(appender):
+    
+    def __init__(self):
+        super().__init__()
+        self.skeys = []
+    
+    def read_line_key(self, line):
+        self[line] = []
+    
+    def add_keys(self, d):
+        for k in d:
+            if k not in self.skeys:
+                self.skeys.append(k)
+    
+    def read_value_all(self, d):
+        d = json.loads(d)
+        if type(d) == dict:
+            self.add_keys(d)
+        
+        l = [d.get(i, None) for i in self.skeys]
+        return l
+    
+    def read_line_single(self, line):
+        pd, kv = line.split('\t')
+        self[pd] = self.read_value_all(kv)
+    
+    def read_line_split(self, line):
+        pd, kd, kv = line.split('\t')
+        
+        if pd not in self.rets:
+            self.rets.add(pd)
+            self[pd] = []
+
+        self.add_keys([kd])
+
+        pos = self.skeys.index(kd)
+        while len(self[pd]) <= pos + 1:
+            self[pd].append(None)
+        
+        self[pd][kd] = json.loads(kv)
+    
+    def write_line_key(self, k, v):
+        self[k] = []
+        return f'\n{k}'
+    
+    def write_line_single(self, k, v):
+        self.add_keys(v)
+        
+        l = [v.get(i, None) for i in self.skeys]
+        self[k] = l
+        return f'\n{k}\t{json.dumps(v)}'
+    
+    def write_line_split(self, k, v):
+        self.add_keys(v)
+        
+        l = [v.get(i, None) for i in self.skeys]
+        self[k] = l
+        
+        out = ''
+        for t, i in v.items():
+            out += f'\n{k}\t{t}\t{json.dumps(i)}'
+        
+        return out
+    
+    def dget(self, k, d=None):
+        k = self.get(k, d)
+        if not k:
+            return d
+        
+        d = {}
+        for i, v in enumerate(k):
+            if v != None:
+                d[self.skeys[i]] = v
+        
+        return d
