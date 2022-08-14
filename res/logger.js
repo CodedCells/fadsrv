@@ -36,10 +36,15 @@ function updateListener() {
 	}
 	
 	var levelCounters = document.getElementById("levelCount").children;
+	
 	for (var i = 0; i < data.counts.length; i++) {
 		counts[i] += data.counts[i];
 		if (data.counts[i] > 0)
 			levelCounters[i].children[0].innerHTML = counts[i].toLocaleString();
+		
+		if (counts[i] > 0 && levelCounters[i].style.display != "inherit")
+			levelCounters[i].style.display = "inherit";
+		
 	}
 	
 	gotNewLast = true;

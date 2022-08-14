@@ -68,9 +68,9 @@ class log_filter(object):
             if len(line) > 0 and line[0].isdigit():
                 # only modify if line starts with date
                 add = self.filter_line(line)
-
-            if add > -1:
-                count[add] += 1
+                
+                if add > -1:
+                    count[add] += 1
             
             if add >= self.level:
                 trunc.append(line)
@@ -123,7 +123,8 @@ class builtin_logs(builtin_base):
         
         htmlout = '<div id="levelCount" class="linkthings centered">'
         for n, i in enumerate(loggerlevels):
-            htmlout += f'<a class="log{i}" href="{i[0]}"><span>{counts[n]}</span> {i.title()}</a>'
+            d = ['none', 'inherit'][counts[n] > 0]
+            htmlout += f'<a class="log{i}" style="display:{d}" href="{i[0]}"><span>{counts[n]}</span> {i.title()}</a>'
         
         htmlout += '\n</div>\n'
         
