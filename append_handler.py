@@ -25,6 +25,8 @@ class appender(dict):
         self.volsize = 25000
         self.lines = -1
         self.do_time = False
+        self.keyonly = False
+        self.dbg = []
     
     def setd(i):
         self = i
@@ -61,6 +63,10 @@ class appender(dict):
         self[pd][kd] = self.read_value(kv)
     
     def read_line(self, line):
+        if self.keyonly:
+            self[line.split('\t')[0]] = 0
+            return
+        
         depth = line.count('\t')
         if 0 <= depth < len(self.read_depths):
             return self.read_depths[depth](line)
@@ -86,7 +92,11 @@ class appender(dict):
     
     def write_line(self, k, v):
         if 0 <= self.depth < len(self.write_depths):
-            return self.write_depths[self.depth](k, v)
+            out = self.write_depths[self.depth](k, v)
+            if self.keyonly:
+                self[k] = 0
+            
+            return out
         
         logging.warning(f'unsupported depth: {self.depth}')
         depth_error
@@ -115,7 +125,10 @@ class appender(dict):
         
         size = info.st_size
         if self.do_time or size > 4000000:# >4mb
-            logging.debug(f'Reading {filename} ({size/1000000:,}mb)')
+            dbg = self.dbg
+            if self.keyonly:
+                dbg = dbg + ['keyonly']
+            logging.debug(f'Reading {filename} ({size/1000000:,}mb) {" ".join(dbg)}')
             self.do_time = True
         
         with open(filename, 'r', encoding=self.encoding) as fh:
@@ -131,10 +144,14 @@ class appender(dict):
              encoding='utf8',
              parse=True,
              force=False,
-             dotime=None):
+             dotime=None,
+             keyonly=None):
 
         if force:
             self = {}
+        
+        if keyonly is not None:
+            self.keyonly = keyonly
         
         if filename:
             self.filename = filename
@@ -285,6 +302,7 @@ class appender_sharedkeys(appender):
     def __init__(self):
         super().__init__()
         self.skeys = []
+        self.dbg.append('sharedkeys')
     
     def read_line_key(self, line):
         self[line] = []
