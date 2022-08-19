@@ -1,5 +1,6 @@
 import requests
 
+from append_handler import *
 from onefad import *
 
 def sget(url, d=0):
@@ -297,9 +298,7 @@ def crawl_favourites():
         
         if len(add) > 0:
             logging.info(f'Adding {len(add)} new known posts')
-            apc_write(cfg['apd_dir'] + 'known_faves', add, know,
-                      1, encoding='utf8')
-            know.update(add)
+            know.write(add, volsize=100000)
         
         # check for next page link
         if 'button standard right" href="' in d:
@@ -529,7 +528,8 @@ def configgy():
 
 def main():
     global know, knows
-    know = apc_master().read(cfg['apd_dir'] + 'known_faves', do_time=True)
+    know = appender()
+    know.read(cfg['apd_dir'] + 'known_faves', keyonly=True, dotime=True)
     knows = set(know.keys())
     
     list_local_data()
@@ -669,6 +669,8 @@ if __name__ == '__main__':
         logging.error("Exception occurred", exc_info=True)
     
     logging.info('Done!')
+    del data_store
+    del post_store
     
     if cfg['squash_server']:
         squash_more()
