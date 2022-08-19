@@ -84,6 +84,16 @@ class builtin_logs(builtin_base):
         super().__init__(title, icon)
         self.pagetype = 'builtin_tasker'
     
+    def taskpage_latest(self, handle, path):
+        pid = path[1]
+        prog = ent['log_by_id'][pid]
+        if pid not in ent['task_logs']:
+            return False
+        
+        task = sorted(ent['task_logs'][pid].keys())[-1]
+        path[2] = task
+        return self.taskpage(handle, path)
+    
     def taskpage(self, handle, path):
         pid = path[1]
         prog = ent['log_by_id'][pid]
@@ -250,6 +260,10 @@ class builtin_logs(builtin_base):
         check_running_tasks()
         find_runningg_tasks()
         
+        if len(path) >= 3 and path[2] == 'latest':
+            if self.taskpage_latest(handle, path):
+                return
+        
         if path[-1] in ent['log_by_id']:
             self.progpage(handle, path)
             return
@@ -340,9 +354,9 @@ class builtin_run(builtin_logs):
             self.write(handle, htmlout)
             return
         
-        htmlout = f'<script>function taskRedir() {{window.location.href="/logs/{taskid}";;}}\n'
+        htmlout = f'<script>function taskRedir() {{window.location.href="/logs/{taskid}/latest";;}}\n'
         htmlout += 'var x=setTimeout(taskRedir, 2500);</script>\n'
-        htmlout += '<p>Attemping to take you to the task list for this program.</p>\n'
+        htmlout += '<p>Attemping to take you to the log for this task.</p>\n'
         self.write(handle, htmlout)
     
     def taskicon(self, fn):
