@@ -122,6 +122,9 @@ def datasort():
     
     want_users = len(users) == 0
     want_tags = len(kws) == 0
+    if want_users and '.nouploader' in users_has:
+        del users['.nouploader']
+        users_has.remove('.nouploader')
 
     allposts = set((i, False) for i in altfa)
     allposts.update(set((i, True) for i in apdfa))
@@ -135,8 +138,9 @@ def datasort():
             continue
         
         if want_users:
-            user = data.get('uploader', '.badart').lower().replace('_', '')
-            
+            user = data.get('uploader', '.nouploader').lower().replace('_', '')
+            if user == '.nouploader':
+                logging.debug(f'{post} {has} {data}')
             if user not in users_has:
                 users[user] = []
                 partial[user] = 0
