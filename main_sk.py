@@ -248,16 +248,17 @@ def apd_findnew():
             continue
         # this all between
         
+        if file == 'apdlist':continue
         pd = {**apdfa.dget(postid, {})}
         
         add = [x for x in fields
                if x not in pd
                or (x in ['title', 'uploader'] and not pd[x].strip())]
         
-        if not add:continue
-        if file == 'apdlist':continue
+        if str(postid) not in apdfadesc:
+            add.append('desc')
         
-        add.append('desc')
+        if not add:continue
         
         logging.info(f'Adding data for {file}, adding {json.dumps(add)}')
         c += 1
@@ -506,8 +507,7 @@ def apd_findnew():
                 out = appender()
                 out.write(data, filename=dd + f'outdesc/{block}')
         
-        out = appender()
-        out.write(ch_apdfadesc, volsize=100000, filename=dd + 'apdfadesc')
+        apdfadesc.write(ch_apdfadesc, volsize=100000)
         
         logging.info('Done writing and apply changes')
     
@@ -1233,7 +1233,7 @@ class descman(object):
     def get_apc(self, posts):
         out = {}
         for post in posts:
-            desc = apdfadesc.dget(str(post))
+            desc = apdfadesc.get(str(post))
             if desc:
                 out[post] = desc
         
@@ -2674,7 +2674,7 @@ def create_linktodathing(kind, thing, onpage=False, retmode='full', con=None, or
                 if not uns:
                     pi.append(['seen', ii(32), '', ''])
                 
-                elif uns < got:
+                elif perc < 1:
                     v = wrapme(uns, f=' {:,} ') + wrapme(got)
                     pi.append(['partial', ii(1), '', ''])
             
@@ -5370,12 +5370,12 @@ def load_bigapd(load=True):
     global apdfa, apdfadesc, apdfafol
 
     data_files = ['apdfa', 'apdfafol']
-    if not cfg['desc_split']:
-        data_files.append('apdfadesc')
     
     for k in data_files:
         if k not in globals():
             globals()[k] = appender_sharedkeys()
+    
+    apdfadesc = appender()
     
     gc.collect()
     
@@ -5388,6 +5388,10 @@ def load_bigapd(load=True):
         globals()[k].read(
             cfg['apd_dir'] + k,
             encoding='iso-8859-1', dotime=True)
+    
+    apdfadesc.read(
+        cfg['apd_dir'] + 'apdfadesc',
+        encoding='iso-8859-1', dotime=True, keyonly=cfg['desc_split'])
     
     return True
 
