@@ -111,7 +111,7 @@ class builtin_logs(builtin_base):
         title = ldata.get('name', ldata['prog'])
         
         htmlout = '<script src="/logger.js"></script>\n<div class="pageinner">'
-        htmlout += f'<div class="head"><h2 class="pagetitle"><span>{title}</span></h2></div>\n'
+        htmlout += f'<div class="head"><a href="/logs/{pid}"><h2 class="pagetitle"><span>{title}</span></h2></a></div>\n'
         htmlout += '<div class="container list">\n'
         htmlout += f'<p style="display:none" id="progName">{pid}</p>'
         diff = (datetime.now() - data['dmod']).total_seconds()
