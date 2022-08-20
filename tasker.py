@@ -354,7 +354,7 @@ class builtin_run(builtin_logs):
             self.write(handle, htmlout)
             return
         
-        htmlout = f'<script>function taskRedir() {{window.location.href="/logs/{taskid}/latest";;}}\n'
+        htmlout = f'<script>function taskRedir() {{window.location.href="/logs/{taskid}/latest/";;}}\n'
         htmlout += 'var x=setTimeout(taskRedir, 2500);</script>\n'
         htmlout += '<p>Attemping to take you to the log for this task.</p>\n'
         self.write(handle, htmlout)
