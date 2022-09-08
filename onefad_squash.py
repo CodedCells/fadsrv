@@ -41,7 +41,13 @@ def what_to_do_with(fol, file, rext):
         return 'copy', fol, file
     
     if rext.lower() in ['png', 'jpg', 'jpeg', 'bmp', 'jfif']:
-        src_size = os.path.getsize(fol + file)
+        try:
+            src_size = os.path.getsize(fol + file)
+        
+        except FileNotFoundError:
+            logging.warning(f'Can\'t get size of {fol}{file}')
+            return 'fuck', 'idk', 'haha'
+        
         if src_size < 51200:# fuke us snakk, it'll do
             return 'copy', fol, file
         
@@ -49,18 +55,19 @@ def what_to_do_with(fol, file, rext):
             img = Image.open(fol + file)
         
         except Exception as e:
-            print(e)
-            return 'copy', fol, file
-        
-        if img.mode == 'RGBA':
-            po = Image.new('RGBA', img.size, color='#303030')
-            img = Image.alpha_composite(po, img)
+            logging.error(f"Error while opening image {fol}{file}", exc_info=True)
+            return 'fuck', 'idk', 'haha'
 
-        try:
+        try:        
+            if img.mode == 'RGBA':
+                po = Image.new('RGBA', img.size, color='#303030')
+                img = Image.alpha_composite(po, img)
+            
             img = img.convert('RGB')
         
         except OSError as e:
-            raise Exception('Something went terribly wrong!\nFile: {}\n{}'.format(file, e))
+            logging.error(f"'Something went terribly wrong!\n{fol}{file}", exc_info=True)
+            return 'fuck', 'idk', 'haha'
         
         ratio = img.size[1] / img.size[0]
         if img.size[0] > 2000 and img.size[1] > 2000:

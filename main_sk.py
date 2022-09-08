@@ -4,6 +4,7 @@ import requests
 import gc
 
 from onefad_functions import *
+from fa_parser import *
 
 ent['version'] = '31#2022-08-18'
 
@@ -126,9 +127,9 @@ def datasort():
         del users['.nouploader']
         users_has.remove('.nouploader')
 
-    allposts = set((i, False) for i in altfa)
-    allposts.update(set((i, True) for i in apdfa))
-    for post, has in allposts:
+    allposts = {str(i): False for i in altfa}
+    allposts.update({str(i): True for i in apdfa})
+    for post, has in allposts.items():
         if has:
             data = apdfa.dget(post)
         else:
@@ -140,7 +141,9 @@ def datasort():
         if want_users:
             user = data.get('uploader', '.nouploader').lower().replace('_', '')
             if user == '.nouploader':
-                logging.debug(f'{post} {has} {data}')
+                #logging.debug(f'nouploader {post} {has} {data}')
+                continue
+            
             if user not in users_has:
                 users[user] = []
                 partial[user] = 0
@@ -226,27 +229,18 @@ def apd_findnew():
     if cfg['post_split']:
         files = []
         for i in range(100):
-            i = cfg['image_dir'] + f'{i:02d}/'
+            i = cfg['data_dir'] + f'{i:02d}/'
             if os.path.isdir(i):
                 files += os.listdir(i)
     else:
         files = []
-        if os.path.isdir(cfg['image_dir']):
-            files = os.listdir(cfg['image_dir'])
+        i = cfg['data_dir']
+        if os.path.isdir(i):
+            files = os.listdir(i)
     
     for file in files:
         # todo this extension management is horrible
-        
-        if '.' not in file:
-            logging.info(f'File missing extension: {file}')
-            file += '.'
-        
-        try:
-            postid, postext = file.split('.')
-        except Exception as e:
-            logging.info(f'File has funky extension: {file}')
-            continue
-        # this all between
+        postid = file.split('_desc')[0]
         
         if file == 'apdlist':continue
         pd = {**apdfa.dget(postid, {})}
@@ -266,12 +260,6 @@ def apd_findnew():
             logging.info(f'{c:>5,} posts so far')
         
         made_changes += 1
-        if 'ext' in add:
-            pd['ext'] = postext
-            add.remove('ext')
-            if not add:
-                ch_apdfa[postid] = pd
-                continue
         
         if 'rating' in add:
             if knowns is None:
@@ -300,6 +288,13 @@ def apd_findnew():
             logging.warning(f'Missing data {datafn}')
             made_changes -= 1
             continue
+        
+        wip = parse_postpage()
+        wip.loads(data)
+        
+        ext = wip.get('ext')
+        if 'ext' in add:
+            pd['ext'] = ext
         
         if 'rating' in add:
             if 'name="twitter:data2" content="' in data:
@@ -341,7 +336,17 @@ def apd_findnew():
                 pd['resolution'] = None
         
         if 'srcbytes' in add:
-            pd['srcbytes'] = os.path.getsize(data_path(file, d='image'))
+            fnd = data_path(f'{postid}.{ext}', d='image')
+            sbytes = None
+            
+            if os.path.isfile(fnd):
+                sbytes = os.path.getsize(fnd)
+            
+            else:
+                logging.warning(f'image {fnd} not found')
+            
+            pd['srcbytes'] = sbytes
+                
         
         if not data:
             ch_apdfa[postid] = pd
@@ -1219,6 +1224,12 @@ class descman(object):
     def __init__(self):
         self.ret = {}
     
+    def descfilter(self, desc):
+        if '//a.furaffinity.net/' in desc:
+            desc = desc.replace('//a.furaffinity.net/', '//192.168.0.66:6953/avatar/')
+        
+        return desc
+    
     def get_block(self, block, posts):
         data = appender()
         data.read(
@@ -1227,15 +1238,20 @@ class descman(object):
         
         for post in posts:
             desc = data.get(post)
-            if desc:
-                self.ret[post] = json.loads(desc)
+            if not desc:
+                continue
+            
+            desc = json.loads(desc)
+            self.ret[post] = self.descfilter(desc)
     
     def get_apc(self, posts):
         out = {}
         for post in posts:
             desc = apdfadesc.get(str(post))
-            if desc:
-                out[post] = desc
+            if not desc:
+                continue
+            
+            out[post] = self.descfilter(desc)
         
         return out
     
@@ -2689,7 +2705,7 @@ def create_linktodathing(kind, thing, onpage=False, retmode='full', con=None, or
             pi.append(['notgot', ii(34), '', ''])
     
     elif kind == 'folders':
-        linkdes = apdfafol.dget(thing, {'title': f'Folder {thing}'})['title']
+        linkdes = apdfafol.dget(thing, {}).get('title', f'Folder {thing}')
     
     elif kind == 'tags':
         pass
@@ -3594,7 +3610,7 @@ class mort_review(mort_base):
             self.items = {}
             passed = dpref.get('passed', {})
             for user, date in passed.items():
-                up = user.get(user, {}).get('new_post')
+                up = ustat.dget(user, {}).get('new_post')
                 if up:
                     pd = jsdate(date)
                     up = datetime.utcfromtimestamp(up)
@@ -5538,8 +5554,8 @@ def init_apd():
         os.mkdir(cfg['mark_dir'])
     
     make_apd('apdfa', {'//': {}}, origin=cfg['apd_dir'])
-    if not os.path.isdir(cfg['apd_dir'] + 'descb'):
-        os.mkdir(cfg['apd_dir'] + 'descb')
+    if not os.path.isdir(cfg['apd_dir'] + 'outdesc'):
+        os.mkdir(cfg['apd_dir'] + 'outdesc')
     
     make_apd('apdfafol', {'//': {}}, origin=cfg['apd_dir'])
     

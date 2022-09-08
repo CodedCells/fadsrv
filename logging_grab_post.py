@@ -297,6 +297,8 @@ def crawl_favourites():
                 knows.add(post)
         
         if len(add) > 0:
+            logging.debug(f'New posts {add}')
+            
             logging.info(f'Adding {len(add)} new known posts')
             know.write(add, volsize=100000)
         
@@ -436,6 +438,9 @@ def get_new_data():
         request = False
         c += 1
         
+        if str(post) in skip:
+            continue
+        
         # data check
         hd = has_data(post)
         if post in fnf:
@@ -527,10 +532,13 @@ def configgy():
 
 
 def main():
-    global know, knows
+    global know, knows, skip
     know = appender()
     know.read(cfg['apd_dir'] + 'known_faves', keyonly=True, dotime=True)
     knows = set(know.keys())
+    
+    skip = appender()
+    skip.read(cfg['apd_dir'] + 'grabskip.txt')
     
     list_local_data()
     
@@ -617,7 +625,7 @@ def squash_more():
     
     logging.info('Poking server...')
     tell_unpack()
-    
+    return
     global files, com, rem
     
     mode = cfg['post_store'][main_post].get('mode', None)

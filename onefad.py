@@ -60,10 +60,10 @@ strings = {}
 
 def load_global(gn, val, src={}):
     if type(val) == str:
-        if not os.path.isfile(cfg['apd_dir'] + val):
+        if not os.path.isfile('cfg/' + val):
             return
         
-        val = read_json(cfg['apd_dir'] + val)
+        val = read_json('cfg/' + val)
     
     go = globals().get(gn, src.copy())
     for k, v in val.items():

@@ -34,9 +34,18 @@ div {
 }
 
 #content {
+	text-align: initial;
 	min-height: calc(100% - 60px);
 	margin-top: 60px;
-	margin-left: 240px;
+	margin-left: 210px;
+}
+
+#content .menu {
+	display: none;
+}
+
+#content .head {
+	display: none;
 }
 
 #masthead-container {
@@ -50,12 +59,12 @@ div {
     transition: transform 0.3s ease;
 	height: 55px;
 	
-	border-bottom: 5px solid #272727;
+	background: #272727;
 }
 
 #masthead-container h2 {
     margin: 0;
-	margin-left: 80px;
+	margin-left: 2px;
 	line-height: 55px;
 	font-size: 24pt;
 }
@@ -70,16 +79,25 @@ div {
 
 #guide {
 	text-align: initial;
-	width: 240px;
+	width: 200px;
+	margin: 0 calc(50% - 100px);
 	max-height: 100vh;
 	top: 60px;
 	bottom: 0;
 	left: 0;
 	position: fixed;
-	width: 240px;
 	z-index: 2005;
-	
 	overflow-y: auto;
+}
+
+@media screen and (min-width: 500px) {
+	#guide {
+		margin: 0;
+		border-right: 4px solid #272727;
+	}
+	#content .menu {
+		display: grid;
+	}
 }
 
 .guide-item {
@@ -107,7 +125,6 @@ div {
 	opacity: 0.6;
 	font-style: italic;
 }
-
 
 .guide-item:hover {
 	background-color: #707090;

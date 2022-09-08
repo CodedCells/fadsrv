@@ -738,7 +738,7 @@ def read_config():
     load_global('cfg', ent['config_file'])
     load_global('menus', ent['menu_file'])
     
-    dd = cfg.get('apd_dir', 'data/')
+    dd = 'cfg/'
     
     sf = ent.get('strings_file')
     if not sf or not os.path.isfile(dd + sf):
@@ -760,7 +760,7 @@ def save_config():
         logging.warning('Preventing accidental config loss, please fix config file.')
         return
     
-    dd = cfg.get('apd_dir', 'data/')
+    dd = 'cfg/'
     
     if ent.get('config_file'):
         user_friendly_dict_saver(
@@ -798,7 +798,6 @@ class post__flag(post_base):
         if cfg.get('static_cfg'):
             return {'status': 'Server set to Static for cfg'}
         
-        dd = cfg.get('apd_dir', 'data/')
         ret = {}
         
         flag = pargs[1]

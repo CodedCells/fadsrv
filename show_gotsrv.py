@@ -1,6 +1,6 @@
 from onefad_web import *
 from fa_parser import *
-from append_handler import appender
+from append_handler import *
 import requests
 
 ent['version'] = 1
@@ -172,7 +172,7 @@ def big_action_list_time(reload=0):
     create_menus()
     save_config()
     if reload > 2:
-        sideposts = appender()
+        sideposts = appender()#_sharedkeys()
         sideposts.read(cfg['apd_dir'] + 'sideposts')
     
     # do work here
