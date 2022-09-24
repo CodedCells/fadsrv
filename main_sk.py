@@ -275,6 +275,12 @@ def apd_findnew():
                     ch_apdfa[postid] = pd
                     continue
         
+        if 'srcbytes' in add and 'ext' not in add:
+            add.remove('srcbytes')
+        
+        if not add:
+            continue
+        
         datafn = data_path(postid, s='_desc.html') + '_desc.html'
         
         try:
@@ -346,7 +352,6 @@ def apd_findnew():
                 logging.warning(f'image {fnd} not found')
             
             pd['srcbytes'] = sbytes
-                
         
         if not data:
             ch_apdfa[postid] = pd
