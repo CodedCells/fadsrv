@@ -297,7 +297,7 @@ def crawl_favourites():
                 knows.add(post)
         
         if len(add) > 0:
-            logging.debug(f'New posts {add}')
+            logging.debug(f'New posts {add.keys()}')
             
             logging.info(f'Adding {len(add)} new known posts')
             know.write(add, volsize=100000)
