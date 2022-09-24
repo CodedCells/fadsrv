@@ -251,6 +251,22 @@ class builtin_logs(builtin_base):
         htmlout += '</div>'
         return htmlout
     
+    
+    def display_tasks(self, handle):
+        for group, order in ent['log_group_order']:
+            htmlout = '<div class="taskloglist">'
+            
+            gtasks = ent['log_group'][group]
+            
+            if not group.startswith('_'):
+                self.write(handle, f'<h2>{group}</h2>\n')
+            
+            for task in gtasks:
+                htmlout += self.loglistlink(task)
+            
+            self.write(handle, htmlout+'</div>')
+    
+    
     def page(self, handle, path):
         
         if len(path) >= 3 and path[2].endswith('.txt'):
@@ -268,34 +284,55 @@ class builtin_logs(builtin_base):
             self.progpage(handle, path)
             return
         
-        htmlout = '<div class="pageinner"><div class="head"><h2 class="pagetitle">Task Logs</h2></div>\n'
+        htmlout = f'<div class="pageinner"><div class="head"><h2 class="pagetitle">{self.title}</h2></div>\n'
         htmlout += '<div class="container list">\n'
         self.write(handle, htmlout)
         
-        c = 0
+        self.display_tasks(handle)
+        
+        self.write(handle, '</div></div></div>')
+
+
+class builtin_active(builtin_logs):
+
+    def __init__(self, title='Active', icon=1):
+        super().__init__(title, icon)
+    
+    def display_tasks(self, handle):
+        self.write(handle, '<div class="taskloglist">')
+        
         for group, order in ent['log_group_order']:
-            htmlout = '<div class="taskloglist">'
-            
             gtasks = ent['log_group'][group]
-            
-            if not group.startswith('_'):
-                self.write(handle, f'<h2>{group}</h2>\n')
+            htmlout = ''
             
             for task in gtasks:
                 htmlout += self.loglistlink(task)
             
-            self.write(handle, htmlout+'</div>')
-            c += 1
+            self.write(handle, htmlout)
         
-        htmlout = '</div></div></div>'
-        self.write(handle, htmlout)
+        self.write(handle, '</div>')
+    
+    def loglistlink(self, pid):
+        prog = ent['log_by_id'][pid]
+        ldata = ent['log_data'][prog]
+        title = ldata.get('name', ldata['prog'])
+        htmlout = '<div class="tasklogbox">'
+        htmlout += f'<a href="/logs/{ldata["id"]}">'
+        htmlout += f'<span class="title">{title}</span>'
+        logc = len(ent["task_logs"][pid])
+        htmlout += f' ({logc:,})</a><br>\n'
+        
+        tl = self.tasklist(pid, False)
+        if not tl:
+            return ''
+        
+        return htmlout + tl + '</div>'
 
 
 class builtin_run(builtin_logs):
     
     def __init__(self, title='Run', icon=11):
         super().__init__(title, icon)
-        self.pagetype = 'builtin_tasker'
     
     def do_it(self, data):
         cmd = cfg['script_types'].get(data['ext'], {}).get('cmd')
