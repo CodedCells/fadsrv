@@ -1937,14 +1937,14 @@ class eyde_user(eyde_base):
         else:
             user = ''
         
+        if 'escape' in pargs:
+            user = html.escape(user)
+        
         self.name = f'user:{user}'
         ent['visited_rebuild'].append([self.marktype, user])
         self.title = user
         self.markid = user
         self.items = users.get(user, [])
-        
-        if 'escape' in pargs:
-            user = html.escape(user)
         
         h = ''
         
