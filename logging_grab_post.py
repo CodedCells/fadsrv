@@ -38,7 +38,7 @@ def read_secret(path):
 
 def config_save():
     user_friendly_dict_saver(
-        cfg['apd_dir'] + 'grabpostoptions.json',
+        cfg['cfg_dir'] + 'grabpostoptions.json',
         cfg)
 
 
@@ -498,6 +498,7 @@ def configgy():
         'username': '',
         'exitOnComplete': False,
         'apd_dir': 'data/',
+        'cfg_dir': 'cfg/',
         'data_store': {
             'pm/':  {'mode': 'split'}
             },
@@ -642,7 +643,7 @@ def squash_more():
     com = set(os.listdir('ncomp'))
     logging.info(f'{len(com):,} compressed')
     
-    fl = cfg["squash_server"] + 'data/filelist'
+    fl = cfg["squash_server"] + cfg['apd_dir'] + 'filelist'
     if not os.path.isfile(fl):
         logging.warning(f'Can\'t find filelist at {fl}')
         return
