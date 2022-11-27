@@ -187,10 +187,7 @@ class parse_user_common(parse_basic):
             'registered_date': self.item_username
             })
     
-    def item_username(self, prop):
-        if 'userpage-flex-item username">' not in self.text:
-            return
-        
+    def item_username_prebanner(self, prop):
         tmp = get_prop('userpage-flex-item username">', self.text, t='</div')
         
         username = tmp.split('</')[0].split('>')[-1].strip()
@@ -201,12 +198,39 @@ class parse_user_common(parse_basic):
         user_title = None
         if '"hideonmobile">' in tmp:
             user_title = get_prop('font-small">', tmp, t='<span ').strip()
-
+        
         if user_title:
             self.items['user_title'] = html.unescape(user_title)
         
         tmp = get_prop('Member Since:', tmp, t='</').strip()
         self.items['registered_date'] = strdate(tmp).timestamp()
+        
+        return self.items.get(prop)
+    
+    def item_username(self, prop):
+        if 'userpage-flex-item username">' in self.text:
+            return self.item_username_prebanner(prop)
+        
+        if '<userpage-nav-user-details>' not in self.text:
+            return
+        
+        tmp = get_prop('<userpage-nav-user-details>', self.text, t='</userpage-nav-user-details>')
+        
+        username = get_prop('<username>', tmp, t='</username>').strip()
+        self.items['username'] = username[1:]
+        statuses = {'!': 'suspended', '-': 'banned', '@': 'admin'}
+        self.items['user_status'] = statuses.get(username[0], 'regular')
+        
+        user_title = None
+        if 'class="user-title">' in tmp:
+            user_title = get_prop('class="user-title">', tmp, t='<span').strip()[:-1].strip()
+        
+        if user_title:
+            self.items['user_title'] = html.unescape(user_title)
+
+        if 'Registered:</span> ' in tmp:
+            tmp = get_prop('Registered:</span> ', tmp, t='</').strip()
+            self.items['registered_date'] = strdate(tmp).timestamp()
         
         return self.items.get(prop)
 
