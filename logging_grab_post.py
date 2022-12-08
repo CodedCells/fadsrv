@@ -475,6 +475,7 @@ def get_new_data():
             continue
         
         request = check_post(post, where=main_data)
+        logging.warning(f'Had to check {post}')
         
         if c//500 > la:
             logging.info(f'\taddloop\t{(c // 500) * 500}')
@@ -487,7 +488,7 @@ def get_new_data():
         
         if request:
             time.sleep(cfg['speed'])
-
+    
     if len(apd) > 0:
         apdlist_add(apd)
 
