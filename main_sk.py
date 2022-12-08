@@ -252,6 +252,9 @@ def apd_findnew():
         if str(postid) not in apdfadesc:
             add.append('desc')
         
+        if 'srcbytes' in add and 'ext' not in add:
+            add.remove('srcbytes')
+        
         if not add:continue
         
         logging.info(f'Adding data for {file}, adding {json.dumps(add)}')
@@ -274,9 +277,6 @@ def apd_findnew():
                 if not add:
                     ch_apdfa[postid] = pd
                     continue
-        
-        if 'srcbytes' in add and 'ext' not in add:
-            add.remove('srcbytes')
         
         if not add:
             continue
