@@ -305,7 +305,7 @@ if __name__ == '__main__':
     
     name = ent.get('internal_name', '')
     if len(name) < 4:name += 'srv'
-    init_logger(name, disp=':' in code_path)
+    init_logger(name, disp=':' in code_path, level=logging.INFO)
     
     load_global('cfg', {
         'developer': False,
