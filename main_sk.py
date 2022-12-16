@@ -2118,6 +2118,11 @@ class post_sort_prop(object):
         self.prop = prop
         self.default = default
     
+    def sort(self, values):
+        return sorted([
+            self.value(v) for v in values
+            ])
+    
     def value(self, postid):
         return apdfa.dget(postid, {}).get(self.prop, self.default)
 
@@ -2135,20 +2140,20 @@ class post_sort_prop_none(post_sort_prop):
         return v
 
 
-class post_sort_id(object):
+class post_sort_id(post_sort_prop):
     
     def __init__(self, prop, default):
         self.prop = prop
         self.default = default
     
     def value(self, postid):
-        if postid.isdigit():
+        if str(postid).isdigit():
             return int(postid)
         
         return postid
 
 
-class post_sort_linked(object):
+class post_sort_linked(post_sort_prop):
     
     def __init__(self, prop):
         self.prop = prop
