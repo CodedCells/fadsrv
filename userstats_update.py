@@ -22,6 +22,7 @@ def process_user(user, page, mod=None):
     x.origin = 'web'
     big = x.get_all()
     
+    online = 999999999999
     if big.get('_online_users'):
         online = big['_online_users']
     
