@@ -176,8 +176,9 @@ def datasort():
     if want_tags:
         kws = sorted(kws, key=lambda k: len(kwd[k]))
     
+    sort_id = post_sort_id(None, None)
     for user, posts in users.items():
-        users[user] = [str(x) for x in sorted(posts)]
+        users[user] = [str(x) for x in sort_id.sort(posts)]
         marked = partial.get(user, 0)
         posts = [post for post in posts if post in posthas]
         if not want_users:# not did above stuff
@@ -1031,7 +1032,7 @@ class mark_button(object):
         if '{' in action:
             action = action.format(thing, mark, icon, state)
         
-        return self.build_wrap([thing, mark], state, f' title="{text}" onclick="{action}"', icon)
+        return self.build_wrap([str(thing), str(mark)], state, f' title="{text}" onclick="{action}"', icon)
     
     def build_wrap(self, namep, cla, arg, inner):
         if namep[0] is None:return ''
