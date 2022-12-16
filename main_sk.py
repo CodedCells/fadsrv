@@ -1126,6 +1126,9 @@ class mark_button(object):
 
 
 def mark_for(kind, thing, wrap=False, size=60, page=None):
+    if not cfg.get('do_mark_buttons', True):
+        return ''
+    
     # get all marks for a thing of a kind
     # wrap adds a container box
     out = ''
@@ -5745,6 +5748,7 @@ if __name__ == '__main__':
         
         'homepage_menu': 'menu',
         'dropdown_menu': 'menu',
+        'do_mark_buttons': True,
         'do_button_align': False,
         'mark_button_align': 'center',
         'modify_button_align': True,
