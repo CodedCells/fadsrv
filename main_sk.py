@@ -4196,7 +4196,7 @@ class stats_base(builtin_base):
         super().__init__(title, icon)
         self.table_name = 'Add a name silly!'
         self.cluster = True
-        self.charte = '<canvas id="{}" style="width:100%;max-width:700px"></canvas>\n'
+        self.charte = '<canvas id="{}" style="max-width:500px;display:inline-block"></canvas>\n'
         self.chartc = '''new Chart("##name##", {
   type: "##TYPE##",
   data: {
