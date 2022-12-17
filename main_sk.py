@@ -4795,7 +4795,7 @@ class builtin_config(builtin_config):
         self.ez_menu(
             handle, path, 'Edit Menus', self.icon, eles)
         
-        doc = '<button onclick="">Create New</button>'
+        doc = '<!--<button onclick="">Create New</button>-->'
         self.write(handle, doc)
     
     def edit_mark(self, handle, mark):
@@ -4856,7 +4856,7 @@ class builtin_config(builtin_config):
         self.ez_menu(
             handle, path, 'Edit Marks', self.icon, eles)
         
-        doc = '<button onclick="">Create New</button>'
+        doc = '<!--<button onclick="">Create New</button>-->'
         self.write(handle, doc)
     
     def edit_profiles(self, handle, path):
