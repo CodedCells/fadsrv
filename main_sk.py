@@ -4751,8 +4751,9 @@ class builtin_config(builtin_config):
     def __init__(self, title='Configure', icon=12):
         super().__init__(title, icon)
         self.subpages.update({
-            'test': [self.testsub, 'Test', 60],
+            #'test': [self.testsub, 'Test', 60],
             'menus': [self.edit_menus, 'Menus', 59],
+            #'oldmenu': [self.edit_oldmenu, 'Old Menu', 0],
             'marks': [self.edit_marks, 'Marks', 3],
             'profiles': [self.edit_profiles, 'Profiles', 65],
             })
@@ -4844,6 +4845,25 @@ class builtin_config(builtin_config):
         self.write(handle, doc)
     
     def edit_profiles(self, handle, path):
+        profiles = ent['profiles']
+        if len(path) > 2 and path[2] in profiles:
+            self.write(handle, path[2])
+            return
+        
+        eles = [{
+            'label': v.get('_label', k),
+            'icon': v.get('_icon', 99),
+            'href': f'/config/profiles/{k}'}
+            for k, v in profiles.items()
+            ]
+        
+        self.ez_menu(
+            handle, path, 'Edit Profiles', self.icon, eles)
+        
+        doc = '<!--<button onclick="">Create New</button>-->'
+        self.write(handle, doc)
+    
+    def edit_oldmenu(self, handle, path):
         h = '<p>Menus:</p>'
         s = '\n<script>\nvar menuPages = {'
         butt = {}
