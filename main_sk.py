@@ -4661,7 +4661,8 @@ def serve_image(handle, path, head=True):
     ext = path.split('.')[-1]
     
     fp = post_path(path.split('/')[-1])
-    if '/pageimg/' in path:
+    
+    if path.startswith('pages/pageimg/'):
         fp = path
     
     if fp and os.path.isfile(fp):
@@ -5213,15 +5214,15 @@ class fa_req_handler(BaseHTTPRequestHandler):
         path_split = path_nice.lower().split('/')
         
         if path_split[0] == 'pageimg':# hack
-            path_long = 'i/pages/' + path_long
+            path_nice = 'i/pages/' + path_nice
         
         if path_split[-1] in ent['resources']:
             serve_resource(self, path_split[-1])
             return
         
-        elif (path_long.startswith('i/') or
-              path_long.startswith('t/')):
-            serve_image(self, urllib.parse.unquote(self.path[3:]))
+        elif (path_nice.startswith('i/') or
+              path_nice.startswith('t/')):
+            serve_image(self, path_nice[2:])
             return
         
         b = builtin_base()
