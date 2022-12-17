@@ -4762,7 +4762,23 @@ class builtin_config(builtin_config):
         self.write(handle, 'Success')
     
     def edit_menu(self, handle, menu):
-        self.write(handle, f'<h2>{menu}</h2>\n')
+        doc = '<div class="container">\n'
+
+        inlineicn = '<i class="iconsheet teenyicon" {} vertical-align: middle;"></i> {}'
+        data = menus['pages'][menu]
+        doc += f'\n<h1>ds_{menu}</h1>\n'
+        
+        data['icon'] = data.get('icon', [-1, -1])
+        
+        for k, v in data.items():
+            if k == 'icon':
+                v = inlineicn.format(markicon(v[0], v[1], -24), v)
+                doc += f'<p>{k}: {v}</p>\n'
+                continue
+            
+            doc += f'\n<div class="setting">{self.configure_item(menu, k, v, func="menucfg")}\n</div>'
+        
+        self.write(handle, doc)
     
     def edit_menus(self, handle, path):
         pages = menus.get('pages', {})
@@ -4783,7 +4799,7 @@ class builtin_config(builtin_config):
         self.write(handle, doc)
     
     def edit_mark(self, handle, mark):
-        doc = '<div class="container list">\n'
+        doc = '<div class="container">\n'
 
         inlineicn = '<i class="iconsheet teenyicon" {} vertical-align: middle;"></i> {}'
         data = apdmm[mark]
@@ -4801,8 +4817,7 @@ class builtin_config(builtin_config):
             elif k == 'values' or k == 'valueicon':
                 continue
             
-            doc += self.configure_item('apdmm', k, v)
-            
+            doc += f'\n<div class="setting">{self.configure_item(mark, k, v, func="apdmcfg")}\n</div>'
         
         self.write(handle, doc)
         doc = ''
