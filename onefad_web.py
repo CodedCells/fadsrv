@@ -627,7 +627,7 @@ class builtin_config(builtin_menu):
             }
     
     @staticmethod
-    def configure_item(mode, k, v):
+    def configure_item(mode, k, v, func='cfg'):
         name = strings.get(mode + f'.{k}.name', k)
         label = strings.get(mode + f'.{k}.label', '').replace('\n', '<br>')
         inner = f'<div class="info">\n<h2>{name}</h2>\n<p>{label}</p>\n</div>'
@@ -654,7 +654,7 @@ class builtin_config(builtin_menu):
             inner += '</p>\n</div>'
             return inner
         
-        scr = f"cfg('{k}', '{mode}')"
+        scr = f"{func}('{k}', '{mode}')"
         inner += f'''<div>
 <input class="niceinp" id="{k}" type="{inptype}" value="{v}">
 <button class="mbutton" onclick="{scr}">Apply</button>\n</div>'''
