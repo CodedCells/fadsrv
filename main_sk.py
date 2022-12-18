@@ -5783,6 +5783,7 @@ if __name__ == '__main__':
         'skip_bigdata': False,
         'skip_findnew': False,
         
+        'responsive': True,
         'homepage_menu': 'menu',
         'dropdown_menu': 'menu',
         'do_mark_buttons': True,
