@@ -5664,7 +5664,8 @@ if __name__ == '__main__':
     code_path = os.path.dirname(__file__)
     init_logger('fadsrv', disp=':' in code_path)
     
-    os.chdir(code_path)
+    if code_path:
+        os.chdir(code_path)
     
     load_global('strings',{# todo migrate more from code and clean up
 'responsive': '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n',
