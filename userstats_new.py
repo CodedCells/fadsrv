@@ -40,7 +40,11 @@ def get_user(user):
     logging.info(f'get user {user}')
     page = session.get(f'http://www.furaffinity.net/user/{user}/')
     
-    with open(f'userstats/user/{user}.html', 'wb') as fh:
+    path = 'userstats/user/'
+    if not os.path.isdir(path):
+        os.makedirs(path)
+    
+    with open(f'{path}{user}.html', 'wb') as fh:
         fh.write(page.content)
         fh.close()
     
