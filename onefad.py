@@ -40,7 +40,7 @@ def init_logger(prog,
     fmt = ['asctime', 'levelname', 'message']
     fmt = '\t'.join(f'%({x})s' for x in fmt)
     logging.basicConfig(filename=fn,
-                        encoding='utf-8',
+#                        encoding='utf-8',
                         level=level,
                         format=fmt)
     
