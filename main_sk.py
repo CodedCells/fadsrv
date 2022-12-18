@@ -5115,7 +5115,7 @@ class post_data(post_base):
             
             ret = {}
             for i in data['posts']:
-                data = datsrc.get(i)
+                data = datsrc.dget(i)
                 if data:
                     ret[i] = data
             
