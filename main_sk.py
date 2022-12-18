@@ -2249,6 +2249,10 @@ class eyde_filter(eyde_base):
     def filter_items_by(self, s, m):
         self.items = [f for f in self.items if (f in s) == m]
     
+    def filter_items_unresolved(self):
+        data = set(get_posts(self.items))
+        self.items = [f for f in self.items if f not in data]
+    
     def filter_param_str(self, p):
         if ':' in p:
             k = p.split(':')
@@ -2401,7 +2405,7 @@ class eyde_filter(eyde_base):
         
         h += '</div>\n<div class="filterTab">\n'
         
-        for k in ['Unavailable', 'Descpost']:
+        for k in ['Unavailable', 'Unresolved', 'Descpost']:
             h += self.filter_widget(
                 'checkbox', k, ['', k], [], '@'+k.lower() in a)
         
@@ -2466,6 +2470,7 @@ class eyde_filter(eyde_base):
             m, t, b = p_and, 0, True
             if p in [
                 '@unavailable',
+                '@unresolved',
                 '@all',
                 '@unmarked',
                 '@marked',
@@ -2528,6 +2533,9 @@ class eyde_filter(eyde_base):
         
         if not unav_skip and ('@', 'unavailable') in p_arg:
             self.filter_items_by(ent['_posts'], False)
+        
+        if ('@', 'unresolved') in p_arg:
+            self.filter_items_unresolved()
         
         if not has_sort:# default sort
             self.filter_arg_do('sort', 'id')
