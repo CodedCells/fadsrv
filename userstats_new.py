@@ -115,8 +115,9 @@ def main():
         c += 1
         try:
             data = get_user(user)
-        except:
-            logging.warning(f'Error on {user}')
+        except Exception as e:
+            logging.error(f"Error on {user}", exc_info=True)
+            data = None
         
         if not data:
             continue
