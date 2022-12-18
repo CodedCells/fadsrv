@@ -4764,7 +4764,8 @@ class builtin_config(builtin_config):
     
     def edit_menu(self, handle, menu):
         doc = '<div class="container">\n'
-
+        doc += '<b class="wip">Not functional yet!</b>\n'
+        
         inlineicn = '<i class="iconsheet teenyicon" {} vertical-align: middle;"></i> {}'
         data = menus['pages'][menu]
         doc += f'\n<h1>ds_{menu}</h1>\n'
@@ -4801,7 +4802,8 @@ class builtin_config(builtin_config):
     
     def edit_mark(self, handle, mark):
         doc = '<div class="container">\n'
-
+        doc += '<b class="wip">Not functional yet!</b>\n'
+        
         inlineicn = '<i class="iconsheet teenyicon" {} vertical-align: middle;"></i> {}'
         data = apdmm[mark]
         doc += f'\n<h1>ds_{mark}</h1>\n'
@@ -4863,7 +4865,7 @@ class builtin_config(builtin_config):
     def edit_profiles(self, handle, path):
         profiles = ent['profiles']
         if len(path) > 2 and path[2] in profiles:
-            self.write(handle, path[2])
+            self.write(handle, '<b class="wip">Not functional yet!</b>\n')
             return
         
         eles = [{
