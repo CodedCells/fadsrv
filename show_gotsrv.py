@@ -1040,7 +1040,7 @@ class builtin_info(builtin_base):
         self.write(handle, doc)
         
         self.stat(handle, 'Server Time Now', timestamp_disp(now))
-        self.stat(handle, 'Last Rebuilt:', timestamp_disp(ent['built_at']))
+        self.stat(handle, 'Last Rebuilt', timestamp_disp(ent['built_at']))
         self.stat(handle, 'Posts', len(sideposts))
         self.stat(handle, 'Last Posts', ent['lastposts'])
 
