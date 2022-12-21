@@ -1287,13 +1287,16 @@ class post_mgot_parse(post_mgot):
         posts = self.get_posts(
             data.get('path'), data.get('raw'))
         
-        logging.debug(f'data give {len(posts)} {data.get("path", None)}')
+        new = {}
         if posts:
             new = {post: info
                    for post, info in posts.items()
                    if post not in sideposts}
-            
-            sideposts.write(new, volsize=100000)
+           
+            if new:
+                sideposts.write(new, volsize=100000)
+        
+        logging.debug(f'data give {len(posts)} {data.get("path", None)} new {len(new)}')
         
         posts = set(data.get('posts', []) + list(posts))
         
