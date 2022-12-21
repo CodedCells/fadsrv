@@ -1,6 +1,6 @@
 from onefad_functions import *
 
-ent['version'] = '25'
+ent['version'] = '26'
 
 end_of_time = datetime.fromisoformat('9999-01-01')
 
@@ -67,7 +67,7 @@ def load_apd():
 
     apdmark = {}
     
-    scandir = cfg['apd_dir']
+    scandir = cfg['mark_dir']
     
     for f in os.listdir(scandir):
         if '.' in f or f[-1].isdigit():
@@ -84,6 +84,22 @@ def load_apd():
     ent['apdmark'] = [y for x, y in sorted(order)]
     
     ent['loaded_apd'] = True
+
+
+def load_user_config():
+    global ent
+    
+    read_config()
+    
+    if 'all_pages' not in menus['pages']:
+        menus['pages']['all_pages'] = {
+            "title": "All Pages",
+            "mode": "wide-icons-flat",
+            "buttons": "all_pages_buttons",
+            "icon": [9, 9]
+            }
+    
+    logging.info('Loaded strings')
 
 
 def register_dynamic():
@@ -138,13 +154,7 @@ def register_dynamic():
         if m not in ent['builtin']:
             ent['builtin'][m] = builtin_menu(which=m)
     
-    if 'all_pages' not in menus['pages']:
-        menus['pages']['all_pages'] = {
-            "title": "All Pages",
-            "mode": "wide-icons-flat",
-            "buttons": "all_pages_buttons",
-            "icon": [9, 9]
-            }
+    
     
     menus['all_pages_buttons'] = []
     rbcat = {
@@ -244,9 +254,10 @@ def build_entries(reload=0):
     ent['building_entries'] = True
     ent['generated'] = datetime.now()
     logging.info('Building')
-    read_config()
+    load_user_config()
     
     if reload > 1:
+        init_apd()
         load_apd()
     
     apdm_divy()
@@ -259,8 +270,9 @@ def build_entries(reload=0):
         }
     
     group_tags(force=True)
-    register_dynamic()
     save_config()
+    
+    register_dynamic()
     
     ent['building_entries'] = False
     logging.info('Ready.')
@@ -268,10 +280,6 @@ def build_entries(reload=0):
 
 def sort_records():
     global ent, cfg
-
-    order = appender()
-    order.read(cfg['apd_dir'] + 'targetorder')
-    cfg['targetorder'] = ['Total'] + list(order)
     
     ent['targets'] = {x.lower(): x for x in cfg['targetorder']}
     ent['apd'] = {
@@ -281,28 +289,32 @@ def sort_records():
     total_period = {}
     merge_period = {}
     
-    for fn in os.listdir(cfg['data_dir']):
+    for fn in sorted(os.listdir(cfg['data_dir'])):
         file = fn.lower()
         if file.endswith('_posts'):
             part = 'posts'
         
-        elif file.endswith('_period'):
+        elif file.endswith('_trunc'):
             part = 'period'
         
         else:
             continue
         
-        user = file[:-len(part)-1]
+        user = file[:-6]
         logging.debug(f'Found {user} {part}')
         
         if user not in ent['apd']:
             ent['apd'][user] = {}
             if user not in ent['targets']:
-                ent['targets'][user] = user
+                ent['targets'][user] = fn[:-6]
+                cfg['targetorder'].append(fn[:-6])
         
         data = appender()
         data.read(cfg['data_dir'] + fn, dotime=True)
         ent['apd'][user][part] = data
+        
+        if user in cfg['total_ignore']:
+            continue
         
         if part == 'posts':
             for t, p in ent['apd'][user]['posts'].items():
@@ -310,7 +322,7 @@ def sort_records():
                     **p,
                     'user': ent['targets'][user]}
         
-        elif part == 'period':
+        if part == 'period':
             for t, p in ent['apd'][user]['period'].items():
                 t = t[:13]
                 if t not in total_period:
@@ -383,6 +395,7 @@ def timestamp_disp(t):
     
     return t.strftime('%b %d, %Y %H:%M')
 
+
 class builtin_info(builtin_base):
     
     def __init__(self, title='Info', icon=[3, 3]):
@@ -401,7 +414,13 @@ class builtin_info(builtin_base):
         self.write(handle, doc)
         
         self.stat(handle, 'Server Time Now', timestamp_disp(now))
-        self.stat(handle, 'Last Rebuilt:', timestamp_disp(ent['generated']))
+        self.stat(handle, 'Last Rebuilt', timestamp_disp(ent['generated']))
+        
+        doc = '<h2>Stats from:</h2>\n'
+        for user in cfg['targetorder']:
+            doc += f'<p>{user}</p>\n'
+        
+        self.write(handle, doc)
 
 
 def matchmode(v, m):
@@ -850,112 +869,6 @@ class get_icon_collection(builtin_base):
         return h
 
 
-class mort_collection_list(mort_base):
-    
-    def __init__(self, colname, plural):
-        self.colname = colname
-        marktype = colname
-        title = plural
-        self.name = plural
-        link = lister_linker(marktype)
-        icon = apdmm[colname].get('icon', None)
-        self.rebuildread = True
-        self.doread = apdmm[self.colname].get('doReadCount', False)
-        super().__init__(marktype, title, link, icon, con=colname)
-        
-        if self.doread:
-            self.modes_default = 'all'
-            self.modes = {
-                'all': 'All',
-                'unread': 'Unread',
-                'read': 'Read',
-                'part': 'Partial'
-                }
-            self.page_options.append(list(self.modes))
-        
-        self.hide_empty = False
-        self.pagetype = 'remort_mark'
-    
-    def gimme(self, pargs):
-        self.items = []
-        self.datas = {}
-        if self.rebuildread and self.doread:
-            prefr = set(dpref.get('read', {}))
-        
-        for d, k, n in sort_collection(self.colname, rebuild=True):
-            self.items.append((k, d, n))
-            self.datas[k] = apdm[self.colname][k]['items'].copy()
-            
-            for i, u in enumerate(self.datas[k]):
-                t = pick_thumb(users.get(u, []), do_ext=False)
-                if t != 'parrot.svg':
-                    self.datas[k][i] = t
-                    break
-            
-            if self.rebuildread and self.doread:
-                self.read[k] = 0
-                for p in self.datas[k]:
-                    if p not in prefr:
-                        self.read[k] += 1
-        
-        self.title = self.name
-        if self.modes:
-            list_mode, wr = self.mode_picker(pargs)
-            if list_mode != 'all':
-                self.title += f' ({self.modes[list_mode]})'
-            
-            if list_mode == 'unread':
-                self.items = [(k, d, n)
-                              for k, d, n in self.items
-                              if self.read.get(k, 0)]
-            
-            elif list_mode == 'read':
-                self.items = [(k, d, n)
-                              for k, d, n in self.items
-                              if not self.read.get(k, 0)]
-            
-            elif list_mode == 'part':
-                self.items = [(k, d, n)
-                              for k, d, n in self.items
-                              if 0 < self.read.get(k, 0) < len(self.datas[k])]
-        
-        else:
-            self.title = self.name
-            list_mode, wr = self.modes_default, ''
-        
-        self.headtext[0] = wr
-        
-        
-        if False:#self.doread:
-            self.title = self.name
-            
-            if 'unread' in str(pargs[1]):
-                self.items = [(k, d, n) for k, d, n in self.items if self.read.get(k, 0)]
-                self.title += ' (Unread)'
-            
-            elif 'read' in str(pargs[1]):
-                self.items = [(k, d, n) for k, d, n in self.items if not self.read.get(k, 0)]
-                self.title += ' (Read)'
-            
-            elif 'partial' in str(pargs[1]):
-                self.items = [(k, d, n) for k, d, n in self.items if 0 < self.read.get(k, 0) < len(self.datas[k])]
-                self.title += ' (Partial)'
-            
-            h = '<div class="userinfo">'
-            for m in ['Unread', 'Read', 'Part']:
-                h += f'<a href="/{self.colname}/{m}/1">{m}</a><br>'
-            
-            h += '</div>'
-            self.headtext[0] = h
-    
-    def purge(self, strength):
-        super().purge(strength)
-        
-        if self.clear_threshold <= strength:
-            self.read = {}
-            self.rebuildread = True
-
-
 def mimic_data(mimic, pargs):
     if mimic in ent['builtin']:
         ent['builtin'][mimic].gimme(pargs)
@@ -1103,7 +1016,12 @@ class builtin_pie(builtin_base):
     
     def page(self, handle, path):
         handle.wfile.write(b'<script src="chart.js"></script>\n')
-
+        
+        # source: https://lospec.com/palette-list/dawnbringer-16
+        db16 = ['#140c1c', '#442434', '#30346d', '#4e4a4e', '#854c30', '#346524', '#d04648', '#757161', '#597dce', '#d27d2c', '#8595a1', '#6daa2c', '#d2aa99', '#6dc2ca', '#dad45e', '#deeed6']
+        
+        palette = cfg['usercolor'] + db16
+        
         data = {}
         for d in cfg['targetorder'][1:]:
             data[d] = len(ent['apd'][d.lower()]['posts'])
@@ -1114,7 +1032,7 @@ class builtin_pie(builtin_base):
     datasets: [{
         data: ''' + json.dumps(list(data.values())) + ''',
     
-    backgroundColor: ''' + json.dumps(cfg.get('usercolor', '#ffffff')) + ''',
+    backgroundColor: ''' + json.dumps(palette) + ''',
     rotation: 0.5,
     borderWidth: 6,
     borderColor: "#121212"
@@ -1275,6 +1193,9 @@ class builtin_period(builtin_chart):
                 views += p['views']
                 faves += p['faves']
             
+            if posts - posts_prev < 0:
+                continue
+            
             posts_new, posts_prev = posts - posts_prev, posts
             views_new, views_prev = views - views_prev, views
             faves_new, faves_prev = faves - faves_prev, faves
@@ -1401,9 +1322,9 @@ class builtin_period(builtin_chart):
         modename = self.division.get(mode, mode)
         
         self.default_limit = {
-            'hour': -168,
-            'day': -576,# 24 days
-            'week': -1344# 8 weeks
+            'hour': -7*24,
+            'day': -24*24,# 24 days
+            'week': -56*24# 8 weeks
             }.get(mode, None)
         
         if mode == 'hour':
@@ -1524,13 +1445,40 @@ class builtin_posts(builtin_period):
             fill += line_item.format('-quad' + ' r-' + rating.lower(),
                 f'{rating}<span>Rating</span>')
         
-        groups = get_collectioni('postgroup', postid, onlyin=True)
-        lgroup = len(groups)
-        style = '-quad'
-        if lgroup:style += ' on'
-        style += f'" name="{postid}@postgroup" onclick="setsGetMagic(this)'
-        fill += line_item.format(style, f'{lgroup:,} <span>Groups</span>')
+        collectionlist = ''
+        for p, c in ent['mark_buttons'].items():
+            if not compare_for(apdmm[p], 'posts'):
+                continue
+            
+            if not apdmm[p].get('type') == 'collection':
+                continue
+            
+            groups = get_collectioni(p, postid, onlyin=True)
+            mname = apdmm[p]['name_plural']
+            
+            style = '-quad'
+            
+            if groups:
+                style += ' on'
+                cfill = f'\n<div class="linkthings left">{mname}:'
+                for group in groups:
+                    cname = group[0]
+                    cfill += '\n' + line_link.format(f'/{p}/{cname}', cname)
+                
+                collectionlist += cfill + '\n</div>'
+            
+            style += f'" name="{postid}@{p}" onclick="setsGetMagic(this)'
+            fill += line_item.format(style, f'{len(groups):,} <span>{mname}</span>')
+        
         doc += line_item.format('-col', fill)
+        
+        # groups = get_collectioni('postgroup', postid, onlyin=True)
+        # lgroup = len(groups)
+        # style = '-quad'
+        # if lgroup:style += ' on'
+        # style += f'" name="{postid}@postgroup" onclick="setsGetMagic(this)'
+        # fill += line_item.format(style, f'{lgroup:,} <span>Groups</span>')
+        # doc += line_item.format('-col', fill)
         
         fill = line_link.format(f'/view/{postid}', info.get('title', postid))
         fill += line_link.format(
@@ -1554,13 +1502,15 @@ class builtin_posts(builtin_period):
         
         dic += line_item.format('-wide', fill + '</div>')
         
-        if groups:
-            fill = '\n<div class="linkthings left">Groups:'
-            for group in groups:
-                name = group[0]
-                fill += '\n' + line_link.format(f'/postgroup//{name}', name)
+        if collectionlist:
+            dic += line_item.format('-wide', collectionlist)
+        # if groups:
+            # fill = '\n<div class="linkthings left">Groups:'
+            # for group in groups:
+                # name = group[0]
+                # fill += '\n' + line_link.format(f'/postgroup/{name}', name)
             
-            dic += line_item.format('-wide', fill + '</div>')
+            # dic += line_item.format('-wide', fill + '</div>')
         
         doc += line_item.format('', dic)
         return f'<div class="postrow">{doc}</div>\n'
@@ -1736,7 +1686,7 @@ class builtin_posts(builtin_period):
         
         self.write(handle, doc)
         
-        seq = self.sift_data('hour', 'total', start, end, posts)
+        seq = self.sift_data('hour', target, start, end, posts)
         if len(seq.items()) == 0:
             self.write(handle, '<h2>No Content!</h2>\n<p>Might be loading.</p>\n<br>')
             return
@@ -2256,18 +2206,7 @@ class mort_collection_list(mort_base):
         link = lister_linker(marktype)
         icon = apdmm[colname].get('icon', None)
         self.rebuildread = True
-        self.doread = apdmm[self.colname].get('doReadCount', False)
         super().__init__(marktype, title, link, icon, con=colname)
-        
-        if self.doread:
-            self.modes_default = 'all'
-            self.modes = {
-                'all': 'All',
-                'unread': 'Unread',
-                'read': 'Read',
-                'part': 'Partial'
-                }
-            self.page_options.append(list(self.modes))
         
         self.hide_empty = False
     
@@ -2282,47 +2221,15 @@ class mort_collection_list(mort_base):
         self.items = []
         self.datas = {}
         
-        if self.rebuildread and self.doread:
-            prefr = set(dpref.get('read', {}))
-        
         for d, k, n in sort_collection(self.colname, rebuild=True):
             self.items.append((k, d, n))
             self.datas[k] = apdm[self.colname][k]['items'].copy()
             
             i, t = self.pick_collection_thumb(self.datas[k])
             self.datas[k][i] = t
-            
-            if self.rebuildread and self.doread:
-                self.read[k] = 0
-                for p in self.datas[k]:
-                    if p not in prefr:
-                        self.read[k] += 1
         
         self.title = self.name
-        if self.modes:
-            list_mode, wr = self.mode_picker(pargs)
-            if list_mode != 'all':
-                self.title += f' ({self.modes[list_mode]})'
-            
-            if list_mode == 'unread':
-                self.items = [(k, d, n)
-                              for k, d, n in self.items
-                              if self.read.get(k, 0)]
-            
-            elif list_mode == 'read':
-                self.items = [(k, d, n)
-                              for k, d, n in self.items
-                              if not self.read.get(k, 0)]
-            
-            elif list_mode == 'part':
-                self.items = [(k, d, n)
-                              for k, d, n in self.items
-                              if 0 < self.read.get(k, 0) < len(self.datas[k])]
-        
-        else:
-            self.title = self.name
-            list_mode, wr = self.modes_default, ''
-        
+        list_mode, wr = self.modes_default, ''
         self.headtext[0] = wr
     
     def purge(self, strength):
@@ -2633,6 +2540,25 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     """Handle requests in a separate thread.""" 
 
 
+def init_apd():
+    
+    if not os.path.isdir(cfg['apd_dir']):
+        os.mkdir(cfg['apd_dir'])
+    
+    if not os.path.isdir(cfg['mark_dir']):
+        os.mkdir(cfg['mark_dir'])
+    
+    make_apd('ds_postgroup', {'//': {
+        'icon':  ii(0),
+        'name': "Postgroup",
+        "name_plural": "Postgroups",
+        'type': "collection",
+        'for': "posts",
+        "excludeMarked": False,
+        'order': 1
+    }})
+
+
 def stop():
     logging.info('Stopping server')
     time.sleep(2)
@@ -2641,37 +2567,36 @@ def stop():
 
 if __name__ == '__main__':
     code_path = os.path.dirname(__file__)
-    if code_path:
-        os.chdir(code_path)
-    
     init_logger('statsrv', disp=':' in code_path)
     
     load_global('cfg', {
         # these settings are not saved outside this file
-        'developer': True,
+        'developer': False,
         'server_name': 'StatSrv',
         'list_count': 15,# users/kewords per page
         'post_count': 25,# posts per page
         'over': 5,# how many posts over the limit a page may extend
         'apd_dir': 'data/',
+        'mark_dir': 'data_mark/',
         'data_dir': 'data_period/',
         'res_dir': 'res/',
-        'mark_dir': 'data/',
         'remote_images': '',
         'homepage_menu': 'nav',
         'dropdown_menu': 'nav',
         'targetorder': [
             'Total'
             ],
+        'total_ignore': [],
         'allow_data': False,
-        'static': False
+        'static': False,
+        'usercolor': []
         })
     
     load_global('menus', {
         'pages': {
             "nav": {
                 "title": "StatSrv Navigator",
-                "mode": "narrow-icons",
+                "mode": "narrow-icons-flat",
                 "buttons": "nav_buttons",
                 'icon': [6, 9]
                 }
@@ -2682,9 +2607,10 @@ if __name__ == '__main__':
             {"label": "Minthly", "href": "/period/total/month"},
             {"label": "Posts", "href": "posts"},
             {"href": "tags"},
-            {"href": "groups"},
-            {"href": "remort"},
-            {"href": "info"}
+            {"href": "postgroups"},
+            {"href": "all_pages"},
+            {"href": "info"},
+            {"href": "pie"}
             ]
         })
     
