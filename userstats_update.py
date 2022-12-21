@@ -47,11 +47,22 @@ def process_user(user, page, mod=None):
 
 def get_user(user):
     logging.info(f'get user {user}')
-    page = session.get(f'https://www.furaffinity.net/user/{user}/')
+    path = f'/user/{user}/'
+    page = session.get('http://www.furaffinity.net' + path)
     
     with open(f'userstats/user/{user}.html', 'wb') as fh:
         fh.write(page.content)
         fh.close()
+    
+    gs = {
+        "posts": [],
+        "raw": page.text,
+        "path": path
+    };
+    try:
+        requests.post("http://192.168.0.68:6990/mgot_parse", json.dumps(gs))
+    except Exception as e:
+        logging.error("GOTSRV exception", exc_info=True)
     
     smol, big = process_user(user, page.text)
     return smol
