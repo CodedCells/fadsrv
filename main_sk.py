@@ -175,6 +175,7 @@ def datasort():
     
     if want_tags:
         kws = sorted(kws, key=lambda k: len(kwd[k]))
+        kws = set(kws)
     
     sort_id = post_sort_id(None, None)
     for user, posts in users.items():
