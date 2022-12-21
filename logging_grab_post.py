@@ -475,7 +475,8 @@ def get_new_data():
             continue
         
         request = check_post(post, where=main_data)
-        logging.warning(f'Had to check {post}')
+        if hd != 'no':
+            logging.warning(f'Had to check {post} {hd}')
         
         if c//500 > la:
             logging.info(f'\taddloop\t{(c // 500) * 500}')
