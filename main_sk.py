@@ -686,7 +686,7 @@ def register_dynamic():
             if m not in ent['link_to']:
                 ent['link_to'][m] = f'/{name}/{{}}/1'
             
-            if name_list.lower() not in ent['builtin']:
+            if name_listl not in ent['builtin']:
                 ent['builtin'][name_listl] = mort_collection_list(m, name_list)
         
         if compare_for(d, 'posts', sw=True):
