@@ -1,3 +1,9 @@
+## PLEASE USE EXPERIMENTAL BRANCH
+It works a lot better generally despite it's name.
+Gonna put it as master when it's tidy.
+
+----
+
 Python 3 Web Server and Toolset for gathering and browsing content from Fur Affinity posts in customisable lists, quickly and easily.
 
 This project is in active development, some parts are very janky and will need to be fixed.
