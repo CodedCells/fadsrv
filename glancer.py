@@ -301,7 +301,8 @@ def checksys_loop():
 
 if __name__ == '__main__':
     code_path = os.path.dirname(__file__)
-    os.chdir(code_path)
+    if code_path:
+        os.chdir(code_path)
     
     name = ent.get('internal_name', '')
     if len(name) < 4:name += 'srv'

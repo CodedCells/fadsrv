@@ -667,6 +667,9 @@ def prompt_exit():
 
 if __name__ == '__main__':
     code_path = os.path.dirname(__file__)
+    if code_path:
+        os.chdir(code_path)
+    
     user_control = ':' in code_path
     init_logger('grab_post', disp=user_control)
     

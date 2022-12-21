@@ -2641,6 +2641,9 @@ def stop():
 
 if __name__ == '__main__':
     code_path = os.path.dirname(__file__)
+    if code_path:
+        os.chdir(code_path)
+    
     init_logger('statsrv', disp=':' in code_path)
     
     load_global('cfg', {

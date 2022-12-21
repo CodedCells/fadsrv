@@ -3,6 +3,9 @@ import random
 
 if __name__ == '__main__':
     code_path = os.path.dirname(__file__)
+    if code_path:
+        os.chdir(code_path)
+    
     user_control = ':' in code_path
     init_logger('logtest', disp=user_control)
 
