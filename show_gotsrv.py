@@ -1042,6 +1042,7 @@ class builtin_info(builtin_base):
         self.stat(handle, 'Server Time Now', timestamp_disp(now))
         self.stat(handle, 'Last Rebuilt:', timestamp_disp(ent['built_at']))
         self.stat(handle, 'Posts', len(sideposts))
+        self.stat(handle, 'Last Posts', ent['lastposts'])
 
         doc = '<table class="stripy">\n<tr>\n<td>Origin</td>\n<td>Count</td></tr>\n'
         c = 0
@@ -1080,6 +1081,8 @@ def big_action_list_time(reload=0):
     if reload > 2:
         sideposts = appender()#_sharedkeys()
         sideposts.read(cfg['apd_dir'] + 'sideposts')
+    
+    ent['lastposts'] = len(sideposts)
     
     # do work here
     has = {}
