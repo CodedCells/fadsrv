@@ -5361,8 +5361,8 @@ def get_cfg_resources(k):
 
 def load_user_config():
     global ent
-    load_global('cfg', ent['config_file'])
-    load_global('menus', ent['menu_file'])
+    
+    read_config()
     ent['profiles'] = load_global('profiles', 'fadprofiles.json')
     
     if 'all_pages' not in menus['pages']:
@@ -5387,18 +5387,6 @@ def load_user_config():
         for i in v:
             if i.lower() not in ent['resources']:
                 ent['resources'].append(i.lower())
-    
-    st = safe_readfile(cfg['apd_dir'] + 'strings.txt')
-    if not st:return# empty
-    
-    for line in st.split('\n')[1:]:
-        line = line.split('\t')
-        if len(line) == 2:
-            line[1] = line[1].replace('\\n', '\n')
-            if line[0].startswith('b.'):
-                line[1] = bytes(line[1][2:-1], cfg['encoding_serve'])
-            
-            strings[line[0]] = line[1]
     
     logging.info('Loaded strings')
 
