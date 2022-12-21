@@ -669,23 +669,25 @@ def register_dynamic():
         
         if d.get('type', False) == 'collection':
             name = d.get('name', m)
+            name_listl = name.lower()
             
             if compare_for(d, 'posts', sw=True):
-                if name.lower() not in ent['builtin']:
-                    ent['builtin'][name.lower()] = eyde_collection(m)
+                if name_listl not in ent['builtin']:
+                    ent['builtin'][name_listl] = eyde_collection(m)
             
             else:
-                if name.lower() not in ent['builtin']:
-                    ent['builtin'][name.lower()] = mort_collection(m)
+                if name_listl not in ent['builtin']:
+                    ent['builtin'][name_listl] = mort_collection(m)
             
             name_list = d.get('name_plural', name + 's')
-            ent['_collections'][name_list.lower()] = m
+            name_listl = name_list.lower()
+            ent['_collections'][name_listl] = m
             
             if m not in ent['link_to']:
                 ent['link_to'][m] = f'/{name}/{{}}/1'
             
             if name_list.lower() not in ent['builtin']:
-                ent['builtin'][name_list.lower()] = mort_collection_list(m, name_list)
+                ent['builtin'][name_listl] = mort_collection_list(m, name_list)
         
         if compare_for(d, 'posts', sw=True):
             mode = 'posts'
