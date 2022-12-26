@@ -296,7 +296,7 @@ def crawl_favourites():
                 add[post] = data
                 knows.add(post)
         
-        if len(add) > 0:
+        if add:
             logging.debug(f'New posts {add.keys()}')
             
             logging.info(f'Adding {len(add)} new known posts')
@@ -482,15 +482,14 @@ def get_new_data():
             logging.info(f'\taddloop\t{(c // 500) * 500}')
             la = c // 500
             
-            if len(apd) > 0:
+            if apd:
                 apdlist_add(apd)
-                
                 apd = []
         
         if request:
             time.sleep(cfg['speed'])
     
-    if len(apd) > 0:
+    if apd:
         apdlist_add(apd)
 
 
