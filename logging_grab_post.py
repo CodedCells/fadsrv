@@ -1,45 +1,4 @@
-import requests
-
-from append_handler import *
-from onefad import *
-
-def sget(url, d=0):
-    #logging.debug(f'Retrieving {url}')
-    sg = session.get(url)
-    if sg.status_code == 502:
-        logging.info(f'Server gave 502, waiting ({url})')
-        time.sleep(10)
-        return sget(url, d=d+1)
-    
-    #logging.debug(f'Got {url}')
-    return sg
-
-
-def read_secret(path):
-    logging.info(f'Reading secret from {path}')
-    if not os.path.isfile(path):
-        logging.error('Secret File Missing')
-        return None
-    
-    try:
-        cookies = read_json(path)
-    
-    except Exception as e:
-        logging.error("Exception occurred", exc_info=True)
-
-
-    if (isinstance(cookies.get('a'), str) and
-        isinstance(cookies.get('b'), str)):
-        return cookies
-    
-    logging.error('Secret File Incomplete, must have a and b cookies')
-    return None
-
-
-def config_save():
-    user_friendly_dict_saver(
-        cfg['cfg_dir'] + 'grabpostoptions.json',
-        cfg)
+from stray_common import *
 
 
 def file_id_split(fd, s='.'):
@@ -144,7 +103,7 @@ def download_data(post):
     logging.info(f'get data {post}')
     
     state = True
-    sg = sget('https://www.furaffinity.net/view/{}/'.format(post))
+    sg = session_get('https://www.furaffinity.net/view/{}/'.format(post))
     
     x = check_login(sg.text, post)
     if x:
@@ -212,7 +171,7 @@ def check_post(post, where):
     
     if hd == 'no':
         logging.info(f'get img {post}')
-        sg = sget('https:' + fp)
+        sg = session_get('https:' + fp)
         request = True
         
         con = sg.content
@@ -273,7 +232,7 @@ def crawl_favourites():
     while link != '':
         logging.info(f'Page {page}')
         
-        req = sget(link)
+        req = session_get(link)
         d = req.text
         if seqgal not in d:
             logging.warning('uh-oh')
@@ -493,46 +452,6 @@ def get_new_data():
         apdlist_add(apd)
 
 
-def configgy():
-    global cfg, session
-    load_global('cfg', {
-        'username': '',
-        'exitOnComplete': False,
-        'apd_dir': 'data/',
-        'cfg_dir': 'cfg/',
-        'data_store': {
-            'pm/':  {'mode': 'split'}
-            },
-        'post_store': {
-            'im/': {'mode': 'split'}
-            },
-        'poke_servers': {
-            'FADSRV': {'port': 6970, 'post': 'findnew'}
-            },
-        'speed': 1.5,
-        "squash_server": "",
-        "squash_tell": ""
-        })
-    
-    pp = cfg['apd_dir']
-    if not os.path.isdir(pp):
-        os.mkdir(pp)
-    
-    load_global('cfg', 'grabpostoptions.json')
-    config_save()
-
-    if not cfg['username']:
-        logging.error('Set the username in the config')
-        prompt_exit()
-    
-    cookies = read_secret(pp + 'secret.json')
-    if not cookies:
-        prompt_exit()
-    
-    session = requests.Session()
-    session.cookies.update(cookies)
-
-
 def main():
     global know, knows, skip
     know = appender()
@@ -550,27 +469,6 @@ def main():
     logging.info(f'Know {len(know)}')
     
     get_new_data()
-
-
-def poke_servers():
-    logging.info('Notifying servers')
-    for k, v in cfg['poke_servers'].items():
-        logging.info(k)
-        path = v.get('path',
-                     'http://{}:{}/{}/get_post'.format(
-                         v.get('ip', '127.0.0.1'),
-                         v['port'],
-                         v.get('post', '')
-                         )
-                     )
-        try:
-            x = requests.post(path)
-        
-        except:
-            logging.info('Offline.')
-            continue
-        
-        logging.info(f'Status: {x.status_code}')
 
 
 def copy_skip(f, e):
@@ -649,7 +547,9 @@ def squash_more():
         logging.warning(f'Can\'t find filelist at {fl}')
         return
     
-    rem = set(apc_master().read(fl).keys())
+    rem = appender()
+    rem.read(fl, keyonly=True)
+    rem = set(rem)
     
     logging.info(f'{len(rem):,} remote')
     
@@ -658,26 +558,45 @@ def squash_more():
     tell_unpack()
 
 
-def prompt_exit():
-    if user_control:
-        input('\nTerminating')
-    
-    exit()
+load_global('cfg', {
+    'username': '',
+    'apd_dir': 'data/',
+    'data_store': {
+        'pm/':  {'mode': 'split'}
+        },
+    'post_store': {
+        'im/': {'mode': 'split'}
+        },
+    'poke_servers': {
+        'FADSRV': {'port': 6970, 'post': 'findnew/get_post'}
+        },
+    'speed': 1.5,
+    "squash_server": "",
+    "squash_tell": ""
+    })
 
 if __name__ == '__main__':
     code_path = os.path.dirname(__file__)
     if code_path:
         os.chdir(code_path)
     
-    user_control = ':' in code_path
+    user_control = True#':' in code_path
     init_logger('grab_post', disp=user_control)
+    configgy('grabpost')
+
+    if not cfg['username']:
+        logging.error('Set the username in the config')
+        prompt_exit()
     
-    configgy()
-    logging.info(f"squash parth is {cfg['squash_server']}")
-    from onefad_squash import *
+    session_create()
+    
+    if cfg['squash_server']:
+        logging.info(f"squash parth is {cfg['squash_server']}")
+        from onefad_squash import *
     
     try:
         main()
+    
     except Exception as e:
         logging.error("Exception occurred", exc_info=True)
     
@@ -688,4 +607,4 @@ if __name__ == '__main__':
     if cfg['squash_server']:
         squash_more()
     
-    poke_servers()
+    poke_servers(cfg['poke_servers'])
