@@ -426,7 +426,8 @@ def apdlist_add(d):
 
 
 def get_new_data():
-    fnf = apc_master().read(cfg['apd_dir'] + 'posts404')
+    fnf = appender()
+    fnf.read(cfg['apd_dir'] + 'posts404')
     
     logging.info('Finding new posts')
     
@@ -452,8 +453,7 @@ def get_new_data():
             if state:
                 apd.append(post)
             else:
-                apc_write(cfg['apd_dir'] + 'posts404', {post: ''}, fnf, 1)
-                fnf[post] = ''
+                fnf.write({post: ''})
         
         elif hd.startswith('added'):
             apd.append(post)
