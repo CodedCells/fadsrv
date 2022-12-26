@@ -56,9 +56,9 @@ class appender(dict):
     def read_line_split(self, line):
         pd, kd, kv = line.split('\t')
         
-        if pd not in self.rets:
-            self.rets.add(pd)
-            self[pd] = {}
+        #if pd not in self.rets:
+        #    self.rets.add(pd)
+        #    self[pd] = {}
         
         self[pd][kd] = self.read_value(kv)
     
@@ -165,7 +165,7 @@ class appender(dict):
         
         self.block = 0
         
-        self.rets = set(self)
+        #self.rets = set(self)
         
         try:
             while self.read_next_block():
@@ -327,9 +327,9 @@ class appender_sharedkeys(appender):
     def read_line_split(self, line):
         pd, kd, kv = line.split('\t')
         
-        if pd not in self.rets:
-            self.rets.add(pd)
-            self[pd] = []
+        #if pd not in self.rets:
+        #    self.rets.add(pd)
+        #    self[pd] = []
 
         self.add_keys([kd])
 
