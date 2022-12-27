@@ -580,7 +580,7 @@ if __name__ == '__main__':
     if code_path:
         os.chdir(code_path)
     
-    user_control = True#':' in code_path
+    user_control = ':' in code_path
     init_logger('grab_post', disp=user_control)
     configgy('grabpost')
 
