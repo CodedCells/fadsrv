@@ -9,6 +9,7 @@
 // ==/UserScript==
 var server = "http://192.168.0.68:6990/";
 var iDitIt = false;
+var pagePosts = [];
 
 function reqListener () {
 	console.log(this.responseText);
@@ -27,6 +28,11 @@ function send_xhr(url, data, f) {
 function statusPostsBack() {
     var data = JSON.parse(this.responseText);
     console.log(data);
+    for (var k in data) {
+        pagePosts.push(parseInt(k));
+    }
+    pagePosts = pagePosts.sort();
+
     var fig = document.getElementsByTagName("figure");
     var chk = document.createElement("style");
     chk.innerHTML = ".fadcheck {display: block; position: absolute; top: 0; left: 0; width: 24px; height: 24px;";
@@ -156,10 +162,38 @@ function newReady() {
     else {plsWork(null);}
 }
 
-window.addEventListener('keydown', function (e) {
-    if (!(e.ctrlKey)) return// only ctrl + key
 
+function quickNavigateView(dir) {
+    var current = parseInt(window.location.href.split('/')[4]);
+    var visit = pagePosts[0];
+    var act = visit < current;
+
+    if (dir) {
+        visit = pagePosts[pagePosts.length-1];
+        act = current < visit;
+    }
+
+    if (act) {
+        window.location.href = "https://www.furaffinity.net/view/" + visit + "/";
+    }
+}
+
+
+function controlKeys(e) {
     if (e.which == 81) {// q
         document.getElementsByClassName("fav")[0].children[0].click();
     }
+
+    if (e.which == 188) {// ,/<
+        quickNavigateView(false);
+    }
+
+    if (e.which == 190) {// ./>
+        quickNavigateView(true);
+    }
+}
+
+
+window.addEventListener('keydown', function (e) {
+    if (e.ctrlKey) controlKeys(e);// only ctrl + key
 }, false);
