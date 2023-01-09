@@ -353,11 +353,12 @@ class builtin_run(builtin_logs):
         
         try:
             os.system(cmd)
-            return
         
         except Exception as e:
             logging.error(f"Failed to run", exc_info=True)
-            return 'Exception!'
+            return f'Exception! {e}'
+        
+        return
     
     def taskpage(self, handle, path):
         if path[1] not in ent['tasks']:
@@ -368,7 +369,6 @@ class builtin_run(builtin_logs):
         filename = data['filename']
         taskid = data.get('id', filename)
         check_running_task_dir(taskid)
-        #print(prog, taskid)
         
         running = self.tasklist(taskid, False)
         if (data.get('preventMultiple') and
@@ -386,7 +386,7 @@ class builtin_run(builtin_logs):
         
         state = self.do_it(data)
         if state:
-            htmlout = '<p>A broblem occurred.</p>\n'
+            htmlout = '<p>A problem occurred.</p>\n'
             htmlout += f'<p>{state}</p>\n'
             self.write(handle, htmlout)
             return
