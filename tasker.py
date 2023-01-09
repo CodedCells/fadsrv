@@ -443,6 +443,9 @@ class builtin_run(builtin_logs):
 
 
 def register_pages():
+    global ent
+    ent['resources'] = os.listdir(cfg['res_dir'])
+    
     for k in list(globals()):
         if k.startswith('builtin_'):
             register_page(k, 'builtin')
@@ -907,6 +910,8 @@ if __name__ == '__main__':
         
         'homepage_menu': 'menu',
         'dropdown_menu': 'menu',
+        
+        'menu_style_run': 'menubtn-narrow-icons-flat',
 
         'static_cfg': False,
         'allow_data': False,
@@ -933,15 +938,7 @@ if __name__ == '__main__':
         })
     
     load_global('ent', {
-        'resources': [
-            'style.css',
-            'parrot.svg',
-            'icons.svg',
-            'mark.js',
-            'client.js',
-            'chart.js',
-            'logger.js',
-            ],
+        'resources': os.listdir(cfg['res_dir']),
         
         'builtin': {},
         'builtin_post': {},
