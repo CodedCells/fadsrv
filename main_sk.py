@@ -813,6 +813,7 @@ def build_entries(reload=0):
         return
     
     ent['building_entries'] = True
+    ent['loaded_apd'] = False
     ent['generated'] = datetime.now()
     logging.info('Started building entries')
     logging.info(f'reload level: {reload}')
@@ -5512,6 +5513,9 @@ def load_apdmfile(path, pre, fn):
 
 def load_apd():
     global ent, apdmm, apdm, dpref, dprefm, xlink, wp, wpm
+    
+    if ent['loaded_apd']:
+        return
     
     logging.info('Reading Mark files')
     
