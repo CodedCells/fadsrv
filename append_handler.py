@@ -56,9 +56,8 @@ class appender(dict):
     def read_line_split(self, line):
         pd, kd, kv = line.split('\t')
         
-        #if pd not in self.rets:
-        #    self.rets.add(pd)
-        #    self[pd] = {}
+        if pd not in self:
+            self[pd] = {}
         
         self[pd][kd] = self.read_value(kv)
     
