@@ -532,6 +532,48 @@ class builtin_menu(builtin_base):
         self.pagetype = 'builtin_menu'
         self.page_options = []
     
+    def build_element(self, btn, d):
+        if d.get('type', 'button') == 'section':
+            return f'<h2>{d.get("label", "Section")}</h2>\n'
+        
+        i = {'href': d.get('href', ''),
+             'label': d.get('label'),
+             'alt': d.get('alt', '')}
+        
+        part = i['href'].lower().split('/')
+        if i['href'] and '/' not in i['href']:
+            i['href'] = f'/{i["href"]}/1'
+        
+        else:
+            part = part[1:]
+        
+        icon = 1, 5
+        if 'icon' in d:
+            icon = d['icon']
+            if isinstance(icon, int):
+                icon = ii(icon)
+        
+        elif 'x' in d and 'y' in d:
+            icon = d['x'], d['y']
+        
+        elif part and part[0] in ent['builtin']:
+            icon = ent['builtin'][part[0]].get_icon(part)
+            if not i['label']:
+                i['label'] = ent['builtin'][part[0]].title
+            
+            if type(icon) != list or len(icon) != 2:
+                icon = 9, 9
+        
+        i['x'], i['y'] = icon
+        
+        i['x'] *= -100
+        i['y'] *= -100
+        
+        if not i['label']:
+            label = 'Error'
+        
+        return btn.format(**i)
+    
     def build_menu(self, handle, which, minfo, eles):
         title = minfo.get('title', f'Undefined: {which}')
         htmlout = f'<div class="head"><h2 class="pagetitle"><a href="/{which}">{title}</a></h2></div>\n'
@@ -544,47 +586,7 @@ class builtin_menu(builtin_base):
             btn = '<a href="{href}" alt="{alt}">{label}</a><br>\n'
         
         for d in eles:
-            
-            if d.get('type', 'button') == 'section':
-                htmlout += f'<h2>{d.get("label", "Section")}</h2>\n'
-                continue
-            
-            i = {'href': d.get('href', ''),
-                 'label': d.get('label'),
-                 'alt': d.get('alt', ''),
-                 'x': 1, 'y': 5}
-            
-            part = i['href'].lower().split('/')
-            if i['href'] and '/' not in i['href']:
-                i['href'] = f'/{i["href"]}/1'
-            
-            else:
-                part = part[1:]
-            
-            if 'icon' in d:
-                icon = d['icon']
-                if isinstance(icon, int):
-                    icon = ii(icon)
-                i['x'], i['y'] = icon
-            
-            elif 'x' in d and 'y' in d:
-                i['x'], i['y'] = d['x'], d['y']
-            
-            elif part and part[0] in ent['builtin']:
-                icon = ent['builtin'][part[0]].get_icon(part)
-                if not i['label']:
-                    i['label'] = ent['builtin'][part[0]].title
-                
-                if type(icon) == list and len(icon) == 2:
-                    i['x'], i['y'] = icon
-                else:
-                    i['x'], i['y'] = 9, 9
-            
-            i['x'] *= -100
-            i['y'] *= -100
-            if not i['label']:label = 'Error'
-            
-            htmlout += btn.format(**i)
+            htmlout += self.build_element(btn, d)
         
         self.write(handle, htmlout + '</div>\n')
     
