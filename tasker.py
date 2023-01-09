@@ -398,16 +398,12 @@ class builtin_run(builtin_logs):
         self.write(handle, htmlout)
     
     def taskicon(self, fn):
-        d = ent['tasks'][fn]
-        icon = d.get('icon', 99)
-        if isinstance(icon, int):
-            icon = ii(icon)
-
-        ret = f'<div class="taskbutton"><a href="/run/{fn}" alt="{fn}">\n'
-        x = icon[0]*-100
-        y = icon[1]*-100
-        ret += f'<i class="iconsheet ico-40" style="background-position:{x}% {y}%;"></i>\n'
-        ret += f'<span class="menu-label"> {d.get("title", fn)}</span>\n</a>\n</div>\n'
+        d = ent['tasks'].get(fn, {})
+        if 'label' not in d and 'title' in d:
+            d['label'] = d['title']
+        
+        d['href'] = f'/run/{fn}'
+        ret = builtin_menu().build_element(strings.get(cfg.get('menu_style_run')), d)
         return ret
     
     def taskpickpage(self, handle, path):
