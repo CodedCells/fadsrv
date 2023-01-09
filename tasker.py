@@ -8,6 +8,7 @@ loggerlevels = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRIITCAL']
 
 def register_page(k, kind):
     global ent
+    
     n = k
     if not k.endswith('_base'):
         n = '_'.join(k.split('_')[1:])
@@ -200,7 +201,7 @@ class builtin_logs(builtin_base):
         htmlout = ''
         sort = sorted([
             ((now - d['dmod']).total_seconds(), t, d)
-            for t, d in ent['task_logs'][pid].items()])
+            for t, d in ent['task_logs'].get(pid, {}).items()])
         
         old = []
         for m, t, d in sort:
