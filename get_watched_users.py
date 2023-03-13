@@ -61,7 +61,7 @@ def configgy():
     if not os.path.isdir(pp):
         os.mkdir(pp)
     
-    load_global('cfg', 'grabpostoptions.json')
+    load_global('cfg', 'grabpost_options.json')
     #config_save()
 
     if not cfg['username']:

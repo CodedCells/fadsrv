@@ -4,7 +4,7 @@ import shutil, os
 from PIL import Image
 from io import BytesIO
 
-load_global('cfg', 'grabpostoptions.json')
+load_global('cfg', 'grabpost_options.json')
 smb = cfg.get('squash_server')
 
 if smb:
