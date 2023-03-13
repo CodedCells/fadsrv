@@ -4,7 +4,7 @@ import os
 
 class appender(dict):
     
-    def __init__(self):
+    def __init__(self, volsize=None):
         super().__init__(self)
         self.filename = None
         self.modified_date = {}
@@ -22,7 +22,9 @@ class appender(dict):
         
         self.depth = 1
         self.encoding = 'utf8'
-        self.volsize = 25000
+        if volsize == None:
+            volsize = 25000
+        self.volsize = volsize
         self.lines = -1
         self.do_time = False
         self.keyonly = False
