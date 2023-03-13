@@ -67,7 +67,7 @@ def main():
         
         if c % 500 == 0:
             logging.info(f'Updated {c:,} of {work:,} userstats')
-            if ent['online'] > 10000:
+            if ent['online'] > 11000:
                 logging.info(f'Halting, {ent["online"]:,} registerd users')
                 break
     
