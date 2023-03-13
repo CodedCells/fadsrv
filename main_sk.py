@@ -5348,18 +5348,6 @@ class fa_req_handler(BaseHTTPRequestHandler):
         return
 
 
-def get_cfg_resources(k):
-    v = cfg.get(k)
-    
-    if type(v) == str:
-        return [v]
-    
-    if type(v) == list:
-        return v
-    
-    return None
-
-
 def load_user_config():
     global ent
     
@@ -5381,13 +5369,6 @@ def load_user_config():
             'buttons': 'page_buttons',
             "icon": [8, 4]
             }
-    
-    for k in ['resources', 'style_doc', 'script_doc']:
-        v = get_cfg_resources(k)
-        if v == None:continue# No files
-        for i in v:
-            if i.lower() not in ent['resources']:
-                ent['resources'].append(i.lower())
     
     logging.info('Loaded strings')
 

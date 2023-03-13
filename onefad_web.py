@@ -734,8 +734,19 @@ class post_base(builtin_base):
         handle.wfile.write(bytes(json.dumps(ret), 'utf-8'))
 
 
+def get_cfg_resources(k):
+    v = cfg.get(k)
+    
+    if type(v) == str:
+        return [v]
+    
+    if type(v) == list:
+        return v
+    
+    return None
+
 def read_config():
-    global strings
+    global strings, ent
     
     dd = 'cfg/'
     if not os.path.isdir(dd):
@@ -743,6 +754,12 @@ def read_config():
     
     load_global('cfg', ent['config_file'])
     load_global('menus', ent['menu_file'])
+    for k in ['resources', 'style_doc', 'script_doc']:
+        v = get_cfg_resources(k)
+        if v == None:continue# No files
+        for i in v:
+            if i.lower() not in ent['resources']:
+                ent['resources'].append(i.lower())
     
     sf = ent.get('strings_file')
     if not sf or not os.path.isfile(dd + sf):
