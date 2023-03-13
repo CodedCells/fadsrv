@@ -1,4 +1,5 @@
 from stray_common import *
+import imghdr
 
 
 def file_id_split(fd, s='.'):
@@ -163,11 +164,12 @@ def check_post(post, where):
         return request
     
     fd = data_path(post, 'post_store', main_post, fmt='')
-    fn = '{}.{}'.format(post, fp.split('.')[-1])
+    ext = fp.split('.')[-1]
+    fn = f'{post}.{ext}'
     if not os.path.isdir(fd):
         os.makedirs(fd)
     
-    hd = has_post(post, '{}.' + fp.split('.')[-1])
+    hd = has_post(post, '{}.' + ext)
     
     if hd == 'no':
         logging.info(f'get img {post}')
@@ -180,6 +182,11 @@ def check_post(post, where):
             logging.error(f'!!! RESPONSE RETURNED ERROR GIF FOR {post} !!!')
             return
         
+        oldext, ext = ext, imghdr.what(None, sg.content)
+        if (oldext != ext):
+            logging.debug(f'Changed extension for {post} from "{oldext}" to "{ext}"')
+        
+        fn = f'{post}.{ext}'
         with open(fd + fn, 'wb') as fh:
             fh.write(sg.content)
             fh.close()
@@ -418,7 +425,8 @@ def get_new_data():
             apd.append(post)
         
         elif hd == 'already':
-            pass
+            if post not in data_store[main_data]:
+                apd.append(post)
         
         elif hd == 'err':
             pass
@@ -524,9 +532,17 @@ def squash_more():
         return
     
     logging.info('Poking server...')
-    tell_unpack()
+    try:
+        tell_unpack()
+    
+    except Exception as e:
+        logging.error("Unpack failed!", exc_info=True)
+        return
+    
     return
     global files, com, rem
+    
+    logging.debug('Checking if need to compress more')
     
     mode = cfg['post_store'][main_post].get('mode', None)
     
@@ -555,7 +571,11 @@ def squash_more():
     
     copyf = what_to_copy()
     logging.info('Pinging')
-    tell_unpack()
+    try:
+        tell_unpack()
+    
+    except Exception as e:
+        logging.error("Unpack failed!", exc_info=True)
 
 
 load_global('cfg', {
@@ -605,6 +625,10 @@ if __name__ == '__main__':
     del post_store
     
     if cfg['squash_server']:
-        squash_more()
+        try:
+            squash_more()
+        
+        except Exception as e:
+            logging.error("Squash error", exc_info=True)
     
     poke_servers(cfg['poke_servers'])
