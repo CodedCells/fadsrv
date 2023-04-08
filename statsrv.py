@@ -1118,7 +1118,7 @@ type: "line",
         return v
 
 
-class builtin_period(builtin_chart):
+class abuiltin_period(builtin_chart):
 
     def __init__(self, title='Period', icon=[0, 2]):
         super().__init__(title, icon)
@@ -1335,8 +1335,10 @@ class builtin_period(builtin_chart):
         
         return mode, modename, pickmode
     
-    def top_stuff(self, handle, path, text, cla=' list', charts=True):
-        doc = f'<div class="head"><h2 class="pagetitle">{self.title}</h2></div>\n'
+    def top_stuff(self, handle, path, text, index_id, last_page, cla=' list', charts=True):
+        doc = '<div class="head">'
+        doc += template_nav(self.title, index_id, last_page, enc=False)
+        doc += '</div>\n'
         doc += f'<div class="container{cla}">\n{text}'
         
         p, start, da = self.daterip(path, self.default_start, 'From')
@@ -1370,7 +1372,7 @@ class builtin_period(builtin_chart):
         
         self.title = f'{targetname} {modename} Stats'
         
-        start, end = self.top_stuff(handle, path, pickmode + picktarget)
+        start, end = self.top_stuff(handle, path, pickmode + picktarget, 1, 1)
         
         seq = self.sift_data(mode, target, start, end, [])
         
@@ -1379,7 +1381,32 @@ class builtin_period(builtin_chart):
         self.write(handle, '\n</div>\n<div class="foot">')
 
 
-class builtin_posts(builtin_period):
+def page_count(flen, index_id, pc=''):
+    # used to select elements per page of mort and eyde
+    
+    if type(pc) != int:
+        pc = cfg['post_count']
+    
+    last_page = max(math.ceil(flen / pc), 1)
+    
+    sa = (index_id - 1) * pc
+    ea = index_id * pc
+    
+    if 0 < flen % pc <= cfg['over']:
+        # bring extra items over rather than a short page
+        last_page = max(last_page - 1, 1)
+        if index_id == last_page:
+            ea = flen
+    
+    if index_id < 1:# wrap back around
+        index_id += last_page
+        if index_id == last_page:
+            ea = flen
+    
+    return last_page, sa, ea
+
+
+class builtin_posts(abuiltin_period):
     
     def __init__(self, title='Posts', icon=[3, 1]):
         super().__init__(title, icon)
@@ -1463,7 +1490,7 @@ class builtin_posts(builtin_period):
                 cfill = f'\n<div class="linkthings left">{mname}:'
                 for group in groups:
                     cname = group[0]
-                    cfill += '\n' + line_link.format(f'/{p}/{cname}', cname)
+                    cfill += '\n' + line_link.format(f'/{p}/{cname}/1', cname)
                 
                 collectionlist += cfill + '\n</div>'
             
@@ -1480,13 +1507,13 @@ class builtin_posts(builtin_period):
         # fill += line_item.format(style, f'{lgroup:,} <span>Groups</span>')
         # doc += line_item.format('-col', fill)
         
-        fill = line_link.format(f'/view/{postid}', info.get('title', postid))
+        fill = line_link.format(f'/view/{postid}/1', info.get('title', postid))
         fill += line_link.format(
             f'https://furaffinity.net/view/{postid}', ' [FA]') 
         dic = line_item.format('-wide', fill)
         
         if 'user' in info:
-            fill = line_link.format(f'/posts/{info["user"]}', info['user'])
+            fill = line_link.format(f'/posts/{info["user"]}/1', info['user'])
             dic += line_item.format('-wide', 'by ' + fill)
         
         if 'date' in info:
@@ -1498,7 +1525,7 @@ class builtin_posts(builtin_period):
         
         fill = '<div class="linkthings left">Tags:'
         for tag in tags:
-            fill += '\n' + line_link.format(f'/tag/{tag}', tag)
+            fill += '\n' + line_link.format(f'/tag/{tag}/1', tag)
         
         dic += line_item.format('-wide', fill + '</div>')
         
@@ -1508,7 +1535,7 @@ class builtin_posts(builtin_period):
             # fill = '\n<div class="linkthings left">Groups:'
             # for group in groups:
                 # name = group[0]
-                # fill += '\n' + line_link.format(f'/postgroup/{name}', name)
+                # fill += '\n' + line_link.format(f'/postgroup/{name}/1', name)
             
             # dic += line_item.format('-wide', fill + '</div>')
         
@@ -1573,13 +1600,13 @@ class builtin_posts(builtin_period):
         rating = info['rating']
         doc = ''
         
-        fill = line_link.format(f'/view/{postid}', info['title'])
+        fill = line_link.format(f'/view/{postid}/1', info['title'])
         fill += line_link.format(
             f'https://furaffinity.net/view/{postid}', ' [FA]') 
         doc += line_item.format('-wide', fill)
         
         if 'user' in info:
-            fill = line_link.format(f'/posts/{info["user"]}', info['user'])
+            fill = line_link.format(f'/posts/{info["user"]}/1', info['user'])
             doc += line_item.format('-wide', 'by ' + fill)
         
         if 'date' in info:
@@ -1661,6 +1688,15 @@ class builtin_posts(builtin_period):
         cla = ''
         cha = False
         
+        index_id = 1
+        for i in reversed(path):
+            if isinstance(i, int) or i.isdigit():
+                index_id = int(i)
+                break
+        
+        lse = page_count(count, index_id)
+        last_page, sa, ea = lse
+        
         doc = ''
         if self.marktype:
             doc += mark_for(self.marktype, self.name.lower())
@@ -1671,6 +1707,7 @@ class builtin_posts(builtin_period):
 
         top = pickmode
         if list_mode == 'chart':
+            index_id, last_page, sa, ea = 1, 1, None, None
             self.title = f'{self.name} {divname} Stats'
             top += pickdiv
             doc = ''
@@ -1680,7 +1717,7 @@ class builtin_posts(builtin_period):
             self.title = f'{self.name} Posts'
             top += picksort
         
-        start, end = self.top_stuff(handle, path, top + self.headtext, cla=cla, charts=cha)
+        start, end = self.top_stuff(handle, path, top + self.headtext, index_id, last_page, cla=cla, charts=cha)
         
         doc += strings['setlogic']
         
@@ -1727,6 +1764,9 @@ class builtin_posts(builtin_period):
                             for x, v in posts],
                            reverse=rev)
             posts = [v for x, v in posts]
+        
+        if list_mode != 'chart':
+            posts = posts[sa:ea]
         
         if list_mode == 'rows':
             self.postrows(handle, posts, showstats = last_period)
@@ -2602,9 +2642,9 @@ if __name__ == '__main__':
                 }
             },
         'nav_buttons': [
-            {"label": "Hourly", "href": "/period/total/hour"},
-            {"label": "Daily", "href": "/period/total/day"},
-            {"label": "Minthly", "href": "/period/total/month"},
+            {"label": "Hourly", "href": "/posts/chart/hour", "icon": 2},
+            {"label": "Daily", "href": "/posts/chart/day", "icon": 2},
+            {"label": "Minthly", "href": "/posts/chart/month", "icon": 2},
             {"label": "Posts", "href": "posts"},
             {"href": "tags"},
             {"href": "postgroups"},
