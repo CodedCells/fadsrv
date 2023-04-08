@@ -3,53 +3,47 @@ import imghdr
 
 
 def file_id_split(fd, s='.'):
-    return set(x.split(s)[0] for x in os.listdir(fd))
+    return [x.split(s)[0] for x in os.listdir(fd)]
 
 
 def load_local_data(path, thing, split='.'):
     data = cfg[thing][path]
     
-    if os.path.isfile(path + 'apdlist'):
-        with open(path + 'apdlist', 'r') as fh:
-            out = set(fh.read().split('\n')[1:])
-            fh.close()
-        
-        if data['mode'] == 'split':
-            for i in range(100):
-                i = path + '{:02d}/'.format(i)
-                if not os.path.isdir(i):
-                    os.makedirs(i)
+    if not os.path.isdir(path):
+        os.makedirs(path)
+    
+    if data['mode'] == 'split':
+        for i in range(100):
+            i = path + f'{i:02d}/'
+            if not os.path.isdir(i):
+                logging.debug(f'Creating {i}')
+                os.makedirs(i)
+    
+    out = appender_set(volsize=False)
+    out.read(path + "apdlist")
+    out.depth = 0
+    if out:
+        return out
+    
+    logging.info(f'Listing files: {path}')
+    if not data.get('list', True):
+        out.filename = None
+    
+    if data['mode'] == 'single':
+        out.write(file_id_split(path, s=split))
+        return out
+    
+    elif data['mode'] == 'split':
+        for i in range(100):
+            i = path + f'{i:02d}/'
+            
+            logging.debug(f'Listing {i}')
+            out.write(file_id_split(i, s=split))
         
         return out
     
-    if data.get('list', True):
-        logging.info(f'Building list for {path}')
-    
-    if data['mode'] == 'single':
-        if not os.path.isdir(path):
-            os.makedirs(path)
-        out = file_id_split(path, s=split)
-    
-    elif data['mode'] == 'split':
-        out = set()
-        for i in range(100):
-            i = path + '{:02d}/'.format(i)
-            if os.path.isdir(i):
-                out.update(file_id_split(i, s=split))
-            else:
-                os.makedirs(i)
-    
-    else:
-        logging.warning(f'Unknown mode: {data["mode"]} for path {path}')
-        return set()
-    
-    if data.get('list', True):
-        with open(path + 'apdlist', 'w') as fh:
-            fh.write('# apdfile {}apdlist\n'.format(path))
-            fh.write('\n'.join(out))
-            fh.close()
-    
-    return out
+    logging.warning(f'Unknown mode: {data["mode"]} for path {path}')
+    return set()
 
 
 def list_local_store(mode):
@@ -65,7 +59,7 @@ def list_local_store(mode):
             main = k
         
         store[k] = load_local_data(k, mode, split=spl)
-        logging.info('Path: {}\t{:,}'.format(k, len(store[k])))
+        logging.info(f'Path: {k}\t{len(store[k]):,}')
     
     stores = list(enumerate(store))
     return store, stores, main
@@ -96,7 +90,7 @@ def check_import():
             postid = get_prop('www.furaffinity.net/view/', d, t='/')
             logging.info(f'Adding {postid}')
             
-            os.rename('dl/' + fn, 'put/{}_desc.html'.format(postid))
+            os.rename('dl/' + fn, f'put/{postid}_desc.html')
             check_post(postid, where='put/')
 
 
@@ -104,7 +98,7 @@ def download_data(post):
     logging.info(f'get data {post}')
     
     state = True
-    sg = session_get('https://www.furaffinity.net/view/{}/'.format(post))
+    sg = session_get(f'https://www.furaffinity.net/view/{post}/')
     
     x = check_login(sg.text, post)
     if x:
@@ -208,7 +202,8 @@ def check_post(post, where):
         # code moved to no
         pass
     
-    prepsys(fd, fn)
+    if cfg['squash_server']:
+        prepsys(fd, fn)
     
     return request
 
@@ -379,18 +374,6 @@ def has_post(post, ext):
     return 'no'
 
 
-def apdlist_add(d):
-    logging.info('Appending apdlists')
-    
-    with open(main_data + 'apdlist', 'a') as fh:
-        fh.write('\n' + '\n'.join(d))
-        fh.close()
-    
-    with open(main_post + 'apdlist', 'a') as fh:
-        fh.write('\n' + '\n'.join(d))
-        fh.close()
-
-
 def get_new_data():
     fnf = appender()
     fnf.read(cfg['apd_dir'] + 'posts404')
@@ -399,9 +382,9 @@ def get_new_data():
     
     c = 0
     la = 0
-    apd = []
     
     for post in reversed(list(know.keys())):
+        apd = set()
         request = False
         c += 1
         
@@ -417,22 +400,22 @@ def get_new_data():
             sg, state = download_data(post)
             request = True
             if state:
-                apd.append(post)
+                apd.add(post)
             else:
                 fnf.write({post: ''})
         
         elif hd.startswith('added'):
-            apd.append(post)
+            apd.add(post)
         
         elif hd == 'already':
             if post not in data_store[main_data]:
-                apd.append(post)
+                apd.add(post)
         
         elif hd == 'err':
             pass
         
         else:
-            raise Exception('Post {} data state {}'.format(post, hd))
+            raise Exception(f'Post {post} data state {hd}')
         
         if request:
             time.sleep(cfg['speed'])
@@ -445,19 +428,11 @@ def get_new_data():
         if hd != 'no':
             logging.warning(f'Had to check {post} {hd}')
         
-        if c//500 > la:
-            logging.info(f'\taddloop\t{(c // 500) * 500}')
-            la = c // 500
-            
-            if apd:
-                apdlist_add(apd)
-                apd = []
+        post_store[main_post].write(apd)
+        data_store[main_data].write(apd)
         
         if request:
             time.sleep(cfg['speed'])
-    
-    if apd:
-        apdlist_add(apd)
 
 
 def main():
@@ -493,6 +468,9 @@ def copy_skip(f, e):
 
 
 def what_to_copy():
+    if not cfg['squash_server']:
+        return
+    
     copyf = []
     c = 0
     
@@ -621,8 +599,6 @@ if __name__ == '__main__':
         logging.error("Exception occurred", exc_info=True)
     
     logging.info('Done!')
-    del data_store
-    del post_store
     
     if cfg['squash_server']:
         try:
