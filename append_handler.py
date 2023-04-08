@@ -22,7 +22,7 @@ class appender(dict):
         
         self.depth = 1
         self.encoding = 'utf8'
-        if volsize == None:
+        if volsize is None:
             volsize = 25000
         self.volsize = volsize
         self.lines = -1
@@ -234,10 +234,10 @@ class appender(dict):
               encoding=None,
               volsize=None):
 
-        if encoding:
+        if encoding is not None:
             self.encoding = encoding
         
-        if volsize:
+        if volsize is not None:
             self.volsize = volsize
         
         self.block = 0
@@ -245,7 +245,7 @@ class appender(dict):
         if filename:
             self.filename = filename
         
-        if depth:
+        if depth is not None:
             self.depth = depth
         
         if self:
