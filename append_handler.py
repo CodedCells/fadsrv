@@ -2,7 +2,7 @@ import logging
 import json
 import os
 
-class appender(dict):
+class appender_base():
     
     def __init__(self, volsize=None):
         super().__init__(self)
@@ -127,7 +127,7 @@ class appender(dict):
         size = info.st_size
         if self.do_time or size > 4000000:# >4mb
             dbg = self.dbg
-            if self.keyonly:
+            if self.keyonly and 'keyonly' not in dbg:
                 dbg = dbg + ['keyonly']
             logging.debug(f'Reading {filename} ({size/1000000:,}mb) {" ".join(dbg)}')
             self.do_time = True
@@ -178,11 +178,17 @@ class appender(dict):
         
         self.lines = len(self)
     
+    def detrime_block(self, line):
+        if not self.volsize:
+            return 0
+        
+        return line // self.volsize
+    
     def write_block(self, line, out):
-        self.block = line // self.volsize
+        self.block = self.detrime_block(line)
         
         filename = self.filename
-        if self.volsize and self.block:
+        if self.block:
             filename += f'_{self.block:02d}'
         
         self.prepare_file(filename)
@@ -227,6 +233,23 @@ class appender(dict):
         self.lines = lines
         return lines
     
+    def write_helper(self, data, line):
+        out = ''
+        last_block = 0
+        for k, v in data.items():
+            this_block = self.detrime_block(line)
+            line += 1
+            self.lines += 1
+            out += self.write_line(k, v)
+            
+            if this_block != last_block and out:
+                self.write_block(line, out)
+                out = ''
+                last_block = this_block
+        
+        if out:
+            self.write_block(line, out)
+    
     def write(self,
               newdata,
               depth=None,
@@ -261,47 +284,26 @@ class appender(dict):
             logging.error('FIlename not set when trying to write')
             line = 0
         
-        out = ''
-        for k, v in newdata.items():
-            line += 1
-            self.lines += 1
-            out += self.write_line(k, v)
-            
-            if line % self.volsize == 0 and out:
-                self.write_block(line, out)
-                out = ''
-        
-        if out:
-            self.write_block(line, out)
+        self.write_helper(newdata, line)
     
     def write_all(self,
                   filename,
                   volsize=None):
         
-        if volsize:
+        if volsize is not None:
             self.volsize = volsize
         
         self.filename = filename
         
-        line = 0
-        lineold = 0
-        out = ''
-        for k, v in self.items():
-            line += 1
-            out += self.write_line(k, v)
-            
-            if line % self.volsize == 0 and out:
-                self.write_block(lineold, out)
-                out = ''
-                lineold, line = int(line)
-        
-        if out:
-            self.write_block(lineold, out)
+        self.write_helper(newdata, 0)
+
+class appender(appender_base, dict):
+    pass
 
 class appender_sharedkeys(appender):
     
-    def __init__(self):
-        super().__init__()
+    def __init__(self, volsize=None):
+        super().__init__(wolsize=volsize)
         self.skeys = []
         self.dbg.append('sharedkeys')
     
@@ -374,3 +376,45 @@ class appender_sharedkeys(appender):
                 d[self.skeys[i]] = v
         
         return d
+
+
+class appender_set(appender_base, set):
+    
+    def __init__(self, volsize=None):
+        super().__init__(volsize=volsize)
+        self.dbg.append('settype')
+        #self = set()
+    
+    def read_value(self, d):
+        if self.parse:
+            d = json.loads(d)
+        
+        return d
+    
+    def read_line(self, line):
+        if self.keyonly:
+            self[line.split('\t')[0]] = 0
+            return
+        
+        self.add(line)
+    
+    def write_line(self, k, v):
+        self.add(k)
+        return f'\n{k}'
+    
+    def write_helper(self, data, line):
+        out = ''
+        last_block = 0
+        for k in data:
+            this_block = self.detrime_block(line)
+            line += 1
+            self.lines += 1
+            out += self.write_line(k, 0)
+            
+            if this_block != last_block and out:
+                self.write_block(line, out)
+                out = ''
+                last_block = this_block
+        
+        if out:
+            self.write_block(line, out)
