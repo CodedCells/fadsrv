@@ -303,7 +303,7 @@ class appender(appender_base, dict):
 class appender_sharedkeys(appender):
     
     def __init__(self, volsize=None):
-        super().__init__(wolsize=volsize)
+        super().__init__(volsize=volsize)
         self.skeys = []
         self.dbg.append('sharedkeys')
     
