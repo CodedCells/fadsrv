@@ -6,7 +6,7 @@ import gc
 from onefad_functions import *
 from fa_parser import *
 
-ent['version'] = '31#2022-12-17'
+ent['version'] = '31#2023-05-20'
 
 class builtin_base(builtin_base):
     
