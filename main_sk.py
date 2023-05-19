@@ -1508,7 +1508,7 @@ class eyde_base(builtin_base):
         if ext == 'txt':
             apwc = int(srcbytes / 6.5)# dumb word count
             ret += wrapme(apwc, f=' Approx {:,} words')
-            link = link.replace('i/im', 'reader')
+            link = link.replace('image/im', 'reader')
         
         ret += '</p>\n'
         
@@ -1521,9 +1521,9 @@ class eyde_base(builtin_base):
         ext = data.get('ext', 'png')
         fn = f'{post}.' + ext
         
-        link = f"/i/{fn}"
+        link = f"/image/{fn}"
         if cfg['remote_images'] != '':# do remote link
-            link = cfg['remote_images'].format(fn)
+            link = cfg['remote_images'].format(link)
         
         return self.place_file(ext, link, data.get('srcbytes', 0))
     
@@ -3059,9 +3059,9 @@ hide_empty: {self.hide_empty}\n-->'''
         
         f = choose_thumb(self.marktype, item)
         
-        l = f'/t/{f}'
+        l = f'/thumb/{f}'
         if cfg['remote_images'] != '':
-            l = cfg['remote_images'].format(f)
+            l = cfg['remote_images'].format(l)
         
         label = f'<img loading="lazy" src="{l}" /><br>'
         label = overicon(self.marktype, item, con=self.con) + label
@@ -5230,15 +5230,15 @@ class fa_req_handler(BaseHTTPRequestHandler):
         path_split = path_nice.lower().split('/')
         
         if path_split[0] == 'pageimg':# hack
-            path_nice = 'i/pages/' + path_nice
+            path_nice = 'image/pages/' + path_nice
         
         if path_split[-1] in ent['resources']:
             serve_resource(self, path_split[-1])
             return
         
-        elif (path_nice.startswith('i/') or
-              path_nice.startswith('t/')):
-            serve_image(self, path_nice[2:])
+        elif (path_nice.startswith('image/') or
+              path_nice.startswith('thumb/')):
+            serve_image(self, path_nice[6:])
             return
         
         b = builtin_base()
