@@ -2839,24 +2839,88 @@ class mort_base(builtin_base):
                 for x in so
                 if x[0] >= mincount]
     
-    def build_page(self, handle, pargs, head=True, text=''):
-        index_id = 1
-        pf = []
-        if pargs and isinstance(pargs[-1], int):
-            index_id = pargs[-1]
-            if len(pargs) > 2:
-                pf = str(pargs[-2]).split(' ')
+    def param_eq(self, param, items):
+        cull = False
+        param = param.split('=')
+        if len(param) != 2:
+            return items
         
-        items = self.items
+        lt = math.inf # should be impossibe to reach
         
-        if items is None:
-            items = []
+        if param[0].isdigit():
+            lt = int(param[0])
+        else:
+            pr = ord(param[0]) - 97
         
-        items = maketup(items)
+        if param[1].isdigit():
+            lt = int(param[1])
+        else:
+            pr = ord(param[1]) - 97
+        
+        if pr == 11:# 11 = L for Length
+            return [i for i in items if lt == get_subs(i[0])]
+        
+        return [i for i in items if lt == i[pr]]
+    
+    def param_range(self, param, items, minimum_count):
+        cull = False
+        param = param.split('>')
+        if len(param) < 2:
+            return items
+        
+        gt = int(minimum_count)
+        pr = 1
+        lt = math.inf # should be impossibe to reach
+        
+        if param[0].isdigit():
+            lt = int(param[0])
+        else:
+            pr = ord(param[0]) - 97
+        
+        if param[1].isdigit():
+            gt = int(param[1])
+        else:
+            pr = ord(param[1]) - 97
+        
+        if len(param) == 3:
+            if param[2].isdigit():
+                gt = int(param[2])
+        
+        if pr == 11:# 11 = L for Length
+            return [i for i in items if lt > get_subs(i[0]) > gt]
+        
+        return [i for i in items if lt > i[pr] > gt]
+    
+    def param_handler(self, params, items):
+        minimum_count = 'cull' in params # set minimum to 1 if told to cull
+        is_user_docat = self.marktype == 'users' and cfg['docats']
+        
+        cull = self.hide_empty or minimum_count or is_user_docat
+        if 'nocull' in params:
+            cull = False
+            minimum_count = -200
+        
+        items2 = []
+        for i in items:
+            t = i
+            if isinstance(i, tuple) or isinstance(i, list):
+                t = i[0]
+            
+            d = self.datas.get(t, '')
+            if not isinstance(d, int):# if not a size, get the size
+                d = len(d)# hopefully measurable size
+            
+            if self.marktype == 'users' and cull:
+                d, perc = users_marked.get(t, (0, 0))
+            
+            items2.append(list(i) + [d])
+        
+        items = items2
+        del items2
         
         cols = {}
-        
         done = []
+        
         for m, d in apdmm.items():
             if not compare_for(d, self.marktype):
                 continue
@@ -2864,7 +2928,7 @@ class mort_base(builtin_base):
             mt = d.get('type', 'idk')
             if mt in ['multibutt', 'list']:
                 for v in d.get('values'):
-                    mm = matchmode(v, pf)
+                    mm = matchmode(v, params)
                     if mm is None:
                         continue
                     
@@ -2876,7 +2940,7 @@ class mort_base(builtin_base):
             elif mt == 'collection':
                 cols[d.get('name', m).lower()] = m
                 done.append(m)
-        
+
         for m, d in fpref.items():
             if not compare_for(d, self.marktype):
                 continue
@@ -2884,120 +2948,94 @@ class mort_base(builtin_base):
             if m in done:
                 continue
             
-            mm = matchmode(m, pf)
+            mm = matchmode(m, params)
             if mm is None:
                 continue
-            
+        
             mset = set(i[0] for i in maketup(ent['builtin'][m].get_items()))
             items = [i for i in items if (i[0] in mset) == mm]
         
-        mincount = 'cull' in pf
-        docat = self.marktype == 'users' and cfg['docats']
-        cull = self.hide_empty or mincount or docat
-        if 'nocull' in pf:
-            cull = False
-            mincount = -200
-        
-        i2 = []
-        for i in items:
-            t = i
-            if isinstance(i, tuple) or isinstance(i, list):
-                t = i[0]
+        mark_mode = {}
+        for param in params:
             
-            d = self.datas.get(t, '')
-            if not isinstance(d, int):d = len(d)
-            if self.marktype == 'users' and cull:
-                d, perc = users_marked.get(t, (0, 0))
+            if param.startswith('@'):
+                mark_mode[param[1:]] = True
             
-            i2.append(list(i) + [d])
-        
-        items = i2
-        del i2
-        
-        tmark = {}
-        for x in pf:
+            elif param.startswith('!@'):
+                mark_mode[param[2:]] = False
             
-            if x.startswith('@'):
-                tmark[x[1:]] = True
+            elif '>' in param:
+                items = self.param_range(param, items, minimum_count)
             
-            elif x.startswith('!@'):
-                tmark[x[2:]] = False
-            
-            elif '>' in x:
-                cull = False
-                x = x.split('>')
-                if len(x) < 2:continue
-                gt = int(mincount)
-                pr = 1
-                lt = math.inf # should be impossibe to reach
-                
-                if x[0].isdigit():
-                    lt = int(x[0])
-                else:
-                    pr = ord(x[0]) - 97
-                
-                if x[1].isdigit():
-                    gt = int(x[1])
-                else:
-                    pr = ord(x[1]) - 97
-                
-                if len(x) == 3:
-                    if x[2].isdigit():
-                        gt = int(x[2])
-                
-                if pr == 11:# 11 = L for Length
-                    items = [i for i in items
-                             if lt > get_subs(i[0]) > gt]
-                
-                else:
-                    items = [i for i in items if lt > i[pr] > gt]
+            elif '=' in param:
+                items = self.param_eq(param, items)
         
         # this is a hack, i need to make this cleaner
-        for m, e in tmark.items():
-            t = ''
-            if ':' in m:
-                t = m.split(':')
-                m = t[0]
-                t = ':'.join(t[1:])
+        for mark, state in mark_mode.items():
+            col = ''
+            if ':' in mark:
+                col = mark.split(':')
+                mark = t[0]
+                t = ':'.join(col[1:])
             
-            if m not in cols:
+            if mark not in cols:
                 continue
             
-            m = cols[m]
-            v = find_collection(m, t)
+            mark = cols[mark]
+            v = find_collection(mark, col)
             if v is False:
                 continue
             
-            v = set(apdm[m][v]['items'])
-            items = [i for i in items if (i[0] in v) == e]
+            v = set(apdm[mark][v]['items'])
+            items = [i for i in items if (i[0] in v) == state]
         
         if cull:
             items = [i for i in items if i[2]]
         
-        # pick  what to sort by
-        if not items:pass
+        if not items:
+            return []
         
-        elif 'count' in pf:
-            items = self.item_sorter(self.datas, items, mincount)
+        elif 'count' in params:
+            items = self.item_sorter(self.datas, items, minimum_count)
         
-        elif 'unmarked' in pf:# only for users
+        elif 'unmarked' in params:# only for users
             um = {i: v[0] for i, v in users_marked.items()}
-            items = self.item_sorter(um, items, mincount)
+            items = self.item_sorter(um, items, minimum_count)
         
-        elif 'ustats' in pf:
+        elif 'ustats' in params:
             um = {k: get_subs(k) for k in ustat}
-            items = self.item_sorter(um, items, mincount)
+            items = self.item_sorter(um, items, minimum_count)
         
         else:
             # arbitray data yay
             for x in range(len(items[0])):
-                if f'p{x}' in pf:
+                if f'p{x}' in params:
                     items = sorted([[i[x]] + list(i) for i in items])
                     items = [tuple(x[1:]) for x in items]
                     break
         
-        if 'reversed' in pf:
+        if 'reversed' in params:
             items = list(reversed(items))
+        
+        return items
+        
+    
+    def build_page(self, handle, pargs, head=True, text=''):
+        index_id = 1
+        params = []
+        if pargs and isinstance(pargs[-1], int):
+            index_id = pargs[-1]
+            if len(pargs) > 2:
+                params = str(pargs[-2]).split(' ')
+        
+        items = self.items
+        
+        if items is None:
+            items = []
+        
+        items = maketup(items)
+        
+        items = self.param_handler(params, items)
         
         #mode = pargs[0]
         if self.can_list:# nothing good would come from that
