@@ -1549,6 +1549,25 @@ class eyde_base(builtin_base):
         if cfg['show_unparsed']:
             ret += very_pretty_json(f'post:{post}', data, ignore_keys=['tags'])
         
+        ret += '\n<details><summary>Post Details</summary><div class="userinfo">\n'
+        for i, l, t in [
+            ('rating', '{} rating', 'textCaps'),
+            ('date', 'Uploaded: {}', 'date'),
+            ('ext', '{} type', 'text'),
+            ('filedate', 'Acquired: {}', 'date')]:
+            i = data.get(i)
+            if not i:continue
+            
+            if t == 'date':
+                i = timestamp_disp(i)
+            
+            elif t.endswith('Caps') and type(t) == str:
+                i = i.capitalize()
+            
+            ret += f'{l.format(i)}<br>\n'
+        
+        ret += '</div>\n</details>\n'
+        
         if desc == None:
             desc = '<b>DESCRIPTION NOT FOUND!!!</b>'
         
