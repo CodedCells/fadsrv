@@ -5135,7 +5135,11 @@ class post_apref(post_base):
         
         if ch_apdm:
             logging.debug(json.dumps(ch_apdm))
-            apdm[flag].write(ch_apdm)
+            try:
+                apdm[flag].write(ch_apdm)
+            except Exception as e:
+                logging.error("Exception while writing", exc_info=True)
+                ret = {'status': f'Write error {e}'}
         
         return ret
 
