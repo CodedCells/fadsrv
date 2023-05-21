@@ -6,7 +6,7 @@ import gc
 from onefad_functions import *
 from fa_parser import *
 
-ent['version'] = '31#2023-05-20'
+ent['version'] = '31#2023-05-21'
 
 class builtin_base(builtin_base):
     
@@ -1644,7 +1644,7 @@ class eyde_base(builtin_base):
             cla = ' altsrv'
         
         ret = f'<span class="tbox"><span class="thumb{cla}">\n<div class="thumba" id="{post}@post">'
-        ret += f'<a class="title" href="/view/{post}/1">{title}</a>\n<a href="https://www.furaffinity.net/view/{post}/">view fa</a><br>\n'
+        ret += f'<a class="title" href="/view/{post}/1">{title}</a>\n<a href="https://www.furaffinity.net/view/{post}/">[FA]</a><br>\n'
         
         ret += self.get_file_link(post, data)
         
@@ -5768,7 +5768,7 @@ if __name__ == '__main__':
 'cfg.ent.butt_state.name': 'Butt State',
 'cfg.ent.butt_state.label': 'Joke option, set to your preference I guess',
 
-'eyde_post_title': '<a class="title" href="/view/{0}/1"><h2>{1}</h2></a>\n<a href="https://www.furaffinity.net/view/{0}/">view fa</a><br>\n',
+'eyde_post_title': '<a class="title" href="/view/{0}/1"><h2>{1}</h2></a>\n <a href="https://www.furaffinity.net/view/{0}/">[FA]</a><br>\n',
 'stripeytablehead': '<table class="stripy">\n<tr>\n\t<td colspan={}>{}</td>\n</tr>\n',
 'pt_items': '<div class="desc tags"><details><summary>{} ({:,} items)</summary>\n{}</details>\n</div><br>\n',
 'search_bar': '<input id="searchbar" class="niceinp widebar" placeholder="Search..." oninput="search(false)" />\n',
