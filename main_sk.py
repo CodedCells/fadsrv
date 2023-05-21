@@ -1997,9 +1997,13 @@ class eyde_user(eyde_base):
         if passed:
             h += f'<p>Passed: {timestamp_disp(passed / 1000)}</p>\n'
         
-        for path, name in cfg['altlinks'].get('users', []):
-            path = path.format(user)
-            h += f'<p><a href="{path}">{name}</a></p>\n'
+        alts = cfg['altlinks'].get('users', [])
+        if alts:
+            h += f'<div class="linkthings centered">Alt: '
+            for path, name in alts:
+                path = path.format(user)
+                h += f'\n<a href="{path}">{name}</a>\n'
+            h += '\n</div>'
         
         for w, d in wpm.items():
             if compare_for(d, self.marktype, sw=True):
@@ -2076,9 +2080,13 @@ class eyde_folder(eyde_base):
         self.items = f['items']
         
         h = ''
-        for path, name in cfg['altlinks'].get('folders', []):
-            path = path.format(f["path"])
-            h += f'<p><a href="{path}">{name}</a></p>\n'
+        alts = cfg['altlinks'].get('folders', [])
+        if alts:
+            h += f'<div class="linkthings centered">Alt: '
+            for path, name in alts:
+                path = path.format(f["path"])
+                h += f'\n<a href="{path}">{name}</a>\n'
+            h += '\n</div>'
         
         if self.dosort(folid, pargs):
             self.items = sorted([int(x) for x in self.items])
