@@ -4317,11 +4317,17 @@ class stats_base(builtin_base):
     
     @staticmethod
     def fromiso(d):
-        try:
-            return datetime.strptime(d, '%Y-%m-%dT%H:%M:%S.%f')
+        for i in [
+            '%Y-%m-%dT%H:%M:%S.%f',
+            '%Y-%m-%dT%H:%M:%S',
+            '%Y-%m-%d']:
+            try:
+                return datetime.strptime(d, i)
+            
+            except ValueError:
+                continue
         
-        except:
-            return datetime.strptime(d, '%Y-%m-%dT%H:%M:%S')
+        datetime.strptime(d, i)
     
     def process_date(self, d, mode):
         if isinstance(d, int):
