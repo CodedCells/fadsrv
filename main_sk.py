@@ -4338,7 +4338,7 @@ class stats_base(builtin_base):
         
         elif mode == 'week':
             d = self.fromiso(d).isocalendar()
-            return f'{d[0]} w{d[1]}'
+            return f'{d[0]} w{d[1]:02d}'
     
     def path_pick(self, path, options, default):
         
