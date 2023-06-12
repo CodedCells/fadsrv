@@ -177,7 +177,7 @@ def check_post(post, where):
             return
         
         oldext, ext = ext, imghdr.what(None, sg.content)
-        if (oldext != ext):
+        if (oldext != ext and ext != None):
             logging.debug(f'Changed extension for {post} from "{oldext}" to "{ext}"')
         
         fn = f'{post}.{ext}'
