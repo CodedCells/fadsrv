@@ -1240,8 +1240,10 @@ class descman(object):
         self.ret = {}
     
     def descfilter(self, desc):
-        if '//a.furaffinity.net/' in desc:
-            desc = desc.replace('//a.furaffinity.net/', '//192.168.0.66:6953/avatar/')
+        if cfg.get('avatar_srv'):
+            for i in cfg.get('avatar_swap', []):
+                if i in desc:
+                    desc = desc.replace(i, cfg['avatar_srv'])
         
         return desc
     
@@ -5874,7 +5876,10 @@ if __name__ == '__main__':
             'folders': [['https//www.furaffinity.net{}', 'FA Folder']]
             },
         
-        'altdatsrv': []
+        'altdatsrv': [],
+        'avatar_swap': [
+            '//a.furaffinity.net/'
+            ]
         })
     
     load_global('menus', {
