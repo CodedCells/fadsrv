@@ -2371,6 +2371,15 @@ class eyde_filter(eyde_base):
                 out.append(i)
 
         return set(out)
+
+    def filter_post_title(self, k, v):
+        out = []
+        for i in self.items:
+            d = apdfa.dget(i, {}).get(k, 'unset').lower()
+            if v in d:
+                out.append(i)
+
+        return set(out)
     
     def filter_param_get(self, k, v):
         f = None
@@ -2379,7 +2388,10 @@ class eyde_filter(eyde_base):
 
         elif k == 'rating':
             f = self.filter_post_key
-            
+        
+        elif k == 'title':
+            f = self.filter_post_title
+        
         elif k == '@' and v in self.dprefs:
             f = self.filter_param_dpref
         
