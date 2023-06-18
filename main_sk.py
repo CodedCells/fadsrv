@@ -1391,6 +1391,9 @@ class eyde_base(builtin_base):
         hide_default = cfg['docats'] and self.hide_empty
         
         if 'nocull' not in pf:
+            if '' in self.f_items:
+                self.f_items.remove('')
+            
             self.cull_mode(
                 ent['_marked'],
                 'cull' in pf or hide_default,
