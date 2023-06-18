@@ -2404,7 +2404,7 @@ class eyde_filter(eyde_base):
             f = self.filter_param_tag
         
         else:
-            #print(k, v)
+            logging.warning(f'Filter PARAM Can\'t filter "{k}" as "{v}"')
             return set()
         
         return f(k, v)
@@ -2428,7 +2428,7 @@ class eyde_filter(eyde_base):
             self.items = items
         
         else:
-            pass#print(k, v)
+            logging.warning(f'Filter ARG Can\'t filter "{k}" as "{v}"')
     
     def filter_widgets(self, pbar, p_or, p_and, p_not, p_arg):
         
