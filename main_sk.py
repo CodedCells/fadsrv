@@ -3903,26 +3903,36 @@ class mort_percgot(mort_base):
         
         self.items = sorted(self.items.items(), key=itemgetter(1))
 
+def get_ext(post):
+    return apdfa.dget(str(post), {}).get('ext', 'error')
+
+def select_thumb_from(posts):
+    for post in posts:
+        if cfg['docats'] and post in ent['_marked']:
+            continue# filter out marked posts if we do that
+        
+        ext = get_ext(post)
+        cat = file_category(ext)
+        if cat == 'image':
+            return post, cat, ext
+    
+    chosen = (posts + ['parrot'])[0]
+    if chosen == 'parrot':ext = 'svg'
+    else:ext = get_ext(chosen)
+    cat = file_category(ext)
+    
+    return chosen, ext, cat
 
 def select_thumb(posts, do_ext=True):
-    i = None
-    for i in posts:
-        if cfg['docats'] and i in ent['_marked']:
-            continue
-        
-        break
+    chosen, cat, ext = select_thumb_from(posts)
+    if cat != 'image':
+        chosen = 'parrot'
+        ext = 'svg'
     
-    if not i:
-        return 'parrot.svg'
+    if do_ext:
+        chosen += '.' + ext
     
-    d = apdfa.dget(i, {'ext': 'error'})
-    if file_category(d.get('ext', '')) == 'image':
-        if do_ext:
-            i += '.' + d['ext']
-        
-        return i
-    
-    return 'parrot.svg'
+    return chosen
 
 
 def choose_thumb(marktype, thing, level=0, do_ext=True):
