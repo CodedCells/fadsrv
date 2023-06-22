@@ -1,6 +1,6 @@
 from onefad_functions import *
 
-ent['version'] = '26'
+ent['version'] = '27'
 
 end_of_time = datetime.fromisoformat('9999-01-01')
 
