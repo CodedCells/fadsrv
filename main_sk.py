@@ -3907,27 +3907,23 @@ def get_ext(post):
     return apdfa.dget(str(post), {}).get('ext', 'error')
 
 def select_thumb_from(posts):
-    for post in posts:
-        if cfg['docats'] and post in ent['_marked']:
-            continue# filter out marked posts if we do that
-        
+    if cfg['docats']:
+        eligable = [post for post in posts
+                    if post not in ent['_marked']]
+    
+    if not eligable:
+        eligable = posts
+    
+    for post in eligable:
         ext = get_ext(post)
         cat = file_category(ext)
         if cat == 'image':
             return post, cat, ext
     
-    chosen = (posts + ['parrot'])[0]
-    if chosen == 'parrot':ext = 'svg'
-    else:ext = get_ext(chosen)
-    cat = file_category(ext)
-    
-    return chosen, ext, cat
+    return 'parrot', 'ext', 'image'
 
 def select_thumb(posts, do_ext=True):
     chosen, cat, ext = select_thumb_from(posts)
-    if cat != 'image':
-        chosen = 'parrot'
-        ext = 'svg'
     
     if do_ext:
         chosen += '.' + ext
