@@ -1461,16 +1461,13 @@ class builtin_posts(abuiltin_period):
             doc += line_item.format('', fill)
         
         fill = ''
-        if stats:
-            fill += line_item.format('-quad',
-                f'{stats.get("views","?")}<span>Views</span>')
-            fill += line_item.format('-quad',
-                f'{stats.get("faves","?")}<span>Favourites</span>')
-            fill += line_item.format('-quad',
-                f'{stats.get("comments","?")}<span>Comments</span>')
-            rating = info.get('rating', '?')
-            fill += line_item.format('-quad' + ' r-' + rating.lower(),
-                f'{rating}<span>Rating</span>')
+        rating = info.get('rating', '?')
+        for a, value, label in [
+            ['', wrapme(stats.get("views", "?")), 'Views'],
+            ['', wrapme(stats.get("faves", "?")), 'Favourites'],
+            ['', wrapme(stats.get("comments", "?")), 'Comments'],
+            [' r-' + rating.lower(), rating, 'Rating']]:
+            fill += line_item.format('-quad' + a, f'{value}<span>{label}</span>')
         
         collectionlist = ''
         for p, c in ent['mark_buttons'].items():
