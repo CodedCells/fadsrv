@@ -3920,12 +3920,12 @@ def select_thumb_from(posts):
         ext = get_ext(post)
         cat = file_category(ext)
         if cat == 'image':
-            return post, cat, ext
+            return post, ext
     
-    return 'parrot', 'ext', 'image'
+    return 'parrot', 'svg'
 
 def select_thumb(posts, do_ext=True):
-    chosen, cat, ext = select_thumb_from(posts)
+    chosen, ext = select_thumb_from(posts)
     
     if do_ext:
         chosen += '.' + ext
