@@ -3907,8 +3907,10 @@ def get_ext(post):
     return apdfa.dget(str(post), {}).get('ext', 'error')
 
 def select_thumb_from(posts):
+    eligable = posts
+    
     if cfg['docats']:
-        eligable = [post for post in posts
+        eligable = [post for post in eligable
                     if post not in ent['_marked']]
     
     if not eligable:
