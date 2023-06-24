@@ -176,9 +176,10 @@ def check_post(post, where):
             logging.error(f'!!! RESPONSE RETURNED ERROR GIF FOR {post} !!!')
             return
         
-        oldext, ext = ext, imghdr.what(None, sg.content)
-        if (oldext != ext and ext != None):
-            logging.debug(f'Changed extension for {post} from "{oldext}" to "{ext}"')
+        suggestext = imghdr.what(None, sg.content)
+        if (suggestext != ext and suggestext != None):
+            logging.debug(f'Changed extension for {post} from "{ext}" to "{suggestext}"')
+            ext = suggestext
         
         fn = f'{post}.{ext}'
         with open(fd + fn, 'wb') as fh:
