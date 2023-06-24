@@ -427,7 +427,8 @@ def get_new_data():
         
         request = check_post(post, where=main_data)
         if hd != 'no':
-            logging.warning(f'Had to check {post} {hd}')
+            logging.warning(f'Had to check media for {post} marked "{hd}"')
+            apd.add(post)
         
         post_store[main_post].write(apd)
         data_store[main_data].write(apd)
