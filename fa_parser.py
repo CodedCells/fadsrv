@@ -215,8 +215,17 @@ class parse_user_common(parse_basic):
             return
         
         tmp = get_prop('<userpage-nav-user-details>', self.text, t='</userpage-nav-user-details>')
-        
+            
         username = get_prop('<username>', tmp, t='</username>').strip()
+        
+        if '/usericon-block-before>' in username:# FA+
+            ou, username = username, username.split('/usericon-block-before>')[-1].strip()
+            logging.debug(f'stripped before {username} (from {ou})')
+        
+        if '<usericon-block-after>' in username:
+            ou, username = username, username.split('<usericon-block-after>')[0].strip()
+            logging.debug(f'stripped after {username} (from {ou})')
+        
         self.items['username'] = username[1:]
         statuses = {'!': 'suspended', '-': 'banned', '@': 'admin'}
         self.items['user_status'] = statuses.get(username[0], 'regular')
