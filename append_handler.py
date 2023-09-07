@@ -29,6 +29,7 @@ class appender_base():
         self.do_time = False
         self.keyonly = False
         self.dbg = []
+        self.error_count = 0
     
     def setd(i):
         self = i
@@ -133,8 +134,12 @@ class appender_base():
             self.do_time = True
         
         with open(filename, 'r', encoding=self.encoding) as fh:
-            for x in fh.readlines()[1:]:
-                self.read_line(x.strip())
+            for n, x in enumerate(fh.readlines()[1:]):
+                try:
+                    self.read_line(x.strip())
+                except json.decoder.JSONDecodeError:
+                    logging.warning(f'{self.filename} block {self.block}, line {n}, "{x}"')
+                    self.error_count += 1
             
             fh.close()
         
@@ -174,15 +179,12 @@ class appender_base():
         
         except Exception as e:
             logging.error("SERIUS DATA PARSE ERROR", exc_info=True)
-            logging.error(f'While reading {filename}')
+            logging.error(f'While reading {filename} block {self.block}')
+        
+        if self.error_count:
+            logging.error(f'Enncountered {self.error_count} parsing errors!')
         
         self.lines = len(self)
-    
-    def detrime_block(self, line):
-        if not self.volsize:
-            return 0
-        
-        return line // self.volsize
     
     def write_block(self, line, out):
         self.block = self.detrime_block(line)
