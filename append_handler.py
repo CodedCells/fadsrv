@@ -186,6 +186,12 @@ class appender_base():
         
         self.lines = len(self)
     
+    def detrime_block(self, line):
+        if not self.volsize:
+            return 0
+        
+        return line // self.volsize
+    
     def write_block(self, line, out):
         self.block = self.detrime_block(line)
         
@@ -240,14 +246,15 @@ class appender_base():
         last_block = 0
         for k, v in data.items():
             this_block = self.detrime_block(line)
-            line += 1
-            self.lines += 1
             out += self.write_line(k, v)
             
             if this_block != last_block and out:
-                self.write_block(line, out)
+                self.write_block(line-1, out)
                 out = ''
                 last_block = this_block
+            
+            line += 1
+            self.lines += 1
         
         if out:
             self.write_block(line, out)
