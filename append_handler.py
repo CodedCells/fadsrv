@@ -186,14 +186,14 @@ class appender_base():
         
         self.lines = len(self)
     
-    def detrime_block(self, line):
+    def determine_block(self, line):
         if not self.volsize:
             return 0
         
         return line // self.volsize
     
     def write_block(self, line, out):
-        self.block = self.detrime_block(line)
+        self.block = self.determine_block(line)
         
         filename = self.filename
         if self.block:
@@ -245,7 +245,7 @@ class appender_base():
         out = ''
         last_block = 0
         for k, v in data.items():
-            this_block = self.detrime_block(line)
+            this_block = self.determine_block(line)
             out += self.write_line(k, v)
             
             if this_block != last_block and out:
@@ -415,7 +415,7 @@ class appender_set(appender_base, set):
         out = ''
         last_block = 0
         for k in data:
-            this_block = self.detrime_block(line)
+            this_block = self.determine_block(line)
             line += 1
             self.lines += 1
             out += self.write_line(k, 0)
