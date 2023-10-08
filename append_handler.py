@@ -297,7 +297,7 @@ class appender_base():
         
         self.filename = filename
         
-        self.write_helper(newdata, 0)
+        self.write_helper(self, 0)
 
 class appender(appender_base, dict):
     pass
