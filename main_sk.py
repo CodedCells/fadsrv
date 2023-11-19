@@ -1880,6 +1880,16 @@ class eyde_view(eyde_base):
         else:
             self.title = f'View ({si} items)'
         
+        h = ''
+        alts = cfg['altlinks'].get('posts', [])
+        if alts and si == 1:
+            h += f'<div class="linkthings centered">Alt: '
+            for path, name in alts:
+                path = path.format(self.items[0])
+                h += f'\n<a href="{path}">{name}</a>\n'
+            h += '\n</div>'
+        
+        self.headtext[0] = h
         #self.titledoc(handle, self.title)
 
 
