@@ -2395,12 +2395,21 @@ class eyde_filter(eyde_base):
                 out.append(i)
 
         return set(out)
+   
+    def filter_post_id(self, k, v):
+        mode = k == "before"
+        v = int(v)
+        
+        return set(i for i in self.items if (int(i) < v) == mode)
     
     def filter_param_get(self, k, v):
         f = None
         if k in ['user', 'userl', 'userdescpost', 'linkto', 'linkfrom', 'folder']:
             f = self.filter_param_user
-
+        
+        elif k in ['before', 'after']:
+            f = self.filter_post_id
+        
         elif k == 'rating':
             f = self.filter_post_key
         
