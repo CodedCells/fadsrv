@@ -242,6 +242,9 @@ def apd_findnew():
         if os.path.isdir(i):
             files = os.listdir(i)
     
+    extoverride = appender()
+    extoverride.read('extoverride.txt')
+    
     for file in files:
         # todo this extension management is horrible
         postid = file.split('_desc')[0]
@@ -303,6 +306,9 @@ def apd_findnew():
         wip.loads(data)
         
         ext = wip.get('ext')
+        if postid in extoverride:
+            ext = extoverride[postid]
+        
         if 'ext' in add:
             pd['ext'] = ext
         
