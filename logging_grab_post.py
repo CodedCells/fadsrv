@@ -182,6 +182,7 @@ def check_post(post, where):
             ext = suggestext
         
         fn = f'{post}.{ext}'
+        logging.debug(f'Writing file {fn}')
         with open(fd + fn, 'wb') as fh:
             fh.write(sg.content)
             fh.close()
