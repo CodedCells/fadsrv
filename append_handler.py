@@ -196,6 +196,9 @@ class appender_base():
         self.block = self.determine_block(line)
         
         filename = self.filename
+        if filename is None:
+            return
+        
         if self.block:
             filename += f'_{self.block:02d}'
         
