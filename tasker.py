@@ -539,6 +539,9 @@ def group_manage(kind, thing, data):
         ent[groupd] = {'_ungrouped': []}
         ent[groupd + '_order'] = {'_ungrouped': 6979}
     
+    if thing == None:
+        return
+    
     groupd, groupo = ent[groupd], ent[groupd + '_order']
     
     group = data.get('group', data.get('log_dir', '_ungrouped'))
@@ -567,6 +570,8 @@ def group_sort(kind):
 def find_avialble_tasks():
     ent['tasks'] = {}
     group_flush('task')
+    
+    group_manage('task', None, None)
     
     for fn in os.listdir(cfg['task_dir']):
         for ext, data in cfg['script_types'].items():
