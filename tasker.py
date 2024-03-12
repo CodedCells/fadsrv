@@ -639,7 +639,11 @@ def log_info(progd, make=True):
     data = {}
     exists = os.path.isfile(infod)
     if exists:
-        data = read_json(infod)
+        try:
+            data = read_json(infod)
+        except Exception as e:
+            logging.error(f'Skipping bad JSON {infod}, {e}')
+            return {}
     
     if 'id' not in data:
         data['id'] = str(uuid4())
@@ -670,6 +674,8 @@ def find_runningg_tasks():
         if not os.path.isdir(logd):
             continue
         
+        group_manage('log', None, None)
+        
         for prog in os.listdir(logd):
             progd = logd + prog + '/'
             if not os.path.isdir(progd):
@@ -683,7 +689,9 @@ def find_runningg_tasks():
                 }
             
             data = {**log_info(progd), **data}
-            pid = data['id']
+            pid = data.get('id')
+            if not pid:
+                continue
             
             ent['log_data'][progd] = data
             group_manage('log', pid, data)
