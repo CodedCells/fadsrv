@@ -3703,9 +3703,9 @@ class mort_activity(mort_base):
         for a in ustat:
             d = ustat.dget(a)
             if d.get('new_post'):
-                tusers[a] = (d.get('new_post'), a)
+                tusers.append([d.get('new_post'), a])
         
-        self.items = [(a, d) for d, a in sorted(tusers)]
+        self.items = [(a, trim_date(d*1000)) for d, a in sorted(tusers)]
         
         try:# try and grab a date
             target = datetime.fromisoformat(pargs[1])
