@@ -5,6 +5,13 @@ load_global('cfg', {
     'server_addr': '127.0.0.1',
     'server_port': 80,
     'server_name': 'Onefad Base',
+    'menu_modes': [
+        'list',
+        'narrow-icons',
+        'wide-icons',
+        'narrow-icons-flat',
+        'wide-icons-flat'
+        ]
 })
 load_global('strings',{# todo migrate more from code and clean up
 'responsive': '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n',
@@ -534,7 +541,11 @@ class builtin_menu(builtin_base):
         
         self.which = which
         self.pagetype = 'builtin_menu'
-        self.page_options = []
+        self.path_parts = 2
+        self.page_options = [
+            ['reversed'],
+            ['display ' + x for x in cfg.get('menu_modes', [])]
+        ]
     
     def build_element(self, btn, d):
         if d.get('type', 'button') == 'section':
@@ -578,18 +589,36 @@ class builtin_menu(builtin_base):
         
         return btn.format(**i)
     
-    def build_menu(self, handle, which, minfo, eles):
-        title = minfo.get('title', f'Undefined: {which}')
-        htmlout = f'<div class="head"><h2 class="pagetitle"><a href="/{which}">{title}</a></h2></div>\n'
-        htmlout += '<div class="container list menu">\n'
-        
-        mode = minfo.get('mode', 'list')
+    @staticmethod
+    def set_mode(mode):
         btn = strings.get(f'menubtn-{mode}', None)
         if btn is None:
             logging.warning(f'Missing markup string for menubtn-{mode}')
             btn = '<a href="{href}" alt="{alt}">{label}</a><br>\n'
         
+        return btn
+    
+    def build_menu(self, handle, which, minfo, eles, params=[]):
+        title = minfo.get('title', f'Undefined: {which}')
+        htmlout = f'<div class="head"><h2 class="pagetitle"><a href="/{which}">{title}</a></h2></div>\n'
+        htmlout += '<div class="container list menu">\n'
+        
+        mode = minfo.get('mode', 'list')
+        
+        forced_mode = False
+        for p in params:
+            if p.startswith('display '):
+                mode = p[8:]
+                forced_mode = True
+                break
+        
+        btn = self.set_mode(mode)
+        
         for d in eles:
+            if d.get('type', 'button') == 'set_mode' and not forced_mode:
+                btn = self.set_mode(d.get('mode', 'list'))
+                continue
+            
             htmlout += self.build_element(btn, d)
         
         self.write(handle, htmlout + '</div>\n')
@@ -613,10 +642,12 @@ class builtin_menu(builtin_base):
         butts = minfo.get('buttons', f'{self.which}_buttons')
         eles = menus.get(butts, {})
         
-        if 'reversed' in path[1:]:
+        params = path[1:]
+        
+        if 'reversed' in params:
             eles = self.reverse(eles)
         
-        self.build_menu(handle, self.which, minfo, eles)
+        self.build_menu(handle, self.which, minfo, eles, params)
 
 
 class builtin_config(builtin_menu):
