@@ -5660,11 +5660,12 @@ def load_apd():
     for apdfile in wpfile:
         load_wp(apdfile)
     
-    logging.info('Reading APX files')
-    for apdfile in apxlink:
-        load_apx(scandir, 'apx_', apdfile)
+    if not cfg.get('skip_bigdata'):
+        logging.info('Reading APX files')
+        for apdfile in apxlink:
+            load_apx(scandir, 'apx_', apdfile)
     
-    ent['loaded_apx'] = True
+        ent['loaded_apx'] = True
 
 
 def apdm_divy():
