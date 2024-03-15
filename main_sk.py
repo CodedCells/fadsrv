@@ -727,8 +727,8 @@ def register_dynamic():
     menus['all_pages_buttons'] = []
     rbcat = {
         'builtin': [],
-        'builtin stats': [],
         'builtin menu': [],
+        'builtin stats': [],
         'remort': [],
         'remort mark': [],
         'eyde': [],
@@ -776,6 +776,9 @@ def register_dynamic():
         if not d:continue
         menus['all_pages_buttons'].append({'type': 'section', 'label': c.title()})
         menus['all_pages_buttons'] += [icn for m, icn in sorted(d)]
+        
+        if c == 'builtin stats':
+            menus['all_pages_buttons'].append({'type': 'set_mode', 'mode': 'wide-icons-flat'})
 
 
 def load_altfa():
