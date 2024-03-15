@@ -366,6 +366,9 @@ var t = setTimeout(function(){window.location.reload(1);}, 5000);
 
         if len(outp) > 1:
             outp[-2] = r
+        else:
+            outp.append(r)
+            outp.append('')
         
         return '/'.join([str(x) for x in outp])
     
