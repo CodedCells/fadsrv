@@ -2265,6 +2265,7 @@ class eyde_filter(eyde_base):
         self.f_sortflip = False
         self.f_colstrip = {}
         
+        self.path_parts = 1
         self.page_options += [
             ['@unavilable'],
             ['@all', '@unmarked', '@marked'],
@@ -4718,7 +4719,6 @@ class mort_postmarks(mort_base, builtin_menu):
         self.icon = icon
         self.pagetype = 'remort'
         self.marktype = marktype
-        self.page_options = ['reversed']
     
     def page(self, handle, path):
         minfo = {
