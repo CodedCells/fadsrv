@@ -226,7 +226,7 @@ class parse_user_common(parse_basic):
             ou, username = username, username.split('<usericon-block-after>')[0].strip()
             logging.debug(f'stripped after {username} (from {ou})')
         
-        self.items['username'] = username[1:]
+        self.items['username'] = get_prop('Userpage of ', self.text, t=' ')
         statuses = {'!': 'suspended', '-': 'banned', '@': 'admin'}
         self.items['user_status'] = statuses.get(username[0], 'regular')
         
