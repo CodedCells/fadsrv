@@ -298,6 +298,7 @@ class parse_userpage(parse_user_common):
             if username == data['uploader']:
                 isuser[postid] = data
             else:
+                del data['upload_date']
                 other[postid] = data
         
         self.items['recent_posts'] = isuser
