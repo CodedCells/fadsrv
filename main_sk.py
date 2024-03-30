@@ -4776,7 +4776,11 @@ class builtin_rebuild(builtin_base):
         super().__init__(title, icon)
     
     def page(self, handle, pathe):
-        build_entries()
+        
+        level = 0
+        if len(pathe) > 1:level = pathe1[1]
+        build_entries(reload=level)
+        
         htmlout = '<div class="head">\n<h2 class="pagetitle">Rebuild'
         htmlout += '</h2>\n</div>\n<div class="container list">\n'
         htmlout += 'Should be done!<br>\n<br>\n'
