@@ -2584,7 +2584,7 @@ class eyde_filter(eyde_base):
         l_and = len(p_and)
         l_not = len(p_not)
         
-        self.items = set(apdfa)
+        self.items = set()
         and_skip = None
         unav_skip = False
         #print(p_arg)
@@ -2594,6 +2594,9 @@ class eyde_filter(eyde_base):
                 self.items = xlink.get('descpostback', {})
                 self.filter_items_by(ent['_posts'], False)
                 unav_skip = True
+        
+            else:
+                self.items = set(apdfa)
         
         elif not l_or:# must have >1 and
             self.items = self.filter_param_get(*p_and[0])
