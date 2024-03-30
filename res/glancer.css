@@ -96,7 +96,7 @@ div {
 		border-right: 4px solid #272727;
 	}
 	#content .menu {
-		display: grid;
+		display: block;
 	}
 }
 

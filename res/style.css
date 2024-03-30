@@ -179,7 +179,7 @@ input {
 }
 
 .iconsheet {
-	background: url("/icons.png");
+	background: url("icons.png");
 }
 
 .teenyicon {
@@ -199,7 +199,7 @@ a > i.teenyicon, .icons i.teenyicon {
 .mbutton.iconsheet {
 	padding: 10px;
 	vertical-align: botton;
-	background-image: url(/icons.png);
+	background-image: url(icons.png);
 	background-size: 600px 600px;
 }
 
