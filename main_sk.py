@@ -2656,6 +2656,12 @@ class eyde_filter(eyde_base):
             elif k == '@' and v in self.dprefs:
                 pass
             
+            elif k == 'folder':
+                uv = f'folder:{v}'
+                if uv in linked:continue
+                linked.add(uv)
+                h += mark_for('folders', v, wrap=True)
+            
             elif k in self.col:
                 uv = f'{k}:{v}'
                 if uv in linked:continue
