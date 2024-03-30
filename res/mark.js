@@ -358,17 +358,17 @@ function aprefAllRead(a) {
 	}
 }
 
-function folderToSetMakeBack() {
+function makeSetFromItemsMakeBack() {
 	var data = JSON.parse(this.responseText);
 	console.log("BACK!", data);
 	if (data.status == "success") {
 		setMark(posts, data.name);
 	} else {
-		folderToSet("Nah fam, give it a differeent name")
+		makeSetFromItems("Nah fam, give it a differeent name")
 	}
 }
 
-function folderToSet(pr, addto) {
+function makeSetFromItems(pr, addto) {
 	title = prompt(pr, defaultSetName);
 	if (title == null) {
 		return;
@@ -380,7 +380,7 @@ function folderToSet(pr, addto) {
 		"time": Date.now(),
 		"con": addto
 	};
-	send_xhr('/collections/new', JSON.stringify(meta), folderToSetMakeBack);
+	send_xhr('/collections/new', JSON.stringify(meta), makeSetFromItemsMakeBack);
 }
 
 function aprefMagic(a, provided) {

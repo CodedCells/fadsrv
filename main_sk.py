@@ -1387,6 +1387,35 @@ class eyde_base(builtin_base):
             i for i in self.f_items
             if (i in compare) != mode]
     
+    def make_set_from_items(self, thingid, autoname):
+        
+        out = f'''<script>
+var defaultSetName = "{autoname}";
+var posts = {json.dumps([str(x) for x in self.items])};
+</script>'''
+        
+        addto = ''
+        
+        for m  in ent['mark_buttons']:
+            d = apdmm[m]
+            if not compare_for(d, 'posts', sw=True):
+                continue
+            
+            if d.get('type', False) != 'collection':
+                continue
+            
+            name = d.get('name', m)
+
+            addto += mark_button().ez(
+                thingid, 'create',
+                f"makeSetFromItems('Name the new {name}', '{m}')",
+                name, name, 'item')
+        
+        if addto:
+            return out + f'\n<div class="linkthings centered">\nAdd all to: \n{addto}</div>'
+        
+        return ''
+    
     def build_page(self, handle, pargs):
         
         self.f_items = self.items
@@ -1898,6 +1927,9 @@ class eyde_view(eyde_base):
                 h += f'\n<a href="{path}">{name}</a>\n'
             h += '\n</div>'
         
+        if si > 1:
+            h += self.make_set_from_items('viewlist', '')
+        
         self.headtext[0] = h
         #self.titledoc(handle, self.title)
 
@@ -2135,31 +2167,7 @@ class eyde_folder(eyde_base):
             self.items = sorted([int(x) for x in self.items])
             self.items = [str(x) for x in self.items]
         
-        h += '<script>\n'
-        escname = f['title'].replace('"', '\\"')
-        h += f'var defaultSetName = "{escname}";\n'
-        h += 'var posts = ['
-        h += ','.join([f'\n\t"{i}"' for i in self.items])
-        h += '\n];\n</script>\n'
-
-        addto = ''
-        for m  in ent['mark_buttons']:
-            d = apdmm[m]
-            if not compare_for(d, 'posts', sw=True):
-                continue
-            
-            if d.get('type', False) != 'collection':
-                continue
-            
-            name = d.get('name', m)
-
-            addto += mark_button().ez(
-                folid, 'create',
-                f"folderToSet('Name the new {name}', '{m}')",
-                name, name, 'item')
-        
-        if addto:
-            h += f'<div class="linkthings centered">\nAdd all to: {addto}</div>'
+        h += self.make_set_from_items(folid, f['title'].replace('"', '\\"'))
         
         h += '<div class="userinfo">\n'
         got = len(self.items)
@@ -2622,6 +2630,10 @@ class eyde_filter(eyde_base):
         self.items = list(self.items)
         
         h = self.filter_widgets(pbar, p_or, p_and, p_not, p_arg)
+        
+        if len(self.items):
+            h += self.make_set_from_items('filter', pbar)
+        
         m = ''
         
         linked = set()
