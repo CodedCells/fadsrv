@@ -1439,7 +1439,7 @@ var posts = {json.dumps([str(x) for x in self.items])};
         
         if 'showalt' not in pf:
             self.cull_mode(
-                apdfa,
+                ent['_posts'],
                 'onlyalt' in pf,
                 'hidealt' in pf or hide_default)
         
@@ -1952,7 +1952,8 @@ class eyde_dataurl(eyde_base):
         
         new = {}
         for i, d in data.items():
-            if apdfa.dget(i):continue# has
+            if not get_post(i, noalt=True).get('got', True):
+                continue# has
             
             if altfa.dget(i, {}).get('filedate'):
                 continue# don't overwrute actual data
@@ -2193,7 +2194,7 @@ class post_sort_prop(object):
             ])
     
     def value(self, postid):
-        return apdfa.dget(postid, {}).get(self.prop, self.default)
+        return get_post(postid).get(self.prop, self.default)
 
 
 class post_sort_prop_none(post_sort_prop):
@@ -2273,7 +2274,6 @@ class eyde_filter(eyde_base):
         self.f_sortflip = False
         self.f_colstrip = {}
         
-        self.path_parts = 1
         self.page_options += [
             ['@unavilable'],
             ['@all', '@unmarked', '@marked'],
@@ -2399,7 +2399,7 @@ class eyde_filter(eyde_base):
     def filter_post_key(self, k, v):
         out = []
         for i in self.items:
-            d = apdfa.dget(i, {}).get(k, 'unset')
+            d = get_post(i).get(k, 'unset')
             if d == v:
                 out.append(i)
 
@@ -2408,7 +2408,7 @@ class eyde_filter(eyde_base):
     def filter_post_title(self, k, v):
         out = []
         for i in self.items:
-            d = apdfa.dget(i, {}).get(k, 'unset').lower()
+            d = get_post(i).get(k, 'unset').lower()
             if v in d:
                 out.append(i)
 
@@ -3611,10 +3611,10 @@ class mort_postamark(mort_amark):
     def get_items(self):
         datas = {}
         for file in dpref.get(self.val, []):
-            if file not in ent['_posts'] or apdfa.dget(file, {}).get('data') == 'deleted':
+            if file not in ent['_posts'] or aget_post(file).get('data') == 'deleted':
                 continue
             
-            user = apdfa.dget(file)['uploader'].replace('_', '')
+            user = get_post(file)['uploader'].replace('_', '')
             if user not in datas:datas[user] = []
             datas[user].append(file)
         
@@ -3662,7 +3662,7 @@ class mort_unavcheck(mort_base):
         return len(out)
     
     def get_items(self):
-        self.sys_has = set([x for x in apdfa])
+        self.sys_has = set([x for x in ent['_posts']])
         self.unav_marked = set([x
             for x, y in apdm.get('unava', {}).items()
             if y[0] != 'n/a'])
@@ -3954,7 +3954,7 @@ class mort_percgot(mort_base):
         self.items = sorted(self.items.items(), key=itemgetter(1))
 
 def get_ext(post):
-    return apdfa.dget(str(post), {}).get('ext', 'error')
+    return get_post(post).get('ext', 'error')
 
 def select_thumb_from(posts):
     eligable = posts
@@ -4568,8 +4568,8 @@ class builtin_statadd(stats_base):
     
     def data(self):
         d = {}
-        for k in apdfa:
-            v = apdfa.dget(k)
+        for k in ent['_posts']:
+            v = get_post(k)
             if self.field in v and type(v[self.field]) == float:
                 d[k + 'T00:00:00'] = v[self.field] * 1000
         
@@ -4794,7 +4794,7 @@ class builtin_rebuild(builtin_base):
 
 
 def desc_fol(item):
-    data = apdfa.dget(item, {})
+    data = get_post(item)
     user = data.get('uploader')
     
     block = user
@@ -5265,13 +5265,12 @@ class post_data(post_base):
             return {'error': 'no request specified'}
         
         if pargs[1] == 'posts':
-            return list(apdfa)
+            return list(ent['_posts'])
         
         if pargs[1] == 'postdata':
-            datsrc = apdfa
             
             if pargs[-1].isdigit():
-                return datsrc.get(pargs[-1], {'error': 'data not foud'})
+                return get_post(pargs[-1])
             
             elif 'posts' not in data:
                 if ' ' not in pargs[-1]:
@@ -5281,7 +5280,7 @@ class post_data(post_base):
             
             ret = {}
             for i in data['posts']:
-                data = datsrc.dget(i)
+                data = get_post(i)
                 if data:
                     ret[i] = data
             
