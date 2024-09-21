@@ -79,10 +79,12 @@ class parse_basic(object):
         self.items = {}
         self.text = text
     
-    def loadw(self, url):# from web
+    def loadw(self, url, session=None):# from web
+        if session == None:
+            session = requests
         self.origin = 'web'
         self.items = {}
-        self.text = requests.get(url).text
+        self.text = session.get(url).text
     
     def get(self, item):# get single value
         if item not in self.funcs:
