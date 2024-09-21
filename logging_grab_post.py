@@ -174,6 +174,7 @@ def check_post(post, where):
         con = sg.content
         if len(con) == 3072 and con.startswith(b'GIF89ax\x00x\x00\xe7\xa3\x00.;A.;B/;B/<B/<C0<C0=C0=D1=D1>D1>E2>E2'):
             # error result
+            logging.debug(f'Tried getting https:{fp}')
             logging.error(f'!!! RESPONSE RETURNED ERROR GIF FOR {post} !!!')
             return
         
