@@ -42,6 +42,7 @@ def session_create():
     
     session = requests.Session()
     session.cookies.update(cookies)
+    return session
 
 
 def prompt_exit():
