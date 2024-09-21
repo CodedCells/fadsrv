@@ -432,7 +432,7 @@ class parse_postpage(parse_basic):
         ks = '@keywords _untagged"'
         
         if '"/search/@keywords' not in self.text:# no tags
-            return
+            return []
         
         elif '<div id="keywords">' in self.text:# old theme
             ks = get_prop('<div id="keywords">', self.text, t='</div>')
@@ -464,7 +464,7 @@ class parse_postpage(parse_basic):
     def item_folders(self, prop):
         fol = {}
         if 'Listed in Folders' not in self.text:
-            return
+            return fol
         
         for f in get_prop('Listed in Folders</h3>',
                           self.text, t='</section').split('</div>')[:-1]:
