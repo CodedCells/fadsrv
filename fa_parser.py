@@ -228,7 +228,7 @@ class parse_user_common(parse_basic):
             ou, username = username, username.split('<usericon-block-after>')[0].strip()
             logging.debug(f'stripped after {username} (from {ou})')
         
-        self.items['username'] = get_prop('Userpage of ', self.text, t=' ')
+        self.items['username'] = username[1:]
         statuses = {'!': 'suspended', '-': 'banned', '@': 'admin'}
         self.items['user_status'] = statuses.get(username[0], 'regular')
         
@@ -300,7 +300,6 @@ class parse_userpage(parse_user_common):
             if username == data['uploader']:
                 isuser[postid] = data
             else:
-                del data['upload_date']
                 other[postid] = data
         
         self.items['recent_posts'] = isuser
