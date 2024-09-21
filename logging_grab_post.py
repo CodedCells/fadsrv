@@ -212,54 +212,34 @@ def check_post(post, where):
     return request
 
 
-def crawl_favourites_post(e):
-    e = '<figure id="' + e.split('-->')[0]
-    
-    post = get_prop('figure id="sid-', e)
-    if post in knows:
-        return 'got'
-    
-    return post, {
-        'title':  get_prop(' title="', e, o=2),
-        'user':   get_prop(' title="', e, o=3),
-        'rating': get_prop('r-', e, t=' ')
-        }
-
-
 def crawl_favourites():
     global know, knows
     
-    url = 'https://www.furaffinity.net/favorites/{}/'
-    seqgal = 'class="gallery s-'
-
+    link = f'https://www.furaffinity.net/favorites/{cfg["username"]}/'
     page = 1
-    link = url.format(cfg['username'])
-    
+                    
     while link != '':
         logging.info(f'Page {page}')
         
-        req = session_get(link)
-        d = req.text
-        if seqgal not in d:
-            logging.warning('uh-oh')
-            return# no more
+        parser = parse_gallery()
+        parser.loadw(link, session=sess_hack)
         
         add = {}
         new = 0
         got = 0
         
-        page_posts = get_prop(seqgal, d, t='</section>'
-                              ).split('<figure id="')[1:]
+        page_posts = parser.get('posts')
+        if not isinstance(page_posts, dict):
+            logging.warning('non dict uh-oh')
+            return# no more
         
-        for e in page_posts:
-            e = crawl_favourites_post(e)
-            if e == 'got':
+        for sid, data in page_posts.items():
+            if sid in knows:
                 got += 1
+                continue
             
-            else:
-                post, data = e
-                add[post] = data
-                knows.add(post)
+            add[sid] = data
+            knows.add(sid)
         
         if add:
             logging.debug(f'New posts {add.keys()}')
@@ -267,20 +247,24 @@ def crawl_favourites():
             logging.info(f'Adding {len(add)} new known posts')
             know.write(add, volsize=100000)
         
-        # check for next page link
-        if 'button standard right" href="' in d:
-            nlink = get_prop('button standard right" href="', d)
-            if nlink.startswith('/'):
-                nlink = 'https://www.furaffinity.net' + nlink
-            
-            if link == nlink:
-                logger.warning('HALT: Same URL')
-                nlink = ''
-            
-            link = str(nlink)
+        d = parser.text
+        with open('diumpt.txt', 'w') as fh:
+            fh.write(d)
         
-        else:
-            link = ''
+        # check for next page link
+        if '/next" method="get">' not in d:
+            logging.debug('Can\'t find next button')
+            break
+        
+        nlink = d.split('/next" method="get">')[0].split('"')[-1] + '/next'
+        if nlink.startswith('/'):
+            nlink = 'https://www.furaffinity.net' + nlink
+        
+        if link == nlink:
+            logger.warning('HALT: Same URL')
+            break
+        
+        link = str(nlink)
         
         # check if we got any new posts
         if len(page_posts) == got:
@@ -591,7 +575,7 @@ if __name__ == '__main__':
         logging.error('Set the username in the config')
         prompt_exit()
     
-    session_create()
+    sess_hack = session_create()
     
     if cfg['squash_server']:
         logging.info(f"squash parth is {cfg['squash_server']}")
