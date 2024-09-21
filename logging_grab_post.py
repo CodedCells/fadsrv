@@ -34,10 +34,11 @@ def load_local_data(path, thing, split='.'):
         return out
     
     elif data['mode'] == 'split':
+        logging.debug(f'Listing split dirs')
         for i in range(100):
             i = path + f'{i:02d}/'
             
-            logging.debug(f'Listing {i}')
+            #logging.debug(f'Listing {i}')
             out.write(file_id_split(i, s=split))
         
         return out
